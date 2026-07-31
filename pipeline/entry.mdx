@@ -1,23 +1,23 @@
 ---
-title: "Run entry"
-description: "Project sources and deploy logging for every Sealos Deploy run."
+title: "运行入口"
+description: "每次 Sealos Deploy 运行的项目来源与部署日志。"
 keywords: ["entry", "github", "local", "logging"]
 ---
 
-## Project sources
+## 项目来源
 
-Sealos Deploy accepts three project sources:
+Sealos Deploy 接受三种项目来源：
 
-| Source | Behavior |
+| 来源 | 行为 |
 | --- | --- |
-| GitHub repository URL | Clone the repository, then deploy |
-| Local project directory | Deploy the specified directory |
-| Current project | Deploy the current working directory when no URL or path is given |
+| GitHub 仓库 URL | 克隆仓库后部署 |
+| 本地项目目录 | 部署指定目录 |
+| 当前项目 | 未提供 URL 或路径时，部署当前工作目录 |
 
-See [Phase 0](/pipeline/phases/phase-0-preflight) for source materialization rules.
+源码物化规则见 [Phase 0](/pipeline/phases/phase-0-preflight)。
 
-## Deploy log
+## 部署日志
 
-Every run creates a unified deploy log. The log spans all phases. It records phase boundaries, key decisions, failure reasons, and retries.
+每次运行创建统一的部署日志。日志贯穿所有阶段，记录阶段边界、关键决策、失败原因与重试。
 
-The agent must not omit phase boundaries from the log.
+Agent 不得省略日志中的阶段边界。

@@ -1,61 +1,61 @@
 ---
-title: "Phase 3 — Build prep"
-description: "Per-service Dockerfile and build definition preparation."
+title: "Phase 3 — 构建定义准备"
+description: "逐服务 Dockerfile 与构建定义准备。"
 keywords: ["phase 3", "dockerfile", "build prep"]
 ---
 
-## Purpose
+## 目的
 
-Phase 3 prepares build definitions only for services that will run as containers and lack a reusable image digest. Services converting to Sealos-native resources in Phase 5 may skip this phase.
+Phase 3 仅为将以容器运行且缺少可复用镜像 digest 的服务准备构建定义。Phase 5 转为 Sealos 原生资源的服务可跳过本阶段。
 
-Each service gets its own build directory, Dockerfile path, target, and build args. A Dockerfile at the repo root does not cover all services in a multi-service project.
+每个服务有独立构建目录、Dockerfile 路径、target 与 build args。仓库根 Dockerfile 不覆盖多服务项目中所有服务。
 
-## Inputs
+## 输入
 
-| Input | Source |
+| 输入 | 来源 |
 | --- | --- |
 | `service_inventory` | Phase 2 |
-| Project source | `WORK_DIR` |
+| 项目源码 | `WORK_DIR` |
 
-## Outputs
+## 输出
 
-| Output | Location | Description |
+| 输出 | 位置 | 说明 |
 | --- | --- | --- |
-| Build definitions | `service_inventory` entries | Context, Dockerfile, target, arg names for Phase 4 |
+| 构建定义 | `service_inventory` 条目 | context、Dockerfile、target、arg 名称供 Phase 4 |
 
-Phase 3 does not build images, choose registries, set digests, change topology, or write build results.
+Phase 3 不构建镜像、不选 registry、不设置 digest、不改变拓扑、不写入构建结果。
 
-## Procedure
+## 流程
 
-When a service already has a Dockerfile, reuse it by default. Do not rewrite for single-stage build, root user, cache order, or floating base tags unless build or startup would fail, or Phase 4 proves failure.
+服务已有 Dockerfile 时默认复用。不得为单阶段构建、root 用户、缓存顺序或浮动基础标签重写，除非构建或启动会失败，或 Phase 4 证明失败。
 
-When Phase 4 proves `FROM` or `COPY --from` images are inaccessible, return to Phase 3. Rebuild from source with accessible bases. Do not only swap `FROM` and assume entrypoint, paths, user, and ports stay valid.
+Phase 4 证明 `FROM` 或 `COPY --from` 镜像不可访问时，返回 Phase 3。用可访问基础从源码重建。不得仅替换 `FROM` 并假设 entrypoint、路径、用户与端口仍有效。
 
-When no Dockerfile exists, generate a minimal build definition from project evidence. Static builds may end in Nginx or similar. Preserve existing `.dockerignore`. Generate one only when missing.
+无 Dockerfile 时，从项目证据生成最小构建定义。静态构建可终结于 Nginx 等。保留已有 `.dockerignore`。仅缺失时生成。
 
-Missing root start command, no listening port in source, or missing detector runtime contract are not stop conditions. One failed approach does not end Phase 3 if another reasonable path exists.
+缺少根启动命令、源码无监听端口或检测器无运行时契约不是停止条件。一种方式失败不结束 Phase 3，若另有合理路径。
 
-Build arg values resolve in Phase 4. Secret values must not be written to analysis or build results.
+构建 arg 值在 Phase 4 解析。秘密值不得写入 analysis 或构建结果。
 
-## Stop conditions
+## 停止条件
 
-| Result | Condition |
+| 结果 | 条件 |
 | --- | --- |
-| **CONTINUE → Phase 4** | All required services have build definitions |
-| **STOP** | No credible build path remains after bounded retries from Phase 4 |
+| **CONTINUE → Phase 4** | 所有需构建服务有构建定义 |
+| **STOP** | Phase 4 有界重试后无可信构建路径 |
 
-## Acceptance
+## 验收标准
 
-- Each build-bound service has context, Dockerfile, and target recorded
-- No topology changes
-- No images built yet
+- 每个需构建服务记录 context、Dockerfile 与 target
+- 拓扑未改变
+- 尚未构建镜像
 
-## Schema links
+## Schema 链接
 
-- [Artifact schemas](/specs/artifact-schemas)
+- [产物 Schema](/specs/artifact-schemas)
 
-## Implementation map
+## 实现映射
 
-| Spec section | Implementation |
+| 规范章节 | 实现 |
 | --- | --- |
-| Dockerfile integration | `skills/sealos-deploy/modules/dockerfile-integration.md` |
+| Dockerfile 集成 | `skills/sealos-deploy/modules/dockerfile-integration.md` |

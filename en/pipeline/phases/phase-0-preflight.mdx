@@ -1,0 +1,107 @@
+---
+title: "Phase 0 — Preflight"
+description: "Environment checks, source materialization, and Sealos auth before deploy."
+keywords: ["phase 0", "preflight", "environment"]
+---
+
+## Purpose
+
+Phase 0 does two things before the deploy flow starts:
+
+1. Make sure the local environment has the dependencies Sealos Deploy needs.
+2. Confirm and fully materialize project source, Sealos Cloud region, login, and target workspace.
+
+Phase 0 does **not** judge deployability, select or build images, generate templates, create cloud resources, or write `.sealos/` files.
+
+## Inputs
+
+| Input | Source |
+| --- | --- |
+| Project source | GitHub URL, local path, or current directory |
+| Platform context | OS and available package managers |
+| Existing local checkout | For local directory sources |
+
+## Outputs
+
+| Output | Description |
+| --- | --- |
+| Verified dependencies | Tools required for this project's path |
+| `WORK_DIR` | Single materialized, analyzable, buildable project directory |
+| Repository metadata | Branch and commit when applicable |
+| Sealos context | Region, workspace namespace, usable kubeconfig |
+| Deploy log | Started and used through later phases |
+
+Phase 0 does not write `analysis.json`, `state.json`, templates, build results, or other `.sealos/` files.
+
+## Preconditions
+
+None. Phase 0 is the pipeline entry.
+
+## Procedure
+
+### Dependency inventory
+
+Check for these tools when the selected path needs them:
+
+| Tool | When required |
+| --- | --- |
+| Git | Always |
+| Source fetch tools | When plain Git checkout cannot materialize the commit (for example Git LFS) |
+| Node.js 18+ | When later phases need script mode |
+| Docker CLI and running daemon | When local build may run |
+| Docker Buildx | When local build may run |
+| GitHub CLI (`gh`) | When GHCR push may run; must be logged in to `github.com` with `write:packages` |
+| Python 3.8+ and PyYAML | Phase 5 conversion |
+| kompose | Compose conversion path only |
+| Helm 3+ | Helm chart rendering only |
+| kubectl | Workspace verification |
+| curl, jq | Deploy and inspection helpers |
+
+Invoking the sealos-deploy skill means the user agrees to install dependencies the skill needs. Phase 0 identifies the project's actual source-fetch and deployment-source needs before checking tools. When a tool is missing, the agent installs or upgrades it with the platform-appropriate method without per-tool confirmation, then rechecks.
+
+The agent must not install kompose when the project has no Compose path. The agent must not install Helm when the project has no chart.
+
+A successful `git clone` does not prove source is complete. Phase 0 reads repository metadata first, then checks whether additional mechanisms are needed for the current commit. When the repository declares a mechanism, Phase 0 installs the trusted tool, fetches tracked content, recursive dependencies, and submodules, then rechecks. Git LFS and submodules are examples, not a closed whitelist. A README command alone must not trigger tool installation.
+
+For a user-provided local directory, source materialization preserves existing modifications. Phase 0 stops only when required objects are missing, permissions block fetch, or install, auth, and recheck still cannot produce a complete analyzable workspace.
+
+When Docker is installed but the daemon is not running, start Docker. When `gh` is missing login or scopes, run login or authorization. After kubectl install, verify kubeconfig for the selected workspace. System password, browser auth, or OS prompts continue without extra Sealos Deploy confirmation steps.
+
+When the platform cannot auto-install a dependency, or install, login, auth, and recheck still fail, Phase 0 stops with a clear remediation message.
+
+### Sealos and source setup
+
+After dependency checks, the agent must:
+
+1. Confirm project source and fully materialize the current commit.
+2. Select Sealos Cloud region.
+3. Complete Sealos login.
+4. Select target workspace.
+
+Login or workspace switch updates Sealos auth and kubeconfig in the user home directory safely.
+
+## Stop conditions
+
+| Result | Condition |
+| --- | --- |
+| **STOP** | A required dependency cannot be installed or verified |
+| **STOP** | Source materialization fails after recheck |
+| **STOP** | Sealos region, login, or workspace cannot be confirmed |
+| **CONTINUE** | All checks pass → [mode detection](/en/pipeline/mode-detection) |
+
+## Acceptance
+
+- All required dependencies for this project's path pass recheck.
+- `WORK_DIR` is complete, analyzable, and buildable.
+- Sealos region, namespace, and kubeconfig are confirmed.
+- No `.sealos/` artifacts exist yet.
+
+## Schema links
+
+Phase 0 writes no `.sealos/` JSON artifacts. See [Artifacts](/en/pipeline/artifacts).
+
+## Implementation map
+
+| Spec section | Implementation |
+| --- | --- |
+| Full preflight procedure | `skills/sealos-deploy/modules/preflight.md` |

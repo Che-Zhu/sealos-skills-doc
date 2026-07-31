@@ -1,28 +1,43 @@
 ---
-title: "Prerequisites"
-description: "Accounts, tools, and permissions required before you use Sealos Skills."
+title: "前置条件"
+description: "使用 Sealos Skills 前所需的账号、工具与权限。"
 keywords: ["prerequisites", "sealos account", "ghcr", "docker", "kubectl"]
 ---
 
-{/* TODO: Fill with per-scenario prerequisites (deploy vs database vs S3). */}
+使用 Sealos Skills 部署前，确认以下账号与工具。
 
-## Sealos Cloud account
+## Sealos Cloud 账号
 
-{/* TODO: Required for deployment, database, and object storage work. */}
+部署、数据库与对象存储操作需要 Sealos Cloud 账号。Phase 0 完成区域选择、登录与工作空间选择。
 
-## GitHub CLI and GHCR access
+## GitHub CLI 与 GHCR 访问
 
-{/* TODO: Required only when Phase 4 must build and push a new image. */}
+仅当 Phase 4 需要构建并推送新镜像时需要：
 
-## Local tools by scenario
+- 已安装并登录 `gh` CLI（`github.com`）
+- 具备 `write:packages` scope 以推送到 GHCR
 
-| Scenario | Tools |
+复用已有 digest 的路径不需要 GHCR 推送权限。
+
+## 按场景的本地工具
+
+| 场景 | 工具 |
 | --- | --- |
-| Deploy (build path) | Docker, buildx, Node.js 18+, `gh` CLI |
-| Deploy (reuse image) | Sealos auth, `kubectl` |
-| Database / S3 | `sealos-cli` |
-| Compose source | kompose |
-| Helm source | Helm 3+ |
-| Template generation | Python 3.8+ with PyYAML |
+| 部署（构建路径） | Docker、buildx、Node.js 18+、`gh` CLI |
+| 部署（复用镜像） | Sealos 认证、`kubectl` |
+| 数据库 / S3 | `sealos-cli` |
+| Compose 来源 | kompose |
+| Helm 来源 | Helm 3+ |
+| 模板生成 | Python 3.8+ 与 PyYAML |
 
-{/* TODO: Expand each row with install links and verification commands. */}
+Phase 0 按项目实际路径检查并安装所需依赖。完整列表见 [Phase 0 — 部署前检查](/pipeline/phases/phase-0-preflight)。
+
+## 验证命令
+
+```bash
+docker info
+gh auth status
+kubectl --kubeconfig ~/.sealos/kubeconfig get ns
+```
+
+安装步骤见 [安装](/get-started/install)。

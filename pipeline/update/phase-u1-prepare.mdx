@@ -1,54 +1,54 @@
 ---
-title: "Phase U1 — Prepare update"
-description: "Select services to rebuild or workloads to restart."
+title: "Phase U1 — 准备更新"
+description: "选择要重建的服务或要重启的工作负载。"
 keywords: ["phase u1", "update", "rebuild"]
 ---
 
-## Purpose
+## 目的
 
-After mode detection recognizes an existing app, Phase U1 lets the user choose:
+模式识别确认已有应用后，Phase U1 让用户选择：
 
-| Choice | Action |
+| 选择 | 动作 |
 | --- | --- |
-| Code changed | Rebuild and push one or more services |
-| Code unchanged | Restart one or more existing workloads |
+| 代码已变更 | 重建并推送一个或多个服务 |
+| 代码未变更 | 重启一个或多个已有工作负载 |
 
-## Inputs
+## 输入
 
-| Input | Source |
+| 输入 | 来源 |
 | --- | --- |
-| `state.json` | Prior successful deploy |
-| Live app context | Mode detection |
-| User selection | Rebuild targets or restart targets |
+| `state.json` | 先前成功部署 |
+| 线上应用上下文 | 模式识别 |
+| 用户选择 | 重建目标或重启目标 |
 
-## Outputs
+## 输出
 
-| Output | Description |
+| 输出 | 说明 |
 | --- | --- |
-| Rebuild plan | Per-service context, Dockerfile, target, arg names |
-| New digests | From Phase 4 rules when rebuilding |
-| Restart plan | Workloads to roll without image change |
+| 重建计划 | 逐服务 context、Dockerfile、target、arg 名称 |
+| 新 digest | 重建时按 Phase 4 规则 |
+| 重启计划 | 无镜像变更时要滚动的工作负载 |
 
-## Procedure
+## 流程
 
-**Rebuild path:** each service keeps its build directory, Dockerfile, target, and arg names. Use `linux/amd64`, push to GHCR, read digest from Buildx metadata. Start cloud changes only after all selected rebuilds succeed.
+**重建路径：** 每个服务保留构建目录、Dockerfile、target 与 arg 名称。使用 `linux/amd64`，推送到 GHCR，从 Buildx 元数据读取 digest。所有选定重建成功后才启动云端变更。
 
-**Restart path:** keep current digest per service.
+**重启路径：** 每个服务保持当前 digest。
 
-## Stop conditions
+## 停止条件
 
-| Result | Condition |
+| 结果 | 条件 |
 | --- | --- |
-| **STOP** | Rebuild failure, or GHCR namespace conflict across the full app |
-| **CONTINUE → Phase U2** | Plan complete |
+| **STOP** | 重建失败，或全应用 GHCR namespace 冲突 |
+| **CONTINUE → Phase U2** | 计划完成 |
 
-## Acceptance
+## 验收标准
 
-- User selection recorded
-- All selected rebuilds succeeded before U2 when rebuilding
+- 用户选择已记录
+- 重建时所有选定重建在 U2 前成功
 
-## Implementation map
+## 实现映射
 
-| Spec section | Implementation |
+| 规范章节 | 实现 |
 | --- | --- |
-| Update prepare | `skills/sealos-deploy/modules/pipeline.md` (Phase U1) |
+| 更新准备 | `skills/sealos-deploy/modules/pipeline.md`（Phase U1） |

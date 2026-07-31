@@ -1,27 +1,37 @@
 ---
-title: "Safety rules"
-description: "kubectl scope, deletion confirmation, secret handling, and destructive operations."
+title: "安全规则"
+description: "kubectl 范围、删除确认、秘密处理与破坏性操作。"
 keywords: ["safety", "kubectl", "secrets", "deletion"]
 ---
 
-These rules apply across all skills. They are normative.
+这些规则适用于所有 Skills，具有规范性。
 
-## kubectl scope
+## kubectl 范围
 
-{/* TODO: KUBECONFIG=~/.sealos/kubeconfig, namespace scope, named application scope. */}
+- 使用 `KUBECONFIG=~/.sealos/kubeconfig`
+- 所有 kubectl 命令带 `--insecure-skip-tls-verify`
+- 操作限定于 Phase 0 确认的工作空间 namespace
+- 资源操作限定于目标应用范围，不得修改无关应用
 
-## Deletion confirmation
+## 删除确认
 
-{/* TODO: kubectl delete requires user confirmation. Template API cleanup order. */}
+- `kubectl delete` **须**先获得用户明确确认
+- Template API 清理须包含 `instances.app.sealos.io`
+- 按依赖顺序删除：工作负载 → 网络 → 存储 → Instance/App
+- 删除数据库、存储或测试应用不属于正常部署流程
 
-## Secret handling
+见 [清理边界](/pipeline/cleanup)。
 
-{/* TODO: No secrets in chat, committed files, or user-facing output. */}
+## 秘密处理
 
-## Destructive operations
+- 不得在对话、提交文件或用户可见输出中暴露秘密值
+- 日志与最终摘要须掩码敏感配置
+- 构建 arg 中的秘密值不得写入 `analysis.json` 或 `build-result.json`
 
-{/* TODO: Database deletion, bucket policy changes, credential rotation — all require confirmation. */}
+## 破坏性操作
 
-## System tool installation
+数据库删除、存储桶策略变更、凭证轮换等破坏性操作均须用户明确确认。
 
-{/* TODO: sealos-deploy authorizes path-specific installs; other tools require explicit confirmation. */}
+## 系统工具安装
+
+`sealos-deploy` Phase 0 授权按路径安装所需依赖。其他 Skill 或场景下的系统工具安装须单独确认。

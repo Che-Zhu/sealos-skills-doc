@@ -1,0 +1,91 @@
+---
+title: "Phase 2 — Discover"
+description: "Image inventory, service topology, and digest pinning."
+keywords: ["phase 2", "discover", "topology", "digest"]
+---
+
+## Purpose
+
+Phase 2 confirms two things together: which images the project publishes or uses, and which services and dependencies the final deployment must keep. It is not a search that stops at the first image found.
+
+Image evidence and runtime topology are gathered separately.
+
+## Inputs
+
+| Input | Source |
+| --- | --- |
+| `analysis.json` | Phase 1 |
+| Project source and docs | `WORK_DIR` |
+
+## Outputs
+
+| Output | Path | Description |
+| --- | --- | --- |
+| Deployment source record | `.sealos/analysis.json` → `deployment_source` | Kind, path, `source_hash`, evidence |
+| Image inventory | `.sealos/analysis.json` → `image_inventory` | Selectors resolved to `repository@sha256:digest` |
+| Service inventory | `.sealos/analysis.json` → `service_inventory` | Full service list including databases and workers |
+| Rendered source | `.sealos/deployment-source/rendered.yaml` | Helm/Kubernetes paths only |
+
+See [Deployment sources](/en/pipeline/deployment-sources) for source kinds.
+
+## Image evidence order
+
+1. README image usage
+2. CI publish or push targets
+3. Compose `image` or `build` per service
+4. Helm values, rendered chart, official docs image refs
+5. Native Kubernetes manifest image refs
+
+The agent must not guess Docker Hub or GHCR images from org or repo name. The agent must not treat fuzzy search results as deployable. A local `docker build -t` tag used only in README is not a published image. Dockerfile `FROM` is a build base, not the project's published app image.
+
+## Topology evidence order
+
+1. Root or project-specified Compose file
+2. Helm chart with `Chart.yaml` and templates
+3. Declared native Kubernetes YAML
+4. Implicit path when no explicit topology exists
+
+`implicit-single-service` is a compatibility artifact name. It means no Compose, Helm, or Kubernetes topology was adopted. It does not mean the repo root is the app or that only one service may exist.
+
+## Digest rules
+
+`latest`, `stable`, version tags, digests, and omitted tags are valid project input. The agent keeps the project's selector and resolves it to an immutable digest. Phase 2 does not pre-screen CPU architecture for third-party images. Compatibility is judged in Phase 6 and 6.5.
+
+Detector output is evidence, not the final verdict. On the implicit path, the agent must confirm image ownership, service boundaries, and build context.
+
+## Build skip rules
+
+Per service:
+
+- Resolved immutable digest → reuse, skip Phase 3 and 4 for that service
+- `build` only, no digest, credible source → Phase 3 and 4
+- Databases converting to KubeBlocks in Phase 5 may skip container build
+
+Only when every final container workload has a reusable image does the flow skip straight to Phase 5.
+
+Databases and infrastructure are not removed because they are not the main app image.
+
+## Stop conditions
+
+| Result | Condition |
+| --- | --- |
+| **CONTINUE → Phase 5** | All container workloads have reusable digests |
+| **CONTINUE → Phase 3** | One or more services need build definitions |
+| **STOP** | Required topology evidence cannot be resolved |
+
+## Acceptance
+
+- `deployment_source`, `image_inventory`, and `service_inventory` updated in `analysis.json`
+- No guessed image names
+- Full topology preserved including databases, queues, caches, workers
+
+## Schema links
+
+- [Artifact schemas](/en/specs/artifact-schemas)
+- [Deployment sources](/en/pipeline/deployment-sources)
+
+## Implementation map
+
+| Spec section | Implementation |
+| --- | --- |
+| Discovery and inspectors | `skills/sealos-deploy/modules/pipeline.md` (Phase 2) |

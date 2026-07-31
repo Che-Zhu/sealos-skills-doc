@@ -1,69 +1,69 @@
 ---
-title: "Phase 4 — Build and push"
-description: "linux/amd64 image build and GHCR push with digest."
+title: "Phase 4 — 构建并推送"
+description: "linux/amd64 镜像构建与 GHCR 推送及 digest 捕获。"
 keywords: ["phase 4", "build", "ghcr", "digest"]
 ---
 
-## Purpose
+## 目的
 
-Phase 4 builds and pushes images only for services that still lack a reusable digest and will run as containers. One service needing build does not discard already verified images for other services.
+Phase 4 仅为仍缺少可复用 digest 且将以容器运行的服务构建并推送镜像。一个服务需构建不丢弃其他服务已验证镜像。
 
-Docker, Buildx, Node.js 18+, and `gh` are required only when this phase actually runs.
+仅在本阶段实际运行时要求 Docker、Buildx、Node.js 18+ 与 `gh`。
 
-## Inputs
+## 输入
 
-| Input | Source |
+| 输入 | 来源 |
 | --- | --- |
-| Build definitions | Phase 3 `service_inventory` |
-| GitHub auth | Phase 0 |
+| 构建定义 | Phase 3 `service_inventory` |
+| GitHub 认证 | Phase 0 |
 
-## Outputs
+## 输出
 
-| Output | Path | Description |
+| 输出 | 路径 | 说明 |
 | --- | --- | --- |
-| Per-service build result | `.sealos/build/<service-key>/build-result.json` | Digest, pull access, push metadata |
+| 逐服务构建结果 | `.sealos/build/<service-key>/build-result.json` | digest、拉取访问、推送元数据 |
 
-## Procedure
+## 流程
 
-Sealos Deploy must:
+Sealos Deploy 必须：
 
-- Push newly built images to the current GitHub user's GHCR. The user does not choose the registry.
-- Check `gh` login and `write:packages` only when builds are pending.
-- Build for `linux/amd64`.
-- Use Phase 3 context, Dockerfile, and target per service.
-- Tag with a unique version identifier per build.
-- Read digest from Buildx metadata for the same build.
-- Record whether anonymous pull works and whether deploy needs a pull secret.
-- Return Dockerfile or input failures to Phase 3. Keep auth, network, Docker, and push failures in Phase 4.
+- 将新构建镜像推送到当前 GitHub 用户的 GHCR。用户不选择 registry。
+- 仅在有待构建时检查 `gh` 登录与 `write:packages`。
+- 构建 `linux/amd64`。
+- 按服务使用 Phase 3 的 context、Dockerfile 与 target。
+- 每次构建使用唯一版本标识打标签。
+- 从同次 Buildx 元数据读取 digest。
+- 记录匿名拉取是否可用及部署是否需要 pull secret。
+- Dockerfile 或输入失败返回 Phase 3。认证、网络、Docker 与推送失败留在 Phase 4。
 
-Pull failures on Dockerfile bases during build are build-definition failures. Push failures to `ghcr.io/<user>/...` are Phase 4 execution failures.
+构建中 Dockerfile 基础镜像拉取失败属构建定义失败。推送到 `ghcr.io/<user>/...` 失败属 Phase 4 执行失败。
 
-All private or indeterminate GHCR images in one app must share one normalized GHCR namespace. Mixed namespaces stop before cloud resource creation.
+应用中所有私有或不确定的 GHCR 镜像须共享一个规范化 GHCR namespace。混合 namespace 在创建云端资源前停止。
 
-Phase 2 may still reuse Docker Hub digests published by maintainers. New builds from this flow go to GHCR only.
+Phase 2 仍可复用维护者发布的 Docker Hub digest。本流程新构建仅推送到 GHCR。
 
-`build-result.json` passes `push.pull_access` to Phase 5. Only `ghcr_secret_required` or `indeterminate` successful builds attach pull-secret handling in the template.
+`build-result.json` 将 `push.pull_access` 传给 Phase 5。仅 `ghcr_secret_required` 或 `indeterminate` 的成功构建在模板中附加 pull-secret 处理。
 
-## Stop conditions
+## 停止条件
 
-| Result | Condition |
+| 结果 | 条件 |
 | --- | --- |
-| **CONTINUE → Phase 5** | All required builds succeed or no builds were needed |
-| **RETURN → Phase 3** | Build definition failure for a service |
-| **STOP** | Phase 4 execution failure after remediation, or namespace conflict |
+| **CONTINUE → Phase 5** | 所有必需构建成功或无需构建 |
+| **RETURN → Phase 3** | 某服务构建定义失败 |
+| **STOP** | 补救后 Phase 4 执行失败，或 namespace 冲突 |
 
-## Acceptance
+## 验收标准
 
-- Each built service has `build-result.json` matching schema
-- Digests are immutable `repository@sha256:...`
-- Reused Phase 2 digests unchanged
+- 每个已构建服务有符合 schema 的 `build-result.json`
+- digest 为不可变 `repository@sha256:...`
+- Phase 2 复用 digest 未改变
 
-## Schema links
+## Schema 链接
 
-- [Artifact schemas — build-result.json](/specs/artifact-schemas)
+- [产物 Schema — build-result.json](/specs/artifact-schemas)
 
-## Implementation map
+## 实现映射
 
-| Spec section | Implementation |
+| 规范章节 | 实现 |
 | --- | --- |
-| Build and push | `skills/sealos-deploy/scripts/build-push.mjs` |
+| 构建与推送 | `skills/sealos-deploy/scripts/build-push.mjs` |

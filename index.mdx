@@ -1,34 +1,38 @@
 ---
 title: "Sealos Skills"
-description: "Deploy projects to Sealos Cloud from your AI agent. Usage guides, pipeline contracts, and skill specifications."
+description: "从 AI Agent 将项目部署到 Sealos Cloud。使用指南、流水线契约与技能规范。"
 keywords: ["sealos", "skills", "deploy", "ai agent", "codex", "claude code"]
 ---
 
-Sealos Skills is a plugin-first skill pack for AI agents. It inspects a project and prepares deployment artifacts. It connects cloud databases and object storage. It builds or reuses container images. Then it deploys to [Sealos Cloud](https://sealos.io).
+Sealos Skills 是面向 AI Agent 的 plugin-first 技能包。它会检查项目并准备部署产物，连接云数据库与对象存储，构建或复用容器镜像，然后部署到 [Sealos Cloud](https://sealos.io)。
 
 <Columns cols={3}>
-  <Card title="Install" icon="download" href="/get-started/install">
-    Install the plugin in Codex, Claude Code, or skills.sh.
+  <Card title="安装" icon="download" href="/get-started/install">
+    在 Codex、Claude Code 或 skills.sh 中安装插件。
   </Card>
-  <Card title="First deploy" icon="rocket" href="/get-started/first-deploy">
-    Deploy a local or GitHub project to Sealos Cloud.
+  <Card title="首次部署" icon="rocket" href="/get-started/first-deploy">
+    将本地或 GitHub 项目部署到 Sealos Cloud。
   </Card>
-  <Card title="Skills" icon="puzzle-piece" href="/skills/overview">
-    Browse all skills and their responsibilities.
+  <Card title="技能" icon="puzzle-piece" href="/skills/overview">
+    浏览全部技能及其职责。
   </Card>
 </Columns>
 
-## What you can do
+## 你可以做什么
 
-- Deploy from a local folder or a GitHub repository
-- Create and connect cloud databases (Postgres, MySQL, Redis, MongoDB)
-- Create and connect S3-compatible object storage
-- View deployed resources in a local read-only canvas
-- Build Sealos Desktop apps with SDK integration
+- 从本地目录或 GitHub 仓库部署
+- 创建并连接云数据库（Postgres、MySQL、Redis、MongoDB）
+- 创建并连接 S3 兼容对象存储
+- 在本地只读画布中查看已部署资源
+- 使用 SDK 集成构建 Sealos Desktop 应用
 
-## Repository layout
+## 仓库关系
 
-| Repository | Role |
+| 仓库 | 角色 |
 | --- | --- |
-| [`labring/sealos-skills`](https://github.com/labring/sealos-skills) | Implementation — `skills/**`, scripts, manifests, tests |
-| [`labring/sealos-skills-doc`](https://github.com/labring/sealos-skills-doc) | **Single source of truth** — usage, contracts, specifications |
+| [`labring/sealos-skills`](https://github.com/labring/sealos-skills) | 实现 — `skills/**`、脚本、清单、测试 |
+| [`labring/sealos-skills-doc`](https://github.com/labring/sealos-skills-doc) | **规范源（SSOT）** — 用法、契约、规格（**中文**） |
+
+<Note>
+本站中文内容为官方规范。英文版（`/en/`）为参考译文，可能滞后于中文。
+</Note>

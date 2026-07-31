@@ -1,56 +1,56 @@
 ---
-title: "State and completion"
-description: "Success criteria, state.json, and final user summary."
+title: "状态与完成"
+description: "成功标准、state.json 与最终用户摘要。"
 keywords: ["state", "completion", "state.json"]
 ---
 
-## When first deploy completes
+## 首次部署何时完成
 
-A first deploy completes only when **all** conditions are true:
+首次部署仅在**全部**条件为真时完成：
 
-1. Phase 1 entry judgment and readiness assess finished
-2. Runtime images confirmed in live deploy
-3. Template passed source-appropriate checks and deploy precheck
-4. User supplied required config and confirmed deploy
-5. Cloud resources created and ready
-6. Runtime truth passed for workload-appropriate entry and behavior
-7. Logs, events, and restarts converged in stability window
-8. State and history recorded with schema validation
-9. For GitHub URL sources, bridge `state.json` updated before temp checkout cleanup
+1. Phase 1 入口判断与就绪度评估已完成
+2. 线上部署中运行时镜像已确认
+3. 模板通过源适配检查与部署预检
+4. 用户已提供必填配置并确认部署
+5. 云端资源已创建并就绪
+6. 运行事实验收对工作负载适用的入口与行为已通过
+7. 日志、事件与重启在稳定窗口内已收敛
+8. 状态与历史已记录并通过 schema 验证
+9. GitHub URL 来源在临时 checkout 清理前已更新桥接 `state.json`
 
-## state.json contents
+## state.json 内容
 
-After Phase 6.5 passes, Sealos Deploy saves:
+Phase 6.5 通过后，Sealos Deploy 保存：
 
-| Field group | Content |
+| 字段组 | 内容 |
 | --- | --- |
-| Identity | App name, access URL when applicable |
-| Context | Sealos region and workspace |
-| Images | Primary runtime image when identifiable |
-| Services | Per updatable service: workload, container, digest, pull mode, build definition |
-| Template | Official template name and catalog version when used |
-| History | First deploy time, last update, deploy method, outcome, operation log |
+| 身份 | 应用名、适用时的访问 URL |
+| 上下文 | Sealos 区域与工作空间 |
+| 镜像 | 可识别时的主运行时镜像 |
+| 服务 | 每个可更新服务：工作负载、容器、digest、拉取模式、构建定义 |
+| 模板 | 使用官方模板时的模板名与目录版本 |
+| 历史 | 首次部署时间、最后更新、部署方式、结果、操作日志 |
 
-One-off Jobs are deploy facts but do not enter in-place UPDATE service mapping.
+一次性 Job 是部署事实，但不进入就地 UPDATE 服务映射。
 
-Primary service and primary image are recorded only when a public entry or clear app intent exists. Workers without public ingress may omit App URL without blocking success.
+主服务与主镜像仅在存在公网入口或明确应用意图时记录。无公网入口的 worker 可省略 App URL，不阻止成功。
 
-## Persistence rules
+## 持久化规则
 
-1. Run full JSON artifact validation after write.
-2. For GitHub URL sources, copy validated `state.json` to the bridge path.
-3. If validation or persistence fails, do not report deploy success.
-4. Do not delete temp checkout until 6.5, validation, and bridge update succeed.
+1. 写入后运行完整 JSON 产物 schema 验证。
+2. GitHub URL 来源将已验证 `state.json` 复制到桥接路径。
+3. 验证或持久化失败时不得报告部署成功。
+4. 6.5、验证与桥接更新成功前不得删除临时 checkout。
 
-## Final summary
+## 最终摘要
 
-Show actual path taken, confirmed runtime images, region, App URL when applicable, and log location. Official template path also shows template name and catalog version. Mask sensitive config.
+展示实际路径、已确认运行时镜像、区域、适用时的 App URL 与日志位置。官方模板路径还展示模板名与目录版本。掩码敏感配置。
 
-## Schema links
+## Schema 链接
 
-- [Artifact schemas — state.json](/specs/artifact-schemas)
+- [产物 Schema — state.json](/specs/artifact-schemas)
 
-## Related
+## 相关
 
-- [Mode detection — GitHub bridge](/pipeline/mode-detection)
-- [Phase 6.5 — Runtime truth](/pipeline/phases/phase-6-5-runtime-truth)
+- [模式识别 — GitHub 桥接](/pipeline/mode-detection)
+- [Phase 6.5 — 运行事实验收](/pipeline/phases/phase-6-5-runtime-truth)

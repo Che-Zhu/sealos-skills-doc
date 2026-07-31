@@ -1,0 +1,28 @@
+---
+title: "Prerequisites"
+description: "Accounts, tools, and permissions required before you use Sealos Skills."
+keywords: ["prerequisites", "sealos account", "ghcr", "docker", "kubectl"]
+---
+
+{/* TODO: Fill with per-scenario prerequisites (deploy vs database vs S3). */}
+
+## Sealos Cloud account
+
+{/* TODO: Required for deployment, database, and object storage work. */}
+
+## GitHub CLI and GHCR access
+
+{/* TODO: Required only when Phase 4 must build and push a new image. */}
+
+## Local tools by scenario
+
+| Scenario | Tools |
+| --- | --- |
+| Deploy (build path) | Docker, buildx, Node.js 18+, `gh` CLI |
+| Deploy (reuse image) | Sealos auth, `kubectl` |
+| Database / S3 | `sealos-cli` |
+| Compose source | kompose |
+| Helm source | Helm 3+ |
+| Template generation | Python 3.8+ with PyYAML |
+
+{/* TODO: Expand each row with install links and verification commands. */}

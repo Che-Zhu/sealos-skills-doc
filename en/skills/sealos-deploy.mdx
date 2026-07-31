@@ -1,0 +1,83 @@
+---
+title: "sealos-deploy"
+description: "Deploy workloads from GitHub or local source to Sealos Cloud."
+keywords: ["sealos-deploy", "deploy", "pipeline"]
+sidebarTitle: "sealos-deploy"
+---
+
+## Purpose
+
+`sealos-deploy` is the entry skill and orchestrator for full project deployments to Sealos Cloud. It runs the lifecycle defined in [Deploy pipeline](/en/pipeline/overview).
+
+## When to use
+
+Use when the user asks to:
+
+- Deploy a repository or local project to Sealos
+- Update an existing Sealos deployment
+- Invoke `/sealos-deploy`
+
+## Prerequisites
+
+See [Prerequisites](/en/get-started/prerequisites) and [Phase 0 — Preflight](/en/pipeline/phases/phase-0-preflight).
+
+## Workflow summary
+
+<Steps>
+  <Step title="Preflight">
+    [Phase 0](/en/pipeline/phases/phase-0-preflight) — environment, source, Sealos auth
+  </Step>
+  <Step title="Mode detection">
+    [DEPLOY or UPDATE](/en/pipeline/mode-detection)
+  </Step>
+  <Step title="First deploy">
+    [Phases 1–6.5](/en/pipeline/phases) or [official template fast path](/en/pipeline/phases/phase-1-5-template)
+  </Step>
+  <Step title="Update">
+    [Phase U1–U3](/en/pipeline/update-mode) when an existing app is recognized
+  </Step>
+  <Step title="State">
+    [State and completion](/en/pipeline/state-and-completion) after runtime truth passes
+  </Step>
+</Steps>
+
+## Modes
+
+| Mode | When | Phases |
+| --- | --- | --- |
+| DEPLOY | No running deployment for this app | 0 → mode detection → 1–6.5 |
+| UPDATE | Existing app recognized | 0 → mode detection → U1–U3 |
+
+## Artifacts
+
+All pipeline outputs live under `.sealos/` in the target project. See [Artifacts](/en/pipeline/artifacts) and [Artifact schemas](/en/specs/artifact-schemas).
+
+## Example prompts
+
+```
+/sealos-deploy https://github.com/org/repo
+/sealos-deploy ./my-app
+/sealos-deploy
+```
+
+## Safety rules
+
+- All kubectl commands use the Sealos kubeconfig with `--insecure-skip-tls-verify`
+- `kubectl delete` requires explicit user confirmation
+- Template API cleanup must include `instances.app.sealos.io`
+
+See [Safety rules](/en/specs/safety-rules) and [Cleanup boundaries](/en/pipeline/cleanup).
+
+## Implementation status
+
+| Area | Doc status | Code path |
+| --- | --- | --- |
+| Lifecycle spec | **Draft — SSOT migration in progress** | This site `/pipeline/*` |
+| Pipeline execution | Implemented | `skills/sealos-deploy/modules/pipeline.md` |
+| Preflight | Implemented | `skills/sealos-deploy/modules/preflight.md` |
+| Runtime truth | Implemented | `skills/sealos-deploy/modules/runtime-truth.md` |
+| Schemas | Partial | `skills/sealos-deploy/schemas/` |
+
+<Note>
+Normative behavior is defined in this documentation site, not in `SKILL.md`. The [Sealos Deploy Lifecycle wiki](https://github.com/labring/sealos-skills/wiki/Sealos-Deploy-Lifecycle) is superseded by `/pipeline/*` pages.
+</Note>

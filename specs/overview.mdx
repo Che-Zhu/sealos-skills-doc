@@ -1,26 +1,30 @@
 ---
-title: "Specifications overview"
-description: "Technical contracts that govern template generation, artifacts, and safety."
+title: "规范总览"
+description: "约束模板生成、产物与安全的技术契约。"
 keywords: ["specifications", "contracts", "schemas"]
 ---
 
-Specifications in this section are normative. Skill implementations in [`sealos-skills`](https://github.com/labring/sealos-skills) must conform to these contracts.
+本章节规范为**规范性**文档。[`sealos-skills`](https://github.com/labring/sealos-skills) 中的 Skill 实现须符合这些契约。
 
-## Specification index
+<Note>
+中文规范位于根路径（`/specs/`、`/pipeline/`、`/skills/`），为 SSOT。`en/` 下为英文翻译。
+</Note>
 
-| Specification | Scope |
+## 规范索引
+
+| 规范 | 范围 |
 | --- | --- |
-| [Template format](/specs/template-format) | Sealos template YAML structure and required fields |
-| [Resource floors](/specs/resource-floors) | Minimum CPU, memory, and storage per workload role |
-| [Conversion rules](/specs/conversion-rules) | Compose/Helm/Kubernetes → Sealos template mappings |
-| [Artifact schemas](/specs/artifact-schemas) | JSON schema contracts for `.sealos/` files |
-| [Safety rules](/specs/safety-rules) | kubectl scope, deletion, secrets, destructive operations |
+| [模板格式](/specs/template-format) | Sealos 模板 YAML 结构与必填字段 |
+| [资源下限](/specs/resource-floors) | 各工作负载角色的最低 CPU、内存与存储 |
+| [转换规则](/specs/conversion-rules) | Compose/Helm/Kubernetes → Sealos 模板映射 |
+| [产物 Schema](/specs/artifact-schemas) | `.sealos/` 下 JSON 文件的 schema 契约 |
+| [安全规则](/specs/safety-rules) | kubectl 范围、删除、秘密与破坏性操作 |
 
-## Change process
+## 变更流程
 
-1. Update the specification page in this repository first.
-2. Update the skill implementation in `sealos-skills` to match.
-3. Add or update tests that enforce the contract.
-4. Cross-link both PRs.
+1. 先在本仓库更新规范页面。
+2. 在 `sealos-skills` 中更新 Skill 实现以匹配。
+3. 添加或更新强制执行契约的测试。
+4. 在两个 PR 中交叉链接。
 
-See [SSOT workflow](/contributing/ssot-workflow) for the full process.
+完整流程见 [SSOT 工作流](/contributing/ssot-workflow)。

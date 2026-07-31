@@ -1,0 +1,79 @@
+---
+title: "Phase 1.5 — Official template"
+description: "Exact official catalog match and fast path to Phase 6."
+keywords: ["phase 1.5", "official template", "fast path"]
+---
+
+## Purpose
+
+Phase 1.5 checks whether the Sealos official template catalog already contains this project.
+
+When exactly one template clearly points to the same source project, and the current source has no local modifications, custom branch, or other non-ignorable drift, Sealos Deploy:
+
+1. Reuses the official template as-is
+2. Uses images, databases, network, storage, and other resources defined in that template
+3. Skips Phase 2, 3, 4, 5, and 5.5
+4. Enters [Phase 6](/en/pipeline/phases/phase-6-deploy) after required template inputs are collected
+
+When there is no exact match, multiple matches, local drift, or unverified catalog origin, the agent continues to [Phase 2](/en/pipeline/phases/phase-2-discover). A temporarily unreachable catalog does not stop deploy.
+
+**Exact match** means the template explicitly corresponds to the same source project. The agent must not fuzzy-match by project name, language, or framework. Reusing an official template deploys the template version, not a rebuild of the current directory.
+
+<Note>
+Similar-template reference during Phase 5 generation is **not implemented**. The current flow does not perform similarity matching or deploy near-match templates.
+</Note>
+
+## Inputs
+
+| Input | Source |
+| --- | --- |
+| `WORK_DIR` and commit | Phase 0 |
+| `analysis.json` | Phase 1 |
+| Official template catalog | Online catalog |
+
+## Outputs
+
+| Output | Path | Description |
+| --- | --- | --- |
+| Route decision | `.sealos/template-references.json` | Match result and chosen route |
+| Provenance copies | `.sealos/template-references/` | Bounded exact-match copies |
+| Official template | `.sealos/template/index.yaml` | Only when route is `deploy_official_template` |
+
+## Preconditions
+
+- Phase 1 completed
+
+## Procedure
+
+1. Query the official template catalog for an exact match to the current source project.
+2. Verify no local drift invalidates the match.
+3. Record match metadata and route in `template-references.json`.
+4. On `deploy_official_template`, copy the selected YAML verbatim to `.sealos/template/index.yaml`.
+5. On standard path, continue to Phase 2 without guessing among partial matches.
+
+Before Phase 6, an official template must pass online catalog verification again. Local records alone are not sufficient after interrupt recovery.
+
+## Stop conditions
+
+| Result | Condition |
+| --- | --- |
+| **CONTINUE → Phase 6** | Unique exact match, route `deploy_official_template` |
+| **CONTINUE → Phase 2** | No match, ambiguous match, drift, or unverified origin |
+
+Phase 1.5 does not stop the pipeline except through catalog access handled as continue-to-standard-path.
+
+## Acceptance
+
+- `template-references.json` records the route decision
+- Official YAML is verbatim when fast path is chosen
+- No similarity-based template selection
+
+## Schema links
+
+- [Artifact schemas — template-references.json](/en/specs/artifact-schemas)
+
+## Implementation map
+
+| Spec section | Implementation |
+| --- | --- |
+| Catalog lookup | `skills/sealos-deploy/modules/pipeline.md` (Phase 1.5) |

@@ -1,88 +1,86 @@
 ---
-title: "Pipeline overview"
-description: "Sealos Deploy lifecycle from preflight through runtime verification and update."
+title: "流水线总览"
+description: "Sealos Deploy 从部署前检查到运行验收与更新的完整生命周期。"
 keywords: ["pipeline", "deploy", "lifecycle", "phases"]
 ---
 
-Sealos Deploy is the entry point and orchestrator for full project deployments. It accepts a GitHub repository, a local project directory, or the current working directory. It judges whether the project can run on Sealos, reuses a matching official template when possible, otherwise prepares container images and a Sealos deployment template. It then deploys, verifies runtime behavior, and recognizes existing apps on later runs.
+Sealos Deploy 是完整项目部署请求的入口和编排器。它接收 GitHub 仓库、本地项目目录或当前项目，判断项目是否适合部署，优先复用匹配的 Sealos 官方模板；没有可直接复用的模板时，再准备容器镜像和新的 Sealos 部署模板。随后完成部署与运行验收，并在后续运行中识别已有应用。
 
-This specification describes **what Sealos Deploy does**. It does not document internal scripts, implementation details, or other skills.
+本文只描述 Sealos Deploy **做什么**，不展开内部脚本、实现细节或其他 Skill 的内部流程。
 
 <Note>
-This section is the **single source of truth** for the `sealos-deploy` lifecycle. It replaces the [Sealos Deploy Lifecycle wiki](https://github.com/labring/sealos-skills/wiki/Sealos-Deploy-Lifecycle) as the authoritative reference.
+本章节是 `sealos-deploy` 生命周期的**规范源（SSOT）**，取代 [Sealos Deploy Lifecycle Wiki](https://github.com/labring/sealos-skills/wiki/Sealos-Deploy-Lifecycle)。
 </Note>
 
-## Named phases
+## 具名阶段
 
-Sealos Deploy defines **13 named phases**:
+Sealos Deploy 一共定义 **13 个具名 Phase**：
 
-| Category | Phases |
+| 类别 | 阶段 |
 | --- | --- |
-| Main deploy lifecycle | Phase 0, 1, 1.5, 2, 3, 4, 5, 5.5, 6, 6.5 |
-| Existing-app update | Phase U1, U2, U3 |
-| Unnumbered lifecycle | Mode detection, interrupt recovery, state recording, cleanup |
+| 主部署生命周期 | Phase 0、1、1.5、2、3、4、5、5.5、6、6.5 |
+| 已有应用更新 | Phase U1、U2、U3 |
+| 未编号环节 | 模式识别、中断恢复、状态记录、清理 |
 
-Phase 0 and mode detection are the shared entry for every run. Phase 1 runs only on the first-deploy path.
+Phase 0 和模式识别是每次运行的共同入口；Phase 1 只在首次部署流程中执行。
 
-## First-deploy routes
+## 首次部署路径
 
 ```mermaid
 flowchart TD
-  P0[Phase 0 Preflight]
-  MD[Mode detection]
-  P1[Phase 1 Assess]
-  P15[Phase 1.5 Official template]
-  P2[Phase 2 Discover]
-  P3[Phase 3 Build prep]
-  P4[Phase 4 Build and push]
-  P5[Phase 5 Template]
-  P55[Phase 5.5 Configure]
-  P6[Phase 6 Deploy]
-  P65[Phase 6.5 Runtime truth]
+  P0[Phase 0 部署前检查]
+  MD[模式识别]
+  P1[Phase 1 项目评估]
+  P15[Phase 1.5 官方模板]
+  P2[Phase 2 镜像与拓扑发现]
+  P3[Phase 3 构建定义准备]
+  P4[Phase 4 构建并推送]
+  P5[Phase 5 模板生成]
+  P55[Phase 5.5 应用配置]
+  P6[Phase 6 部署]
+  P65[Phase 6.5 运行验收]
 
   P0 --> MD
-  MD -->|First deploy| P1
+  MD -->|首次部署| P1
   P1 --> P15
-  P15 -->|Exact official match| P6
-  P15 -->|No exact match| P2
+  P15 -->|精确官方匹配| P6
+  P15 -->|无精确匹配| P2
   P2 --> P3 --> P4 --> P5 --> P55 --> P6 --> P65
   P6 --> P65
 ```
 
-**Official template path:** preflight → mode detection → assess → unique exact catalog match → reuse official template as-is → collect template inputs → deploy → runtime truth → state recording
+**官方模板路径：** 部署前检查 → 模式识别 → 项目评估 → 唯一精确匹配 → 原样复用官方模板 → 收集模板输入 → 部署 → 运行验收 → 状态记录
 
-**Standard build path:** preflight → mode detection → assess → no reusable official template → image and topology discovery → per-service image reuse or build → Sealos template generation → app configuration → deploy → runtime truth → state recording
+**标准构建路径：** 部署前检查 → 模式识别 → 项目评估 → 无可用官方模板 → 镜像与拓扑发现 → 逐服务构建或复用镜像 → 模板生成 → 应用配置 → 部署 → 运行验收 → 状态记录
 
-## Update route
+## 更新路径
 
-When an existing deployment is recognized:
+识别已有应用后：部署前检查 → 选择重建或重启 → 应用更新 → 验证发布 → 记录成功或回滚
 
-preflight → recognize existing app → rebuild one or more services, or restart one or more exact workloads → apply update → verify rollout → record success or roll back
+见 [更新模式](/pipeline/update-mode) 与 [Phase U1–U3](/pipeline/update/phase-u1-prepare)。
 
-See [Update mode](/pipeline/update-mode) and [Phase U1–U3](/pipeline/update/phase-u1-prepare).
+## 阶段索引
 
-## Phase index
-
-| Phase | Name | Primary task |
+| Phase | 名称 | 主要任务 |
 | --- | --- | --- |
-| [Phase 0](/pipeline/phases/phase-0-preflight) | Preflight | Environment, region, auth, workspace, and source materialization |
-| [Phase 1](/pipeline/phases/phase-1-assess) | Assess | Deployment shape, cloud-native readiness, project facts |
-| [Phase 1.5](/pipeline/phases/phase-1-5-template) | Official template | Exact catalog match → skip to Phase 6, else continue to Phase 2 |
-| [Phase 2](/pipeline/phases/phase-2-discover) | Discover | Image inventory, service topology, digest pinning |
-| [Phase 3](/pipeline/phases/phase-3-build-prep) | Build prep | Per-service Dockerfile and build definition |
-| [Phase 4](/pipeline/phases/phase-4-build-push) | Build and push | `linux/amd64` images to GHCR with digest |
-| [Phase 5](/pipeline/phases/phase-5-template) | Template | Generate canonical Sealos template |
-| [Phase 5.5](/pipeline/phases/phase-5-5-configure) | Configure | Collect inputs and confirm deploy |
-| [Phase 6](/pipeline/phases/phase-6-deploy) | Deploy | Create cloud resources |
-| [Phase 6.5](/pipeline/phases/phase-6-5-runtime-truth) | Runtime truth | Verify live behavior before success |
-| [Phase U1](/pipeline/update/phase-u1-prepare) | Prepare update | Select services to rebuild or workloads to restart |
-| [Phase U2](/pipeline/update/phase-u2-apply) | Apply update | Replace images or trigger restarts |
-| [Phase U3](/pipeline/update/phase-u3-verify-rollback) | Verify and rollback | Confirm rollout or restore previous digests |
+| [Phase 0](/pipeline/phases/phase-0-preflight) | 部署前检查 | 环境、区域、登录、工作空间、源码物化 |
+| [Phase 1](/pipeline/phases/phase-1-assess) | 项目评估 | 部署形态、云原生就绪度、项目事实 |
+| [Phase 1.5](/pipeline/phases/phase-1-5-template) | 官方模板复用 | 精确匹配则跳到 Phase 6，否则进入 Phase 2 |
+| [Phase 2](/pipeline/phases/phase-2-discover) | 镜像与拓扑发现 | 镜像清单、服务拓扑、digest 固定 |
+| [Phase 3](/pipeline/phases/phase-3-build-prep) | 构建定义准备 | 逐服务 Dockerfile 与构建定义 |
+| [Phase 4](/pipeline/phases/phase-4-build-push) | 构建并推送 | `linux/amd64` 镜像推送到 GHCR |
+| [Phase 5](/pipeline/phases/phase-5-template) | 模板生成 | 生成 canonical Sealos 模板 |
+| [Phase 5.5](/pipeline/phases/phase-5-5-configure) | 交互式配置 | 收集输入并确认部署 |
+| [Phase 6](/pipeline/phases/phase-6-deploy) | 部署 | 创建云端资源 |
+| [Phase 6.5](/pipeline/phases/phase-6-5-runtime-truth) | 运行事实验收 | 验证真实运行状态 |
+| [Phase U1](/pipeline/update/phase-u1-prepare) | 准备更新 | 选择重建服务或重启工作负载 |
+| [Phase U2](/pipeline/update/phase-u2-apply) | 应用更新 | 替换镜像或触发重启 |
+| [Phase U3](/pipeline/update/phase-u3-verify-rollback) | 验证与回滚 | 确认发布或恢复 digest |
 
-## Related pages
+## 相关页面
 
-- [Run entry](/pipeline/entry) — project sources and logging
-- [Mode detection](/pipeline/mode-detection) — DEPLOY vs UPDATE, interrupt recovery, GitHub bridge state
-- [Artifacts](/pipeline/artifacts) — `.sealos/` file layout
-- [State and completion](/pipeline/state-and-completion) — success criteria and `state.json`
-- [Cleanup boundaries](/pipeline/cleanup) — temp directories and deletion rules
+- [运行入口](/pipeline/entry)
+- [模式识别](/pipeline/mode-detection)
+- [产物](/pipeline/artifacts)
+- [状态与完成](/pipeline/state-and-completion)
+- [清理边界](/pipeline/cleanup)

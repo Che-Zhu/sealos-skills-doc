@@ -1,30 +1,32 @@
 ---
-title: "First deploy"
-description: "Deploy a local or GitHub project to Sealos Cloud end to end."
+title: "首次部署"
+description: "从零将本地或 GitHub 项目端到端部署到 Sealos Cloud。"
 keywords: ["first deploy", "quickstart", "sealos cloud"]
 ---
 
-{/* TODO: Step-by-step from zero to verified deployment. */}
+按以下步骤完成第一次 Sealos 部署。
 
 <Steps>
-  <Step title="Install the plugin">
-    {/* TODO: Link to /get-started/install */}
+  <Step title="安装插件">
+    按 [安装](/get-started/install) 在 AI 宿主中安装 Sealos Skills。
   </Step>
-  <Step title="Authenticate with Sealos">
-    {/* TODO: OAuth / workspace selection */}
+  <Step title="认证 Sealos">
+  运行部署命令时，Phase 0 引导选择区域、完成 OAuth 登录并选择工作空间。
   </Step>
-  <Step title="Run a deploy command">
-    {/* TODO: Example prompts for Codex, Claude, skills.sh */}
+  <Step title="运行部署命令">
+    向 AI 发送部署提示，例如部署 GitHub 仓库或本地目录。
   </Step>
-  <Step title="Verify the deployment">
-    {/* TODO: App URL, logs, runtime truth summary */}
+  <Step title="验证部署">
+    部署完成后检查 App URL、日志与运行验收结果。见 [Phase 6.5](/pipeline/phases/phase-6-5-runtime-truth)。
   </Step>
 </Steps>
 
-## Example prompts
+## 示例提示
 
 ```text
-{/* TODO: $sealos deploy this repo to Sealos Cloud */}
-{/* TODO: /sealos deploy https://github.com/owner/repo */}
-{/* TODO: /sealos-deploy /path/to/project */}
+/sealos-deploy https://github.com/owner/repo
+/sealos-deploy /path/to/project
+/sealos-deploy
 ```
+
+部署生命周期各阶段见 [流水线总览](/pipeline/overview)。`sealos-deploy` Skill 详情见 [sealos-deploy](/skills/sealos-deploy)。

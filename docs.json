@@ -2,7 +2,7 @@
   "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
   "name": "Sealos Skills",
-  "description": "Documentation for the Sealos Skills plugin pack — usage, pipeline contracts, and skill specifications.",
+  "description": "Sealos Skills 插件文档 — 使用指南、流水线契约与技能规范。",
   "colors": {
     "primary": "#6312FF",
     "light": "#6378FF",
@@ -14,120 +14,248 @@
     "dark": "/logo/dark.svg"
   },
   "navigation": {
-    "tabs": [
+    "languages": [
       {
-        "tab": "Documentation",
-        "icon": "book-open",
-        "groups": [
+        "language": "zh-Hans",
+        "default": true,
+        "navbar": {
+          "links": [
+            {
+              "label": "Skills 仓库",
+              "href": "https://github.com/labring/sealos-skills"
+            }
+          ],
+          "primary": {
+            "type": "button",
+            "label": "安装",
+            "href": "/get-started/install"
+          }
+        },
+        "footer": {
+          "socials": {
+            "github": "https://github.com/labring/sealos-skills"
+          }
+        },
+        "tabs": [
           {
-            "group": "Get started",
-            "icon": "rocket",
-            "pages": [
-              "index",
-              "get-started/prerequisites",
-              "get-started/install",
-              "get-started/first-deploy"
-            ]
-          },
-          {
-            "group": "Concepts",
-            "icon": "lightbulb",
-            "pages": [
-              "concepts/overview",
-              "concepts/architecture",
-              "concepts/terminology",
-              "concepts/distribution"
-            ]
-          },
-          {
-            "group": "Skills",
-            "icon": "puzzle-piece",
-            "pages": [
-              "skills/overview",
+            "tab": "文档",
+            "icon": "book-open",
+            "groups": [
               {
-                "group": "Primary skills",
+                "group": "快速开始",
+                "icon": "rocket",
                 "pages": [
-                  "skills/sealos-deploy",
-                  "skills/sealos-database",
-                  "skills/sealos-s3",
-                  "skills/sealos-canvas",
-                  "skills/sealos-app-builder"
+                  "index",
+                  "get-started/prerequisites",
+                  "get-started/install",
+                  "get-started/first-deploy"
                 ]
               },
               {
-                "group": "Supporting skills",
-                "expanded": false,
+                "group": "技能",
+                "icon": "puzzle-piece",
                 "pages": [
-                  "skills/cloud-native-readiness",
-                  "skills/dockerfile-skill",
-                  "skills/docker-to-sealos"
+                  "skills/overview",
+                  "skills/sealos-deploy"
+                ]
+              },
+              {
+                "group": "部署流水线",
+                "icon": "diagram-project",
+                "pages": [
+                  "pipeline/overview",
+                  "pipeline/entry",
+                  "pipeline/mode-detection",
+                  {
+                    "group": "阶段",
+                    "pages": [
+                      "pipeline/phases/index",
+                      "pipeline/phases/phase-0-preflight",
+                      "pipeline/phases/phase-1-assess",
+                      "pipeline/phases/phase-1-5-template",
+                      "pipeline/phases/phase-2-discover",
+                      "pipeline/phases/phase-3-build-prep",
+                      "pipeline/phases/phase-4-build-push",
+                      "pipeline/phases/phase-5-template",
+                      "pipeline/phases/phase-5-5-configure",
+                      "pipeline/phases/phase-6-deploy",
+                      "pipeline/phases/phase-6-5-runtime-truth"
+                    ]
+                  },
+                  {
+                    "group": "更新流程",
+                    "pages": [
+                      "pipeline/update-mode",
+                      "pipeline/update/phase-u1-prepare",
+                      "pipeline/update/phase-u2-apply",
+                      "pipeline/update/phase-u3-verify-rollback"
+                    ]
+                  },
+                  "pipeline/state-and-completion",
+                  "pipeline/cleanup",
+                  "pipeline/artifacts",
+                  "pipeline/deployment-sources"
                 ]
               }
             ]
           },
           {
-            "group": "Deploy pipeline",
-            "icon": "diagram-project",
-            "pages": [
-              "pipeline/overview",
-              "pipeline/entry",
-              "pipeline/mode-detection",
+            "tab": "规范",
+            "icon": "file-lines",
+            "groups": [
               {
-                "group": "Phases",
+                "group": "契约",
                 "pages": [
-                  "pipeline/phases/index",
-                  "pipeline/phases/phase-0-preflight",
-                  "pipeline/phases/phase-1-assess",
-                  "pipeline/phases/phase-1-5-template",
-                  "pipeline/phases/phase-2-discover",
-                  "pipeline/phases/phase-3-build-prep",
-                  "pipeline/phases/phase-4-build-push",
-                  "pipeline/phases/phase-5-template",
-                  "pipeline/phases/phase-5-5-configure",
-                  "pipeline/phases/phase-6-deploy",
-                  "pipeline/phases/phase-6-5-runtime-truth"
+                  "specs/overview",
+                  "specs/safety-rules"
                 ]
               },
               {
-                "group": "Update flow",
+                "group": "贡献",
                 "pages": [
-                  "pipeline/update-mode",
-                  "pipeline/update/phase-u1-prepare",
-                  "pipeline/update/phase-u2-apply",
-                  "pipeline/update/phase-u3-verify-rollback"
+                  "contributing/ssot-workflow"
                 ]
-              },
-              "pipeline/state-and-completion",
-              "pipeline/cleanup",
-              "pipeline/artifacts",
-              "pipeline/deployment-sources"
+              }
             ]
           }
         ]
       },
       {
-        "tab": "Specifications",
-        "icon": "file-lines",
-        "groups": [
+        "language": "en",
+        "navbar": {
+          "links": [
+            {
+              "label": "Skills repo",
+              "href": "https://github.com/labring/sealos-skills"
+            }
+          ],
+          "primary": {
+            "type": "button",
+            "label": "Install",
+            "href": "/en/get-started/install"
+          }
+        },
+        "footer": {
+          "socials": {
+            "github": "https://github.com/labring/sealos-skills"
+          }
+        },
+        "tabs": [
           {
-            "group": "Contracts",
-            "pages": [
-              "specs/overview",
-              "specs/template-format",
-              "specs/resource-floors",
-              "specs/conversion-rules",
-              "specs/artifact-schemas",
-              "specs/safety-rules"
+            "tab": "Documentation",
+            "icon": "book-open",
+            "groups": [
+              {
+                "group": "Get started",
+                "icon": "rocket",
+                "pages": [
+                  "en/index",
+                  "en/get-started/prerequisites",
+                  "en/get-started/install",
+                  "en/get-started/first-deploy"
+                ]
+              },
+              {
+                "group": "Concepts",
+                "icon": "lightbulb",
+                "pages": [
+                  "en/concepts/overview",
+                  "en/concepts/architecture",
+                  "en/concepts/terminology",
+                  "en/concepts/distribution"
+                ]
+              },
+              {
+                "group": "Skills",
+                "icon": "puzzle-piece",
+                "pages": [
+                  "en/skills/overview",
+                  {
+                    "group": "Primary skills",
+                    "pages": [
+                      "en/skills/sealos-deploy",
+                      "en/skills/sealos-database",
+                      "en/skills/sealos-s3",
+                      "en/skills/sealos-canvas",
+                      "en/skills/sealos-app-builder"
+                    ]
+                  },
+                  {
+                    "group": "Supporting skills",
+                    "expanded": false,
+                    "pages": [
+                      "en/skills/cloud-native-readiness",
+                      "en/skills/dockerfile-skill",
+                      "en/skills/docker-to-sealos"
+                    ]
+                  }
+                ]
+              },
+              {
+                "group": "Deploy pipeline",
+                "icon": "diagram-project",
+                "pages": [
+                  "en/pipeline/overview",
+                  "en/pipeline/entry",
+                  "en/pipeline/mode-detection",
+                  {
+                    "group": "Phases",
+                    "pages": [
+                      "en/pipeline/phases/index",
+                      "en/pipeline/phases/phase-0-preflight",
+                      "en/pipeline/phases/phase-1-assess",
+                      "en/pipeline/phases/phase-1-5-template",
+                      "en/pipeline/phases/phase-2-discover",
+                      "en/pipeline/phases/phase-3-build-prep",
+                      "en/pipeline/phases/phase-4-build-push",
+                      "en/pipeline/phases/phase-5-template",
+                      "en/pipeline/phases/phase-5-5-configure",
+                      "en/pipeline/phases/phase-6-deploy",
+                      "en/pipeline/phases/phase-6-5-runtime-truth"
+                    ]
+                  },
+                  {
+                    "group": "Update flow",
+                    "pages": [
+                      "en/pipeline/update-mode",
+                      "en/pipeline/update/phase-u1-prepare",
+                      "en/pipeline/update/phase-u2-apply",
+                      "en/pipeline/update/phase-u3-verify-rollback"
+                    ]
+                  },
+                  "en/pipeline/state-and-completion",
+                  "en/pipeline/cleanup",
+                  "en/pipeline/artifacts",
+                  "en/pipeline/deployment-sources"
+                ]
+              }
             ]
           },
           {
-            "group": "Contributing",
-            "pages": [
-              "contributing/overview",
-              "contributing/ssot-workflow",
-              "contributing/skill-authoring",
-              "contributing/validation",
-              "contributing/distribution"
+            "tab": "Specifications",
+            "icon": "file-lines",
+            "groups": [
+              {
+                "group": "Contracts",
+                "pages": [
+                  "en/specs/overview",
+                  "en/specs/template-format",
+                  "en/specs/resource-floors",
+                  "en/specs/conversion-rules",
+                  "en/specs/artifact-schemas",
+                  "en/specs/safety-rules"
+                ]
+              },
+              {
+                "group": "Contributing",
+                "pages": [
+                  "en/contributing/overview",
+                  "en/contributing/ssot-workflow",
+                  "en/contributing/skill-authoring",
+                  "en/contributing/validation",
+                  "en/contributing/distribution"
+                ]
+              }
             ]
           }
         ]
@@ -153,24 +281,13 @@
       ]
     }
   },
-  "navbar": {
-    "links": [
-      {
-        "label": "Skills repo",
-        "href": "https://github.com/labring/sealos-skills"
-      }
-    ],
-    "primary": {
-      "type": "button",
-      "label": "Install",
-      "href": "/get-started/install"
+  "redirects": [
+    {
+      "source": "/en/pipeline/phases",
+      "destination": "/en/pipeline/phases/index",
+      "permanent": true
     }
-  },
-  "footer": {
-    "socials": {
-      "github": "https://github.com/labring/sealos-skills"
-    }
-  },
+  ],
   "contextual": {
     "options": [
       "copy",

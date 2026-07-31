@@ -1,29 +1,29 @@
 ---
-title: "Update mode"
-description: "In-place update when an existing deployment is detected."
+title: "更新模式"
+description: "识别到已有部署时的就地更新。"
 keywords: ["update", "rollout", "phase u1", "phase u2", "phase u3"]
 ---
 
-When [mode detection](/pipeline/mode-detection) finds a running app, the user may update it instead of creating a new instance.
+[模式识别](/pipeline/mode-detection) 发现运行中的应用时，用户可选择更新而非创建新实例。
 
-UPDATE mode runs **Phase U1, U2, and U3**. It skips Phase 1, discovery, template generation, and full deploy.
+UPDATE 模式运行 **Phase U1、U2 和 U3**。跳过 Phase 1、发现、模板生成与完整部署。
 
-## Update phases
+## 更新阶段
 
-| Phase | Page | Task |
+| 阶段 | 页面 | 任务 |
 | --- | --- | --- |
-| U1 | [Prepare update](/pipeline/update/phase-u1-prepare) | Select services to rebuild or workloads to restart |
-| U2 | [Apply update](/pipeline/update/phase-u2-apply) | Replace images or trigger restarts |
-| U3 | [Verify and rollback](/pipeline/update/phase-u3-verify-rollback) | Confirm rollout or restore previous digests |
+| U1 | [准备更新](/pipeline/update/phase-u1-prepare) | 选择要重建的服务或要重启的工作负载 |
+| U2 | [应用更新](/pipeline/update/phase-u2-apply) | 替换镜像或触发重启 |
+| U3 | [验证与回滚](/pipeline/update/phase-u3-verify-rollback) | 确认 rollout 或恢复先前 digest |
 
-## Skipped phases
+## 跳过的阶段
 
-UPDATE does not re-run:
+UPDATE 不重新运行：
 
-- Phase 1 assess
-- Phase 2–5.5 discovery, build, and template generation
-- Phase 6 full template deploy
+- Phase 1 项目评估
+- Phase 2–5.5 发现、构建与模板生成
+- Phase 6 完整模板部署
 
-## Completion
+## 完成
 
-An update completes when rollout succeeds and state is recorded. On failure, Phase U3 rolls back to the last known good digests. See [State and completion](/pipeline/state-and-completion).
+rollout 成功且状态已记录时更新完成。失败时 Phase U3 回滚到最后已知良好 digest。见 [状态与完成](/pipeline/state-and-completion)。

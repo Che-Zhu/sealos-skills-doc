@@ -13,7 +13,8 @@ This repository (`sealos-skills-doc`) is the **single source of truth** for Seal
 ## SSOT rules
 
 1. **Specs live here first.** Change `/skills/`, `/pipeline/`, or `/specs/` pages before changing `sealos-skills` implementation.
-2. **Do not duplicate normative content** in `SKILL.md` without a corresponding doc page.
+2. **Chinese is authoritative.** Root-path pages (default `zh-Hans`) are the normative SSOT. The `en/` directory is an English translation and may lag behind Chinese.
+3. **Do not duplicate normative content** in `SKILL.md` without a corresponding doc page.
 3. **Pages with `{/* TODO */}`** are structural placeholders awaiting content migration from `sealos-skills`.
 4. **Cross-link both repos** in PR descriptions when behavior changes.
 

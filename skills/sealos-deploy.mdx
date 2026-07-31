@@ -1,58 +1,58 @@
 ---
 title: "sealos-deploy"
-description: "Deploy workloads from GitHub or local source to Sealos Cloud."
+description: "从 GitHub 或本地源码部署工作负载到 Sealos Cloud。"
 keywords: ["sealos-deploy", "deploy", "pipeline"]
 sidebarTitle: "sealos-deploy"
 ---
 
-## Purpose
+## 目的
 
-`sealos-deploy` is the entry skill and orchestrator for full project deployments to Sealos Cloud. It runs the lifecycle defined in [Deploy pipeline](/pipeline/overview).
+`sealos-deploy` 是完整项目部署到 Sealos Cloud 的入口 Skill 与编排器。它运行 [流水线总览](/pipeline/overview) 中定义的生命周期。
 
-## When to use
+## 何时使用
 
-Use when the user asks to:
+用户请求以下操作时调用：
 
-- Deploy a repository or local project to Sealos
-- Update an existing Sealos deployment
-- Invoke `/sealos-deploy`
+- 将仓库或本地项目部署到 Sealos
+- 更新已有 Sealos 部署
+- 调用 `/sealos-deploy`
 
-## Prerequisites
+## 前置条件
 
-See [Prerequisites](/get-started/prerequisites) and [Phase 0 — Preflight](/pipeline/phases/phase-0-preflight).
+见 [前置条件](/get-started/prerequisites) 与 [Phase 0 — 部署前检查](/pipeline/phases/phase-0-preflight)。
 
-## Workflow summary
+## 工作流摘要
 
 <Steps>
-  <Step title="Preflight">
-    [Phase 0](/pipeline/phases/phase-0-preflight) — environment, source, Sealos auth
+  <Step title="部署前检查">
+    [Phase 0](/pipeline/phases/phase-0-preflight) — 环境、源码、Sealos 认证
   </Step>
-  <Step title="Mode detection">
-    [DEPLOY or UPDATE](/pipeline/mode-detection)
+  <Step title="模式识别">
+    [DEPLOY 或 UPDATE](/pipeline/mode-detection)
   </Step>
-  <Step title="First deploy">
-    [Phases 1–6.5](/pipeline/phases) or [official template fast path](/pipeline/phases/phase-1-5-template)
+  <Step title="首次部署">
+    [Phase 1–6.5](/pipeline/phases) 或 [官方模板快速路径](/pipeline/phases/phase-1-5-template)
   </Step>
-  <Step title="Update">
-    [Phase U1–U3](/pipeline/update-mode) when an existing app is recognized
+  <Step title="更新">
+    识别到已有应用时 [Phase U1–U3](/pipeline/update-mode)
   </Step>
-  <Step title="State">
-    [State and completion](/pipeline/state-and-completion) after runtime truth passes
+  <Step title="状态">
+    运行验收通过后 [状态与完成](/pipeline/state-and-completion)
   </Step>
 </Steps>
 
-## Modes
+## 模式
 
-| Mode | When | Phases |
+| 模式 | 时机 | 阶段 |
 | --- | --- | --- |
-| DEPLOY | No running deployment for this app | 0 → mode detection → 1–6.5 |
-| UPDATE | Existing app recognized | 0 → mode detection → U1–U3 |
+| DEPLOY | 无此应用运行部署 | 0 → 模式识别 → 1–6.5 |
+| UPDATE | 识别到已有应用 | 0 → 模式识别 → U1–U3 |
 
-## Artifacts
+## 产物
 
-All pipeline outputs live under `.sealos/` in the target project. See [Artifacts](/pipeline/artifacts) and [Artifact schemas](/specs/artifact-schemas).
+流水线输出均在目标项目 `.sealos/` 下。见 [产物](/pipeline/artifacts) 与 [产物 Schema](/specs/artifact-schemas)。
 
-## Example prompts
+## 示例提示
 
 ```
 /sealos-deploy https://github.com/org/repo
@@ -60,24 +60,24 @@ All pipeline outputs live under `.sealos/` in the target project. See [Artifacts
 /sealos-deploy
 ```
 
-## Safety rules
+## 安全规则
 
-- All kubectl commands use the Sealos kubeconfig with `--insecure-skip-tls-verify`
-- `kubectl delete` requires explicit user confirmation
-- Template API cleanup must include `instances.app.sealos.io`
+- 所有 kubectl 命令使用 Sealos kubeconfig 并带 `--insecure-skip-tls-verify`
+- `kubectl delete` 须用户明确确认
+- Template API 清理须包含 `instances.app.sealos.io`
 
-See [Safety rules](/specs/safety-rules) and [Cleanup boundaries](/pipeline/cleanup).
+见 [安全规则](/specs/safety-rules) 与 [清理边界](/pipeline/cleanup)。
 
-## Implementation status
+## 实现状态
 
-| Area | Doc status | Code path |
+| 领域 | 文档状态 | 代码路径 |
 | --- | --- | --- |
-| Lifecycle spec | **Draft — SSOT migration in progress** | This site `/pipeline/*` |
-| Pipeline execution | Implemented | `skills/sealos-deploy/modules/pipeline.md` |
-| Preflight | Implemented | `skills/sealos-deploy/modules/preflight.md` |
-| Runtime truth | Implemented | `skills/sealos-deploy/modules/runtime-truth.md` |
-| Schemas | Partial | `skills/sealos-deploy/schemas/` |
+| 生命周期规范 | **草稿 — SSOT 迁移进行中** | 本站 `/pipeline/*` |
+| 流水线执行 | 已实现 | `skills/sealos-deploy/modules/pipeline.md` |
+| 部署前检查 | 已实现 | `skills/sealos-deploy/modules/preflight.md` |
+| 运行验收 | 已实现 | `skills/sealos-deploy/modules/runtime-truth.md` |
+| Schema | 部分 | `skills/sealos-deploy/schemas/` |
 
 <Note>
-Normative behavior is defined in this documentation site, not in `SKILL.md`. The [Sealos Deploy Lifecycle wiki](https://github.com/labring/sealos-skills/wiki/Sealos-Deploy-Lifecycle) is superseded by `/pipeline/*` pages.
+规范性行为定义在本文档站点，而非 `SKILL.md`。[Sealos Deploy Lifecycle Wiki](https://github.com/labring/sealos-skills/wiki/Sealos-Deploy-Lifecycle) 已被 `/pipeline/*` 页面取代。
 </Note>

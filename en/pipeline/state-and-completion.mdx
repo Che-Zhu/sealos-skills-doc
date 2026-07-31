@@ -1,0 +1,56 @@
+---
+title: "State and completion"
+description: "Success criteria, state.json, and final user summary."
+keywords: ["state", "completion", "state.json"]
+---
+
+## When first deploy completes
+
+A first deploy completes only when **all** conditions are true:
+
+1. Phase 1 entry judgment and readiness assess finished
+2. Runtime images confirmed in live deploy
+3. Template passed source-appropriate checks and deploy precheck
+4. User supplied required config and confirmed deploy
+5. Cloud resources created and ready
+6. Runtime truth passed for workload-appropriate entry and behavior
+7. Logs, events, and restarts converged in stability window
+8. State and history recorded with schema validation
+9. For GitHub URL sources, bridge `state.json` updated before temp checkout cleanup
+
+## state.json contents
+
+After Phase 6.5 passes, Sealos Deploy saves:
+
+| Field group | Content |
+| --- | --- |
+| Identity | App name, access URL when applicable |
+| Context | Sealos region and workspace |
+| Images | Primary runtime image when identifiable |
+| Services | Per updatable service: workload, container, digest, pull mode, build definition |
+| Template | Official template name and catalog version when used |
+| History | First deploy time, last update, deploy method, outcome, operation log |
+
+One-off Jobs are deploy facts but do not enter in-place UPDATE service mapping.
+
+Primary service and primary image are recorded only when a public entry or clear app intent exists. Workers without public ingress may omit App URL without blocking success.
+
+## Persistence rules
+
+1. Run full JSON artifact validation after write.
+2. For GitHub URL sources, copy validated `state.json` to the bridge path.
+3. If validation or persistence fails, do not report deploy success.
+4. Do not delete temp checkout until 6.5, validation, and bridge update succeed.
+
+## Final summary
+
+Show actual path taken, confirmed runtime images, region, App URL when applicable, and log location. Official template path also shows template name and catalog version. Mask sensitive config.
+
+## Schema links
+
+- [Artifact schemas — state.json](/en/specs/artifact-schemas)
+
+## Related
+
+- [Mode detection — GitHub bridge](/en/pipeline/mode-detection)
+- [Phase 6.5 — Runtime truth](/en/pipeline/phases/phase-6-5-runtime-truth)

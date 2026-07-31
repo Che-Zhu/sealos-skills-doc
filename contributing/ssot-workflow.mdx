@@ -1,65 +1,74 @@
 ---
-title: "SSOT workflow"
-description: "How to keep sealos-skills-doc as the single source of truth for skill behavior."
+title: "SSOT 工作流"
+description: "如何将 sealos-skills-doc 保持为 Skill 行为的单一规范源。"
 keywords: ["ssot", "single source of truth", "workflow"]
 ---
 
-This documentation site is the **single source of truth** for:
+本文档站点是以下内容的**单一规范源（SSOT）**：
 
-- What each skill does and when it runs
-- Pipeline phase contracts (inputs, outputs, stop conditions)
-- Template format and conversion rules
-- Artifact schemas and safety rules
-- User-facing install and usage instructions
+- 每个 Skill 做什么、何时运行
+- 流水线阶段契约（输入、输出、停止条件）
+- 模板格式与转换规则
+- 产物 schema 与安全规则
+- 面向用户的安装与使用说明
 
-The [`sealos-skills`](https://github.com/labring/sealos-skills) repository is the **implementation**. `SKILL.md` and `modules/*.md` files are agent-executable renditions of the specs defined here.
+[`sealos-skills`](https://github.com/labring/sealos-skills) 仓库是**实现**。`SKILL.md` 与 `modules/*.md` 是本文档所定义规范的 Agent 可执行版本。
 
-## Change order
+## 语言与路径
+
+| 语言 | 路径 | 角色 |
+| --- | --- | --- |
+| 中文 | 根路径（`/pipeline/`、`/skills/`、`/specs/` 等） | **SSOT — 先改这里** |
+| 英文 | `en/` 前缀 | 翻译，随中文 SSOT 同步更新 |
+
+新增或修改行为规范时，先编辑根路径中文页面，再更新 `en/` 对应翻译。
+
+## 变更顺序
 
 <Steps>
-  <Step title="Update the spec in sealos-skills-doc">
-    Edit the relevant page under `/skills/`, `/pipeline/`, or `/specs/`.
-    Define behavior, contracts, and acceptance criteria in human-readable form.
+  <Step title="在 sealos-skills-doc 更新规范">
+    编辑 `/skills/`、`/pipeline/` 或 `/specs/` 下相关页面（根路径中文）。
+    以人类可读形式定义行为、契约与验收标准。
   </Step>
-  <Step title="Update the implementation in sealos-skills">
-    Change `SKILL.md`, `modules/`, `scripts/`, `references/`, or `schemas/` to match the spec.
+  <Step title="在 sealos-skills 更新实现">
+    修改 `SKILL.md`、`modules/`、`scripts/`、`references/` 或 `schemas/` 以匹配规范。
   </Step>
-  <Step title="Add or update tests">
-    Run the narrowest validation gate for the changed area.
+  <Step title="添加或更新测试">
+    对变更范围运行最窄的验证门控。
   </Step>
-  <Step title="Cross-link PRs">
-    Reference the doc PR and the implementation PR in each other's descriptions.
+  <Step title="交叉链接 PR">
+    在两个 PR 描述中互相引用文档 PR 与实现 PR。
   </Step>
 </Steps>
 
-## What lives where
+## 内容归属
 
-| Content type | SSOT (this repo) | Implementation (sealos-skills) |
+| 内容类型 | SSOT（本仓库） | 实现（sealos-skills） |
 | --- | --- | --- |
-| Skill purpose and triggers | `/skills/<name>.mdx` | `SKILL.md` frontmatter + usage |
-| Phase logic | `/pipeline/phases.mdx` + phase-specific pages | `modules/pipeline.md` |
-| Conversion rules | `/specs/conversion-rules.mdx` | `references/conversion-mappings.md`, `rules-registry.yaml` |
-| Artifact contracts | `/specs/artifact-schemas.mdx` | `schemas/*.json` |
-| Install commands | `/get-started/install.mdx` | `distribution/platforms.json` |
-| Safety rules | `/specs/safety-rules.mdx` | `SKILL.md` safety sections |
-| Agent execution detail | — | `modules/*.md` (derived, not authoritative) |
+| Skill 目的与触发 | `/skills/<name>.mdx` | `SKILL.md` frontmatter + usage |
+| 阶段逻辑 | `/pipeline/phases/` 各页面 | `modules/pipeline.md` |
+| 转换规则 | `/specs/conversion-rules.mdx` | `references/conversion-mappings.md`、`rules-registry.yaml` |
+| 产物契约 | `/specs/artifact-schemas.mdx` | `schemas/*.json` |
+| 安装命令 | `/get-started/install.mdx` | `distribution/platforms.json` |
+| 安全规则 | `/specs/safety-rules.mdx` | `SKILL.md` 安全章节 |
+| Agent 执行细节 | — | `modules/*.md`（派生，非权威） |
 
-## Drift detection
+## 漂移检测
 
-{/* TODO: Define periodic audit — compare doc claims vs implementation behavior and evals. */}
+定期审计文档声明与实现行为及 eval 是否一致。发现漂移时，以根路径中文 SSOT 为准修正实现或文档。
 
 <Warning>
-Do not change skill behavior in `sealos-skills` without a corresponding spec update in this repository. Exception: bug fixes that restore documented behavior need only a note in the PR.
+不得在 `sealos-skills` 中改变 Skill 行为而不在本仓库更新对应规范。例外：恢复已记录行为的 bug 修复只需在 PR 中注明。
 </Warning>
 
-## Migration from code-first to docs-first
+## 从代码优先到文档优先的迁移
 
-Existing `sealos-skills` content is the starting inventory. Migrate in this order:
+现有 `sealos-skills` 内容是起始清单。按以下顺序迁移：
 
-1. **Pipeline phases** — highest value, most in flux
-2. **Per-skill purpose and triggers** — one page per skill
-3. **Artifact schemas** — field tables from JSON schemas
-4. **Conversion rules** — index first, detail incrementally
-5. **Install and distribution** — sync from `platforms.json`
+1. **流水线阶段** — 价值最高、变动最多
+2. **各 Skill 目的与触发** — 每个 Skill 一页
+3. **产物 schema** — 从 JSON schema 提取字段表
+4. **转换规则** — 先建索引，逐步补充细节
+5. **安装与分发** — 从 `platforms.json` 同步
 
-Pages marked with `{/* TODO */}` are placeholders awaiting content migration.
+带 `{/* TODO */}` 的页面是待从 `sealos-skills` 迁移内容的占位页。

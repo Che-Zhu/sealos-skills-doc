@@ -1,27 +1,27 @@
 ---
-title: "Cleanup boundaries"
-description: "Temp directory cleanup and deletion confirmation rules."
+title: "清理边界"
+description: "临时目录清理与删除确认规则。"
 keywords: ["cleanup", "delete", "temp"]
 ---
 
-## Temp workspace cleanup
+## 临时工作区清理
 
-Sealos Deploy cleans temporary directories created to fetch remote repositories. It does not delete the user's local project.
+Sealos Deploy 清理为获取远程仓库创建的临时目录。不删除用户本地项目。
 
-A GitHub URL temp checkout may be deleted only after Phase 6.5, state validation, and bridge persistence all succeed.
+GitHub URL 临时 checkout 仅在 Phase 6.5、状态验证与桥接持久化全部成功后方可删除。
 
-## Deletion is not a deploy phase
+## 删除不是部署阶段
 
-Deleting Kubernetes resources, databases, storage, or test apps is not part of normal deploy.
+删除 Kubernetes 资源、数据库、存储或测试应用不属于正常部署。
 
-**Any delete requires explicit user confirmation first.**
+**任何删除须先获得用户明确确认。**
 
-## Test deployment cleanup
+## 测试部署清理
 
-When the user requests cleanup of a test deploy, the agent must:
+用户请求清理测试部署时，Agent 必须：
 
-1. Inspect the full app footprint: Instance, App, workloads, network, storage, databases
-2. Delete in dependency order
-3. Avoid leaving Instance-layer resources or deleting unrelated apps
+1. 检查完整应用足迹：Instance、App、工作负载、网络、存储、数据库
+2. 按依赖顺序删除
+3. 避免遗留 Instance 层资源或删除无关应用
 
-See [Safety rules](/specs/safety-rules) for kubectl delete confirmation and Instance CR requirements.
+kubectl 删除确认与 Instance CR 要求见 [安全规则](/specs/safety-rules)。

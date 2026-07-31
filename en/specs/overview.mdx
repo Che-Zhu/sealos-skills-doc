@@ -1,0 +1,26 @@
+---
+title: "Specifications overview"
+description: "Technical contracts that govern template generation, artifacts, and safety."
+keywords: ["specifications", "contracts", "schemas"]
+---
+
+Specifications in this section are normative. Skill implementations in [`sealos-skills`](https://github.com/labring/sealos-skills) must conform to these contracts.
+
+## Specification index
+
+| Specification | Scope |
+| --- | --- |
+| [Template format](/en/specs/template-format) | Sealos template YAML structure and required fields |
+| [Resource floors](/en/specs/resource-floors) | Minimum CPU, memory, and storage per workload role |
+| [Conversion rules](/en/specs/conversion-rules) | Compose/Helm/Kubernetes → Sealos template mappings |
+| [Artifact schemas](/en/specs/artifact-schemas) | JSON schema contracts for `.sealos/` files |
+| [Safety rules](/en/specs/safety-rules) | kubectl scope, deletion, secrets, destructive operations |
+
+## Change process
+
+1. Update the specification page in this repository first.
+2. Update the skill implementation in `sealos-skills` to match.
+3. Add or update tests that enforce the contract.
+4. Cross-link both PRs.
+
+See [SSOT workflow](/en/contributing/ssot-workflow) for the full process.

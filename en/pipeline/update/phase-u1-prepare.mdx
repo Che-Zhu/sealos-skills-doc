@@ -1,0 +1,54 @@
+---
+title: "Phase U1 — Prepare update"
+description: "Select services to rebuild or workloads to restart."
+keywords: ["phase u1", "update", "rebuild"]
+---
+
+## Purpose
+
+After mode detection recognizes an existing app, Phase U1 lets the user choose:
+
+| Choice | Action |
+| --- | --- |
+| Code changed | Rebuild and push one or more services |
+| Code unchanged | Restart one or more existing workloads |
+
+## Inputs
+
+| Input | Source |
+| --- | --- |
+| `state.json` | Prior successful deploy |
+| Live app context | Mode detection |
+| User selection | Rebuild targets or restart targets |
+
+## Outputs
+
+| Output | Description |
+| --- | --- |
+| Rebuild plan | Per-service context, Dockerfile, target, arg names |
+| New digests | From Phase 4 rules when rebuilding |
+| Restart plan | Workloads to roll without image change |
+
+## Procedure
+
+**Rebuild path:** each service keeps its build directory, Dockerfile, target, and arg names. Use `linux/amd64`, push to GHCR, read digest from Buildx metadata. Start cloud changes only after all selected rebuilds succeed.
+
+**Restart path:** keep current digest per service.
+
+## Stop conditions
+
+| Result | Condition |
+| --- | --- |
+| **STOP** | Rebuild failure, or GHCR namespace conflict across the full app |
+| **CONTINUE → Phase U2** | Plan complete |
+
+## Acceptance
+
+- User selection recorded
+- All selected rebuilds succeeded before U2 when rebuilding
+
+## Implementation map
+
+| Spec section | Implementation |
+| --- | --- |
+| Update prepare | `skills/sealos-deploy/modules/pipeline.md` (Phase U1) |

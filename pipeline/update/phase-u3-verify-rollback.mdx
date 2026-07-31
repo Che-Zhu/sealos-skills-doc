@@ -1,42 +1,42 @@
 ---
-title: "Phase U3 — Verify and rollback"
-description: "Confirm rollout success or restore previous digests."
+title: "Phase U3 — 验证与回滚"
+description: "确认 rollout 成功或恢复先前 digest。"
 keywords: ["phase u3", "rollback", "verify"]
 ---
 
-## Purpose
+## 目的
 
-Phase U3 waits for each selected workload to finish rollout and become ready. CronJob targets verify new digest and schedule.
+Phase U3 等待每个选定工作负载完成 rollout 并就绪。CronJob 目标验证新 digest 与调度。
 
-## Success path
+## 成功路径
 
-- Save new image, pull mode, build definition, and update time per service
-- Append success history per service and workload target
-- Return existing App URL when applicable; do not invent URLs for workers without public ingress
+- 按服务保存新镜像、拉取模式、构建定义与更新时间
+- 按服务与工作负载目标追加成功历史
+- 适用时返回已有 App URL；无公网入口的 worker 不编造 URL
 
-## Failure path
+## 失败路径
 
-- Restore every changed service to its last known good digest
-- Keep the full prior image set as current state
-- Append failure history with reason per failed target
-- Give the user next troubleshooting steps
+- 将每个已变更服务恢复到最后已知良好 digest
+- 保持完整先前镜像集为当前状态
+- 按失败目标追加失败历史与原因
+- 向用户提供后续排障步骤
 
-Rollback restores pull-secret refs and secret content changed in this update.
+回滚恢复本次更新中变更的 pull-secret 引用与 secret 内容。
 
-## Stop conditions
+## 停止条件
 
-| Result | Condition |
+| 结果 | 条件 |
 | --- | --- |
-| **COMPLETE** | All selected targets verified |
-| **COMPLETE (rolled back)** | Rollout failed; previous digests restored |
+| **COMPLETE** | 所有选定目标已验证 |
+| **COMPLETE（已回滚）** | rollout 失败；先前 digest 已恢复 |
 
-## Acceptance
+## 验收标准
 
-- No half-updated multi-service version sets after failure
-- History records match actual outcome
+- 失败后无半更新的多服务版本集
+- 历史记录与实际结果一致
 
-## Implementation map
+## 实现映射
 
-| Spec section | Implementation |
+| 规范章节 | 实现 |
 | --- | --- |
-| Verify and rollback | `skills/sealos-deploy/modules/pipeline.md` (Phase U3) |
+| 验证与回滚 | `skills/sealos-deploy/modules/pipeline.md`（Phase U3） |

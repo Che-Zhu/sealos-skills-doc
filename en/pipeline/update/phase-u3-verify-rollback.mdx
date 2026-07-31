@@ -1,0 +1,42 @@
+---
+title: "Phase U3 — Verify and rollback"
+description: "Confirm rollout success or restore previous digests."
+keywords: ["phase u3", "rollback", "verify"]
+---
+
+## Purpose
+
+Phase U3 waits for each selected workload to finish rollout and become ready. CronJob targets verify new digest and schedule.
+
+## Success path
+
+- Save new image, pull mode, build definition, and update time per service
+- Append success history per service and workload target
+- Return existing App URL when applicable; do not invent URLs for workers without public ingress
+
+## Failure path
+
+- Restore every changed service to its last known good digest
+- Keep the full prior image set as current state
+- Append failure history with reason per failed target
+- Give the user next troubleshooting steps
+
+Rollback restores pull-secret refs and secret content changed in this update.
+
+## Stop conditions
+
+| Result | Condition |
+| --- | --- |
+| **COMPLETE** | All selected targets verified |
+| **COMPLETE (rolled back)** | Rollout failed; previous digests restored |
+
+## Acceptance
+
+- No half-updated multi-service version sets after failure
+- History records match actual outcome
+
+## Implementation map
+
+| Spec section | Implementation |
+| --- | --- |
+| Verify and rollback | `skills/sealos-deploy/modules/pipeline.md` (Phase U3) |

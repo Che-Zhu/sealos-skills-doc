@@ -1,25 +1,27 @@
 ---
-title: "Skills overview"
-description: "All skills in the Sealos Skills pack and how they relate."
+title: "Skills 总览"
+description: "Sealos Skills 包中全部 Skill 及其关系。"
 keywords: ["skills", "overview", "catalog"]
 ---
 
-{/* TODO: Dependency graph — sealos-deploy → cloud-native-readiness, dockerfile-skill, docker-to-sealos. */}
+Sealos Skills 是一组面向 AI Agent 的工作流模块，通过插件或 `skills.sh` 安装到 Codex、Claude Code 等宿主。
 
-## Primary skills
+## 主要 Skills
 
-| Skill | Purpose |
+| Skill | 用途 |
 | --- | --- |
-| [sealos-deploy](/skills/sealos-deploy) | Deploy workloads to Sealos Cloud |
-| [sealos-database](/skills/sealos-database) | Create and wire cloud databases |
-| [sealos-s3](/skills/sealos-s3) | Create and wire object storage |
-| [sealos-canvas](/skills/sealos-canvas) | Read-only view of deployed resources |
-| [sealos-app-builder](/skills/sealos-app-builder) | Build Sealos Desktop apps |
+| [sealos-deploy](/skills/sealos-deploy) | 部署工作负载到 Sealos Cloud |
+| sealos-database | 创建并连接云数据库 |
+| sealos-s3 | 创建并连接对象存储 |
+| sealos-canvas | 只读查看已部署资源 |
+| sealos-app-builder | 构建 Sealos Desktop 应用 |
 
-## Supporting skills
+## 支撑 Skills
 
-| Skill | Purpose |
+| Skill | 用途 |
 | --- | --- |
-| [cloud-native-readiness](/skills/cloud-native-readiness) | Score deployment readiness (Phase 1) |
-| [dockerfile-skill](/skills/dockerfile-skill) | Generate production Dockerfiles (Phase 3) |
-| [docker-to-sealos](/skills/docker-to-sealos) | Convert topology to Sealos templates (Phase 5) |
+| cloud-native-readiness | 评分部署就绪度（Phase 1） |
+| dockerfile-skill | 生成生产 Dockerfile（Phase 3） |
+| docker-to-sealos | 将拓扑转换为 Sealos 模板（Phase 5） |
+
+`sealos-deploy` 是部署入口，在评估、构建与转换阶段调用支撑 Skills。完整部署生命周期见 [流水线总览](/pipeline/overview)。

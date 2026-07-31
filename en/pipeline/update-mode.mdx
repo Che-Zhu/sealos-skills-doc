@@ -1,0 +1,29 @@
+---
+title: "Update mode"
+description: "In-place update when an existing deployment is detected."
+keywords: ["update", "rollout", "phase u1", "phase u2", "phase u3"]
+---
+
+When [mode detection](/en/pipeline/mode-detection) finds a running app, the user may update it instead of creating a new instance.
+
+UPDATE mode runs **Phase U1, U2, and U3**. It skips Phase 1, discovery, template generation, and full deploy.
+
+## Update phases
+
+| Phase | Page | Task |
+| --- | --- | --- |
+| U1 | [Prepare update](/en/pipeline/update/phase-u1-prepare) | Select services to rebuild or workloads to restart |
+| U2 | [Apply update](/en/pipeline/update/phase-u2-apply) | Replace images or trigger restarts |
+| U3 | [Verify and rollback](/en/pipeline/update/phase-u3-verify-rollback) | Confirm rollout or restore previous digests |
+
+## Skipped phases
+
+UPDATE does not re-run:
+
+- Phase 1 assess
+- Phase 2–5.5 discovery, build, and template generation
+- Phase 6 full template deploy
+
+## Completion
+
+An update completes when rollout succeeds and state is recorded. On failure, Phase U3 rolls back to the last known good digests. See [State and completion](/en/pipeline/state-and-completion).

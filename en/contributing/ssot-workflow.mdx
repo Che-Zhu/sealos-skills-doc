@@ -1,0 +1,65 @@
+---
+title: "SSOT workflow"
+description: "How to keep sealos-skills-doc as the single source of truth for skill behavior."
+keywords: ["ssot", "single source of truth", "workflow"]
+---
+
+This documentation site is the **single source of truth** for:
+
+- What each skill does and when it runs
+- Pipeline phase contracts (inputs, outputs, stop conditions)
+- Template format and conversion rules
+- Artifact schemas and safety rules
+- User-facing install and usage instructions
+
+The [`sealos-skills`](https://github.com/labring/sealos-skills) repository is the **implementation**. `SKILL.md` and `modules/*.md` files are agent-executable renditions of the specs defined here.
+
+## Change order
+
+<Steps>
+  <Step title="Update the spec in sealos-skills-doc">
+    Edit the relevant page under `/skills/`, `/pipeline/`, or `/specs/`.
+    Define behavior, contracts, and acceptance criteria in human-readable form.
+  </Step>
+  <Step title="Update the implementation in sealos-skills">
+    Change `SKILL.md`, `modules/`, `scripts/`, `references/`, or `schemas/` to match the spec.
+  </Step>
+  <Step title="Add or update tests">
+    Run the narrowest validation gate for the changed area.
+  </Step>
+  <Step title="Cross-link PRs">
+    Reference the doc PR and the implementation PR in each other's descriptions.
+  </Step>
+</Steps>
+
+## What lives where
+
+| Content type | SSOT (this repo) | Implementation (sealos-skills) |
+| --- | --- | --- |
+| Skill purpose and triggers | `/skills/<name>.mdx` | `SKILL.md` frontmatter + usage |
+| Phase logic | `/pipeline/phases.mdx` + phase-specific pages | `modules/pipeline.md` |
+| Conversion rules | `/specs/conversion-rules.mdx` | `references/conversion-mappings.md`, `rules-registry.yaml` |
+| Artifact contracts | `/specs/artifact-schemas.mdx` | `schemas/*.json` |
+| Install commands | `/get-started/install.mdx` | `distribution/platforms.json` |
+| Safety rules | `/specs/safety-rules.mdx` | `SKILL.md` safety sections |
+| Agent execution detail | — | `modules/*.md` (derived, not authoritative) |
+
+## Drift detection
+
+{/* TODO: Define periodic audit — compare doc claims vs implementation behavior and evals. */}
+
+<Warning>
+Do not change skill behavior in `sealos-skills` without a corresponding spec update in this repository. Exception: bug fixes that restore documented behavior need only a note in the PR.
+</Warning>
+
+## Migration from code-first to docs-first
+
+Existing `sealos-skills` content is the starting inventory. Migrate in this order:
+
+1. **Pipeline phases** — highest value, most in flux
+2. **Per-skill purpose and triggers** — one page per skill
+3. **Artifact schemas** — field tables from JSON schemas
+4. **Conversion rules** — index first, detail incrementally
+5. **Install and distribution** — sync from `platforms.json`
+
+Pages marked with `{/* TODO */}` are placeholders awaiting content migration.

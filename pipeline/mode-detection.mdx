@@ -1,47 +1,47 @@
 ---
-title: "Mode detection"
-description: "DEPLOY vs UPDATE detection, interrupt recovery, and GitHub bridge state."
+title: "模式识别"
+description: "DEPLOY 与 UPDATE 识别、中断恢复与 GitHub 桥接状态。"
 keywords: ["mode", "update", "state.json", "interrupt"]
 ---
 
-After [Phase 0](/pipeline/phases/phase-0-preflight) passes, Sealos Deploy decides whether this run is a **first deploy** or an **update** to an existing app.
+[Phase 0](/pipeline/phases/phase-0-preflight) 通过后，Sealos Deploy 判断本次运行是**首次部署**还是对已有应用的**更新**。
 
-## Mode detection steps
+## 模式识别步骤
 
-The agent must:
+Agent 必须：
 
-1. Read previously saved deployment state.
-2. Confirm in the target workspace that the app is still running.
-3. When new-format state is missing, attempt discovery of apps created by older flows.
-4. When an existing app is found, show the app, images, and access URL to the user.
-5. Let the user choose to update the existing app or create a new instance.
+1. 读取先前保存的部署状态。
+2. 在目标工作空间确认应用仍在运行。
+3. 新格式状态缺失时，尝试发现旧流程创建的应用。
+4. 发现已有应用时，向用户展示应用、镜像与访问 URL。
+5. 让用户选择更新已有应用或创建新实例。
 
-## DEPLOY mode
+## DEPLOY 模式
 
-First deploy runs Phase 1 and the main lifecycle. See [Pipeline overview](/pipeline/overview).
+首次部署运行 Phase 1 及主生命周期。见 [流水线总览](/pipeline/overview)。
 
-## UPDATE mode
+## UPDATE 模式
 
-Update runs Phase U1 through U3. It skips assess, discovery, template generation, and full deploy. See [Update mode](/pipeline/update-mode).
+更新运行 Phase U1 至 U3。跳过评估、发现、模板生成与完整部署。见 [更新模式](/pipeline/update-mode)。
 
-## Interrupt recovery
+## 中断恢复
 
-When a first deploy was interrupted, Sealos Deploy recognizes completed assess, official template selection, image builds, or template generation.
+首次部署中断时，Sealos Deploy 识别已完成的评估、官方模板选择、镜像构建或模板生成。
 
-The agent may resume only when artifacts still match the current project and current choices. An official template must pass online catalog verification before Phase 6. The agent must not trust local records and YAML alone.
+Agent 仅在产物仍与当前项目和当前选择匹配时可恢复。官方模板进入 Phase 6 前须通过在线目录验证。Agent 不得仅凭本地记录和 YAML 信任。
 
-Otherwise the run restarts from the appropriate earlier phase.
+否则从合适的较早阶段重新开始。
 
-## GitHub URL bridge state
+## GitHub URL 桥接状态
 
-A GitHub URL deploy uses a temporary checkout. `.sealos/state.json` in the project directory cannot be the sole basis for the next run after cleanup.
+GitHub URL 部署使用临时 checkout。项目目录中的 `.sealos/state.json` 不能作为清理后下次运行的唯一依据。
 
-For GitHub sources, Sealos Deploy keeps a stable bridge copy at:
+对于 GitHub 来源，Sealos Deploy 在以下路径保存稳定的桥接副本：
 
 ```
 ~/.sealos/deployments/github.com/<owner>/<repo>/state.json
 ```
 
-The bridge contains only verified `state.json`. The agent restores it before mode detection on a new checkout. The agent updates it only after [Phase 6.5](/pipeline/phases/phase-6-5-runtime-truth) succeeds and full state passes schema validation.
+桥接目录仅包含已验证的 `state.json`。Agent 在新 checkout 上于模式识别前恢复它。仅在 [Phase 6.5](/pipeline/phases/phase-6-5-runtime-truth) 成功且完整状态通过 schema 验证后更新。
 
-Build results, templates, and other run-local artifacts are not copied to the bridge directory.
+构建结果、模板及其他运行本地产物不复制到桥接目录。

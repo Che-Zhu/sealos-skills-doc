@@ -1,25 +1,27 @@
 ---
-title: "Deployment sources"
-description: "Compose, Helm, Kubernetes, implicit, and official template source types."
+title: "部署源"
+description: "Compose、Helm、Kubernetes、隐式与官方模板来源类型。"
 keywords: ["deployment source", "compose", "helm", "kubernetes"]
 ---
 
-## Source types
+## 来源类型
 
-| Source | Detection | Required tools |
+| 来源 | 检测 | 所需工具 |
 | --- | --- | --- |
-| Official template | Phase 1.5 exact catalog match | None (fast path) |
+| 官方模板 | Phase 1.5 精确目录匹配 | 无（快速路径） |
 | Docker Compose | `docker-compose.yml` / `compose.yaml` | kompose |
-| Helm | `Chart.yaml` or chart directory | Helm 3+ |
-| Kubernetes | Native manifests | Python/PyYAML |
-| Implicit | No explicit topology file | Project structure analysis |
+| Helm | `Chart.yaml` 或 chart 目录 | Helm 3+ |
+| Kubernetes | 原生清单 | Python/PyYAML |
+| 隐式 | 无显式拓扑文件 | 项目结构分析 |
 
-{/* TODO: Source selection precedence and conflict resolution. */}
+## 来源选择优先级
 
-## Conditional source materialization
+Phase 2 按拓扑证据顺序选择部署源。Compose、Helm 与 Kubernetes 显式文件优先于隐式路径。多个显式来源冲突时，Agent 须从项目证据（README、CI、文档）确定主拓扑，不得猜测。
 
-{/* TODO: Git LFS, submodules — install only when repository declares them. */}
+## 条件性源码物化
 
-## Topology preservation
+Git LFS、子模块等机制仅在仓库声明时安装与获取。见 [Phase 0](/pipeline/phases/phase-0-preflight) 源码物化规则。
 
-{/* TODO: Full service inventory retained; build-only services handled separately. */}
+## 拓扑保留
+
+完整 `service_inventory` 须保留数据库、队列、缓存与 worker。仅构建的服务与最终运行时拓扑分开处理。Phase 5 不得因非主应用服务而丢弃依赖。

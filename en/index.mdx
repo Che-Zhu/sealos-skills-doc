@@ -1,0 +1,34 @@
+---
+title: "Sealos Skills"
+description: "Deploy projects to Sealos Cloud from your AI agent. Usage guides, pipeline contracts, and skill specifications."
+keywords: ["sealos", "skills", "deploy", "ai agent", "codex", "claude code"]
+---
+
+Sealos Skills is a plugin-first skill pack for AI agents. It inspects a project and prepares deployment artifacts. It connects cloud databases and object storage. It builds or reuses container images. Then it deploys to [Sealos Cloud](https://sealos.io).
+
+<Columns cols={3}>
+  <Card title="Install" icon="download" href="/en/get-started/install">
+    Install the plugin in Codex, Claude Code, or skills.sh.
+  </Card>
+  <Card title="First deploy" icon="rocket" href="/en/get-started/first-deploy">
+    Deploy a local or GitHub project to Sealos Cloud.
+  </Card>
+  <Card title="Skills" icon="puzzle-piece" href="/en/skills/overview">
+    Browse all skills and their responsibilities.
+  </Card>
+</Columns>
+
+## What you can do
+
+- Deploy from a local folder or a GitHub repository
+- Create and connect cloud databases (Postgres, MySQL, Redis, MongoDB)
+- Create and connect S3-compatible object storage
+- View deployed resources in a local read-only canvas
+- Build Sealos Desktop apps with SDK integration
+
+## Repository layout
+
+| Repository | Role |
+| --- | --- |
+| [`labring/sealos-skills`](https://github.com/labring/sealos-skills) | Implementation — `skills/**`, scripts, manifests, tests |
+| [`labring/sealos-skills-doc`](https://github.com/labring/sealos-skills-doc) | **Single source of truth** — usage, contracts, specifications |

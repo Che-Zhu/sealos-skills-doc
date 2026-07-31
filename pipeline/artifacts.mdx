@@ -1,10 +1,10 @@
 ---
-title: "Artifacts"
-description: "Files written under .sealos/ during a deploy run."
+title: "产物"
+description: "部署运行期间写入 `.sealos/` 下的文件。"
 keywords: ["artifacts", "state.json", "analysis.json", "template"]
 ---
 
-All pipeline outputs are written under `.sealos/` in the target project directory.
+流水线输出均写入目标项目目录下的 `.sealos/`。
 
 ```
 <WORK_DIR>/.sealos/
@@ -25,10 +25,19 @@ All pipeline outputs are written under `.sealos/` in the target project director
     └── index.yaml
 ```
 
-{/* TODO: Document each file's writer phase, reader phase, and schema link. */}
+## 主要产物说明
 
-## Schema validation
+| 文件 | 写入阶段 | 读取阶段 | 说明 |
+| --- | --- | --- | --- |
+| `analysis.json` | Phase 1–2 | Phase 3–5 | 项目事实、清单与部署源 |
+| `template-references.json` | Phase 1.5 | 恢复 | 官方模板匹配与路径决策 |
+| `template/index.yaml` | Phase 1.5 或 5 | Phase 5.5、6 | Canonical 部署模板 |
+| `build/*/build-result.json` | Phase 4 | Phase 5 | 构建 digest 与拉取元数据 |
+| `state.json` | Phase 6.5 后 | 模式识别、UPDATE | 部署状态与服务映射 |
+| `config.json` | 用户或 5.5 | Phase 5.5 | 用户配置覆盖 |
 
-{/* TODO: validate-artifacts.mjs usage and schema paths. */}
+## Schema 验证
 
-See [Artifact schemas](/specs/artifact-schemas) for field-level contracts.
+写入 `state.json` 等 JSON 产物后须通过 schema 验证。实现使用 `validate-artifacts.mjs` 与 `schemas/` 下定义。
+
+字段级契约见 [产物 Schema](/specs/artifact-schemas)。

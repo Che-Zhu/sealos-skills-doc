@@ -1,0 +1,47 @@
+---
+title: "Mode detection"
+description: "DEPLOY vs UPDATE detection, interrupt recovery, and GitHub bridge state."
+keywords: ["mode", "update", "state.json", "interrupt"]
+---
+
+After [Phase 0](/en/pipeline/phases/phase-0-preflight) passes, Sealos Deploy decides whether this run is a **first deploy** or an **update** to an existing app.
+
+## Mode detection steps
+
+The agent must:
+
+1. Read previously saved deployment state.
+2. Confirm in the target workspace that the app is still running.
+3. When new-format state is missing, attempt discovery of apps created by older flows.
+4. When an existing app is found, show the app, images, and access URL to the user.
+5. Let the user choose to update the existing app or create a new instance.
+
+## DEPLOY mode
+
+First deploy runs Phase 1 and the main lifecycle. See [Pipeline overview](/en/pipeline/overview).
+
+## UPDATE mode
+
+Update runs Phase U1 through U3. It skips assess, discovery, template generation, and full deploy. See [Update mode](/en/pipeline/update-mode).
+
+## Interrupt recovery
+
+When a first deploy was interrupted, Sealos Deploy recognizes completed assess, official template selection, image builds, or template generation.
+
+The agent may resume only when artifacts still match the current project and current choices. An official template must pass online catalog verification before Phase 6. The agent must not trust local records and YAML alone.
+
+Otherwise the run restarts from the appropriate earlier phase.
+
+## GitHub URL bridge state
+
+A GitHub URL deploy uses a temporary checkout. `.sealos/state.json` in the project directory cannot be the sole basis for the next run after cleanup.
+
+For GitHub sources, Sealos Deploy keeps a stable bridge copy at:
+
+```
+~/.sealos/deployments/github.com/<owner>/<repo>/state.json
+```
+
+The bridge contains only verified `state.json`. The agent restores it before mode detection on a new checkout. The agent updates it only after [Phase 6.5](/en/pipeline/phases/phase-6-5-runtime-truth) succeeds and full state passes schema validation.
+
+Build results, templates, and other run-local artifacts are not copied to the bridge directory.

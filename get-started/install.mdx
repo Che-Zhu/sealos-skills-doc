@@ -1,26 +1,28 @@
 ---
-title: "Install"
-description: "Install Sealos Skills in Codex, Claude Code, skills.sh, or other supported AI tools."
+title: "安装"
+description: "在 Codex、Claude Code、skills.sh 或其他支持的 AI 工具中安装 Sealos Skills。"
 keywords: ["install", "codex", "claude code", "skills.sh", "plugin"]
 ---
 
-{/* TODO: Sync install commands from sealos-skills distribution/platforms.json. */}
+在支持的 AI 宿主中安装 Sealos Skills 插件或独立 Skill。
 
 <Tabs>
   <Tab title="Codex">
-    {/* TODO: marketplace add + plugin add + $sealos usage */}
+    在 Codex 市场中添加 Sealos 插件，安装后使用 `$sealos` 调用部署与其他 Skills。
   </Tab>
   <Tab title="Claude Code">
-    {/* TODO: marketplace add + plugin install + /sealos usage */}
+    在 Claude Code 市场中添加插件，安装后使用 `/sealos` 或 `/sealos-deploy`。
   </Tab>
   <Tab title="skills.sh">
-    {/* TODO: npx skills add + direct skill entries */}
+    使用 `npx skills add` 安装独立 Skill，直接调用 `/sealos-deploy`、`/sealos-database` 或 `/sealos-s3`。
   </Tab>
-  <Tab title="Other hosts">
-    {/* TODO: Gemini, Qwen, OpenClaw, CodeBuddy — with claim levels from platforms.json */}
+  <Tab title="其他宿主">
+    Gemini、Qwen、OpenClaw、CodeBuddy 等宿主支持情况见 `sealos-skills` 仓库 `distribution/platforms.json`。
   </Tab>
 </Tabs>
 
 <Info>
-Plugin users invoke `$sealos` (Codex) or `/sealos` (Claude Code). Direct `skills.sh` users invoke `/sealos-deploy`, `/sealos-database`, or `/sealos-s3`.
+插件用户使用 `$sealos`（Codex）或 `/sealos`（Claude Code）。直接 `skills.sh` 用户使用 `/sealos-deploy`、`/sealos-database` 或 `/sealos-s3`。
 </Info>
+
+安装后确认 [前置条件](/get-started/prerequisites)，然后按 [首次部署](/get-started/first-deploy) 完成端到端部署。
