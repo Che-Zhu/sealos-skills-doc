@@ -19,15 +19,15 @@ sidebarTitle: "sealos-deploy"
 
 ## 前置条件
 
-见 [前置条件](/get-started/prerequisites) 与 [Phase 0 — 部署前检查](/pipeline/phases/phase-0-preflight)。
+见 [前置条件](/get-started/prerequisites) 与 [Phase 0 — 部署前环境检查](/pipeline/phases/phase-0-preflight)。
 
 ## 工作流摘要
 
 <Steps>
-  <Step title="部署前检查">
+  <Step title="部署前环境检查">
     [Phase 0](/pipeline/phases/phase-0-preflight) — 环境、源码、Sealos 认证
   </Step>
-  <Step title="模式识别">
+  <Step title="部署模式识别">
     [DEPLOY 或 UPDATE](/pipeline/mode-detection)
   </Step>
   <Step title="首次部署">
@@ -45,8 +45,8 @@ sidebarTitle: "sealos-deploy"
 
 | 模式 | 时机 | 阶段 |
 | --- | --- | --- |
-| DEPLOY | 无此应用运行部署 | 0 → 模式识别 → 1–6.5 |
-| UPDATE | 识别到已有应用 | 0 → 模式识别 → U1–U3 |
+| DEPLOY | 无此应用运行部署 | 0 → 部署模式识别 → 1–6.5 |
+| UPDATE | 识别到已有应用 | 0 → 部署模式识别 → U1–U3 |
 
 ## 产物
 
@@ -74,7 +74,7 @@ sidebarTitle: "sealos-deploy"
 | --- | --- | --- |
 | 生命周期规范 | **草稿 — SSOT 迁移进行中** | 本站 `/pipeline/*` |
 | 流水线执行 | 已实现 | `skills/sealos-deploy/modules/pipeline.md` |
-| 部署前检查 | 已实现 | `skills/sealos-deploy/modules/preflight.md` |
+| 部署前环境检查 | 已实现 | `skills/sealos-deploy/modules/preflight.md` |
 | 运行验收 | 已实现 | `skills/sealos-deploy/modules/runtime-truth.md` |
 | Schema | 部分 | `skills/sealos-deploy/schemas/` |
 

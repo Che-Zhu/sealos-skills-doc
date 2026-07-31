@@ -1,20 +1,22 @@
 ---
-title: "模式识别"
+title: "部署模式识别"
 description: "DEPLOY 与 UPDATE 识别、中断恢复与 GitHub 桥接状态。"
 keywords: ["mode", "update", "state.json", "interrupt"]
 ---
 
 [Phase 0](/pipeline/phases/phase-0-preflight) 通过后，Sealos Deploy 判断本次运行是**首次部署**还是对已有应用的**更新**。
 
-## 模式识别步骤
+## 部署模式识别步骤
 
-Agent 必须：
+Agent 必须按以下顺序执行：
 
-1. 读取先前保存的部署状态。
-2. 在目标工作空间确认应用仍在运行。
-3. 新格式状态缺失时，尝试发现旧流程创建的应用。
-4. 发现已有应用时，向用户展示应用、镜像与访问 URL。
-5. 让用户选择更新已有应用或创建新实例。
+1. **恢复桥接状态**（仅 GitHub 临时 checkout）：从 `~/.sealos/deployments/github.com/<owner>/<repo>/state.json` 恢复到当前 `WORK_DIR`。
+2. **读取部署状态**：读取 `.sealos/state.json`。若存在 `last_deploy`，进入步骤 4。
+3. **集群发现**（无 `last_deploy` 时）：用 kubectl 在工作空间查找与项目匹配的旧部署。发现完整且无歧义匹配时，向用户确认并写入 state，再进入步骤 4。用户否认或无匹配 → **DEPLOY 模式**。
+4. **验证线上状态**：对每个 `last_deploy.services[]` 工作负载确认容器仍在运行，且镜像 digest 与记录一致。kubectl 不可用时告知用户并进入 **DEPLOY 模式**。状态与集群矛盾时停止并让用户核对，不得静默新建重复部署。
+5. **用户选择**：展示应用、工作负载、镜像 digest 与访问 URL。用户选择更新（**UPDATE**）或新建实例（**DEPLOY**）。
+
+仅含已完成一次性 Job、无可更新工作负载时，只提供新建部署选项。
 
 ## DEPLOY 模式
 
@@ -42,6 +44,6 @@ GitHub URL 部署使用临时 checkout。项目目录中的 `.sealos/state.json`
 ~/.sealos/deployments/github.com/<owner>/<repo>/state.json
 ```
 
-桥接目录仅包含已验证的 `state.json`。Agent 在新 checkout 上于模式识别前恢复它。仅在 [Phase 6.5](/pipeline/phases/phase-6-5-runtime-truth) 成功且完整状态通过 schema 验证后更新。
+桥接目录仅包含已验证的 `state.json`。Agent 在新 checkout 上于部署模式识别前恢复它。仅在 [Phase 6.5](/pipeline/phases/phase-6-5-runtime-truth) 成功且完整状态通过 schema 验证后更新。
 
 构建结果、模板及其他运行本地产物不复制到桥接目录。

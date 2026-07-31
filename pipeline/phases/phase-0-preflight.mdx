@@ -1,5 +1,5 @@
 ---
-title: "Phase 0 — 部署前检查"
+title: "Phase 0 — 部署前环境检查"
 description: "环境检查、源码物化与 Sealos 认证。"
 keywords: ["phase 0", "preflight", "environment"]
 ---
@@ -87,7 +87,7 @@ Docker 已安装但 daemon 未运行时，直接启动 Docker。`gh` 未登录�
 | **STOP** | 必需依赖无法安装或验证 |
 | **STOP** | 源码物化复检失败 |
 | **STOP** | Sealos 区域、登录或工作空间无法确认 |
-| **CONTINUE** | 全部通过 → [模式识别](/pipeline/mode-detection) |
+| **CONTINUE** | 全部通过 → [部署模式识别](/pipeline/mode-detection) |
 
 ## 验收标准
 
