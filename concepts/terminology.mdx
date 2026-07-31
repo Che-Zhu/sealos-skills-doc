@@ -1,0 +1,20 @@
+---
+title: "Terminology"
+description: "Preferred terms and definitions used across Sealos Skills documentation."
+keywords: ["terminology", "glossary", "definitions"]
+---
+
+Use these terms consistently across all documentation and skill implementations.
+
+| Term | Definition |
+| --- | --- |
+| **Skill** | A self-contained workflow module with `SKILL.md`, modules, scripts, and references. |
+| **Plugin** | A host-specific package that installs one or more skills from root `skills/**`. |
+| **Phase** | A numbered step in the deploy pipeline (Phase 0 = preflight through Phase 6.5 = runtime truth). |
+| **Artifact** | A file written under `.sealos/` in the target project during a deploy run. |
+| **Deployment source** | The topology input: Compose, Helm, Kubernetes, implicit, or official template. |
+| **Runtime truth** | Post-deploy verification that the app URL, logs, and resource footprint are usable. |
+| **UPDATE mode** | In-place image rollout when an existing deployment is detected. |
+| **DEPLOY mode** | Full pipeline from assess through runtime verification. |
+
+{/* TODO: Add more terms as the doc set grows. */}

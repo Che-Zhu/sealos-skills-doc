@@ -1,0 +1,56 @@
+---
+title: "Skill authoring"
+description: "Page template and module structure for documenting and implementing skills."
+keywords: ["skill authoring", "template", "SKILL.md"]
+---
+
+Every skill in the pack has a corresponding page under `/skills/`. Use this template when creating or updating a skill specification.
+
+## Skill page template
+
+Each skill page must include these sections:
+
+| Section | Content |
+| --- | --- |
+| **Purpose** | One paragraph — what the skill does |
+| **When to use** | Trigger phrases, routing rules, standalone vs invoked-by-deploy |
+| **Prerequisites** | Accounts, tools, prior artifacts |
+| **Workflow summary** | Phase-level steps (link to pipeline pages when applicable) |
+| **Artifacts** | Files read or written (with schema links) |
+| **Example prompts** | Codex (`$sealos`), Claude (`/sealos`), skills.sh direct entry |
+| **Safety rules** | Skill-specific constraints (link to global safety rules) |
+| **Implementation status** | Doc status table with code paths in `sealos-skills` |
+
+## Implementation module structure
+
+Each skill in `sealos-skills` follows this layout:
+
+```
+skills/<skill-name>/
+├── SKILL.md              ← Agent entry point (derived from doc spec)
+├── modules/*.md          ← Phase-level execution logic
+├── scripts/*.mjs         ← Deterministic helpers
+├── knowledge/*.md        ← Error patterns, scoring criteria
+├── references/*.md       ← Detailed rule references
+├── config.json           ← Runtime config (if applicable)
+└── evals/evals.json      ← Eval prompts and assertions
+```
+
+## Authoring rules
+
+- Write the spec page in this repo first.
+- Keep `SKILL.md` concise — route to modules for phase detail.
+- Put normative contracts in `/specs/`, not in `SKILL.md`.
+- Put detailed examples in `references/`, not in the skill page.
+- Add eval assertions when user-visible behavior changes.
+
+## Internal skill dependencies
+
+```text
+sealos-deploy
+ ├── cloud-native-readiness (Phase 1)
+ ├── dockerfile-skill (Phase 3)
+ └── docker-to-sealos (Phase 5)
+```
+
+Document dependencies in the skill page and in `/skills/overview`.

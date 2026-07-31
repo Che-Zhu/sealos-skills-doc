@@ -1,0 +1,38 @@
+---
+title: "Validation"
+description: "Tests and quality gates for skill and documentation changes."
+keywords: ["validation", "tests", "quality gate"]
+---
+
+## Documentation validation
+
+```bash
+mint validate
+mint broken-links
+```
+
+Run these before merging changes to this repository.
+
+## Implementation validation by area
+
+| Changed area | Validation command |
+| --- | --- |
+| Codex plugin metadata | `python3 scripts/validate-codex-plugin.py` |
+| sealos-deploy scripts | `node --check <script.mjs>` + `node scripts/test-<name>.mjs` |
+| docker-to-sealos rules | `python3 skills/docker-to-sealos/scripts/quality_gate.py` |
+| Template references | `node scripts/test-sealos-deploy-template-references.mjs` |
+| Live smoke contract | `node skills/sealos-deploy/scripts/test-sealos-live-smoke.mjs` |
+
+{/* TODO: Add CI plan for cross-repo validation — doc claims vs eval assertions. */}
+
+## Eval fixtures
+
+User-visible behavior must stay aligned with evals in `skills/*/evals/evals.json`. When a spec page defines new behavior, add matching eval assertions in the implementation PR.
+
+## Pre-merge checklist
+
+- [ ] Spec page updated in `sealos-skills-doc`
+- [ ] Implementation updated in `sealos-skills`
+- [ ] Relevant validation commands pass
+- [ ] Eval assertions added or updated (if behavior changed)
+- [ ] Cross-repo PR links in both descriptions

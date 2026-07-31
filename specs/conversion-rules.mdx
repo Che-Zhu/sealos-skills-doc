@@ -1,0 +1,27 @@
+---
+title: "Conversion rules"
+description: "Rule precedence and mappings for topology-to-template conversion."
+keywords: ["conversion", "compose", "helm", "kubernetes", "rules"]
+---
+
+{/* TODO: Index of conversion rule categories — do not copy the full rules-registry.yaml. */}
+
+## Rule precedence
+
+{/* TODO: Explicit config > README > Dockerfile > lockfile > inferred. */}
+
+## Rule categories
+
+| Category | Description |
+| --- | --- |
+| Topology | Service inventory, replicas, dependencies |
+| Networking | Ports, ingress, WebSocket |
+| Storage | PVC, object storage, conditional storage |
+| Database | KubeBlocks vs bundled database replacement |
+| Environment | Secret injection, env key wiring |
+
+{/* TODO: Link to detailed rule references in sealos-skills repo where full detail is needed. */}
+
+## Source alignment
+
+{/* TODO: rendered.yaml and resource-map.json accounting contract. */}

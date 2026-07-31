@@ -1,20 +1,47 @@
 ---
-title: "Introduction"
-description: "Welcome to your project"
+title: "Sealos Skills"
+description: "Deploy projects to Sealos Cloud from your AI agent. Usage guides, pipeline contracts, and skill specifications."
+keywords: ["sealos", "skills", "deploy", "ai agent", "codex", "claude code"]
 ---
 
-Write a short description of your product here. What it does, who it's for, and what they can accomplish with it.
+Sealos Skills is a plugin-first skill pack for AI agents. It inspects a project, prepares deployment artifacts, connects cloud databases and object storage, builds or reuses container images, and deploys to [Sealos Cloud](https://sealos.io).
 
-<Tip>
-  Ready to make this your own? Start by editing this page. Update your `docs.json` file to customize your site. Then fill out the [Quickstart](/quickstart) page.
-</Tip>
+<Note>
+This documentation site is the **single source of truth** for skill behavior, pipeline contracts, and user-facing specifications. The [`sealos-skills`](https://github.com/labring/sealos-skills) repository implements these docs.
+</Note>
 
-<Card title="Quickstart" icon="rocket" href="/quickstart">
-  This card links to the quickstart page in your project.
-</Card>
-<Card title="Components" icon="puzzle-piece" href="https://mintlify.com/docs/components">
-  Add cards, callouts, steps, tabs, and more to design and structure your pages.
-</Card>
-<Card title="Settings" icon="gear" href="https://mintlify.com/docs/organize/settings">
-  Set your site name, branding, and navigation in the `docs.json` file.
-</Card>
+<Columns cols={2}>
+  <Card title="Install" icon="download" href="/get-started/install">
+    Install the plugin in Codex, Claude Code, or via skills.sh.
+  </Card>
+  <Card title="First deploy" icon="rocket" href="/get-started/first-deploy">
+    Deploy a local or GitHub project to Sealos Cloud.
+  </Card>
+  <Card title="Skills" icon="puzzle-piece" href="/skills/overview">
+    Browse all skills and their responsibilities.
+  </Card>
+  <Card title="Deploy pipeline" icon="diagram-project" href="/pipeline/overview">
+    Understand the Phase 0–6.5 deployment workflow.
+  </Card>
+  <Card title="Specifications" icon="file-lines" href="/specs/overview">
+    Template format, artifact schemas, and conversion rules.
+  </Card>
+  <Card title="Contributing" icon="code" href="/contributing/overview">
+    Author skills, validate changes, and keep docs in sync.
+  </Card>
+</Columns>
+
+## What you can do
+
+- Deploy a local or GitHub project to Sealos Cloud
+- Create and wire cloud databases (Postgres, MySQL, Redis, MongoDB)
+- Create and wire S3-compatible object storage
+- View deployed resources in a local read-only canvas
+- Build Sealos Desktop apps with SDK integration
+
+## Repository layout
+
+| Repository | Role |
+| --- | --- |
+| [`labring/sealos-skills`](https://github.com/labring/sealos-skills) | Implementation — `skills/**`, scripts, manifests, tests |
+| [`labring/sealos-skills-doc`](https://github.com/labring/sealos-skills-doc) | **Single source of truth** — usage, contracts, specifications |

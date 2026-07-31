@@ -1,0 +1,34 @@
+---
+title: "Artifacts"
+description: "Files written under .sealos/ during a deploy run."
+keywords: ["artifacts", "state.json", "analysis.json", "template"]
+---
+
+All pipeline outputs are written under `.sealos/` in the target project directory.
+
+```
+<WORK_DIR>/.sealos/
+├── config.json
+├── template-references.json
+├── template-references/
+├── state.json
+├── analysis.json
+├── deployment-source/
+│   ├── rendered.yaml
+│   └── resource-map.json
+├── topology-evidence/
+│   └── <app-name>.yaml
+├── build/
+│   └── <service-key>/
+│       └── build-result.json
+└── template/
+    └── index.yaml
+```
+
+{/* TODO: Document each file's writer phase, reader phase, and schema link. */}
+
+## Schema validation
+
+{/* TODO: validate-artifacts.mjs usage and schema paths. */}
+
+See [Artifact schemas](/specs/artifact-schemas) for field-level contracts.

@@ -1,0 +1,25 @@
+---
+title: "Distribution model"
+description: "How Sealos Skills reaches Codex, Claude Code, skills.sh, and other AI hosts."
+keywords: ["distribution", "marketplace", "platforms", "manifests"]
+---
+
+{/* TODO: Explain plugin manifests, marketplace entries, and platform support claims. */}
+
+## Support claim levels
+
+| Claim | Meaning |
+| --- | --- |
+| `verified` | Current validation command or host smoke test exists. |
+| `install-target` | Manifest present; live execution may be environment-dependent. |
+| `context-only` | Host ingests context; slash-command support is not claimed. |
+
+{/* TODO: Link to contributing/distribution for maintainer rules. */}
+
+## Command conventions
+
+| Host | Entry point | Example |
+| --- | --- | --- |
+| Codex | `$sealos` | `$sealos deploy this repo` |
+| Claude Code | `/sealos` | `/sealos deploy this repo` |
+| skills.sh | `/sealos-deploy` | `/sealos-deploy /path/to/project` |

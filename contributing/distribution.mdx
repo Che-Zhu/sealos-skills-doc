@@ -1,0 +1,37 @@
+---
+title: "Distribution"
+description: "Plugin manifests, marketplace entries, and platform support claims."
+keywords: ["distribution", "marketplace", "plugin", "manifests"]
+---
+
+{/* TODO: Maintainer rules from sealos-skills/marketplaces/README.md. */}
+
+## Manifest files
+
+| File | Host |
+| --- | --- |
+| `.codex-plugin/plugin.json` | Codex |
+| `.claude-plugin/plugin.json` | Claude Code |
+| `marketplace.json` | Claude-compatible hosts |
+| `gemini-extension.json` | Gemini CLI (context-only) |
+| `qwen-extension.json` | Qwen Code (context-only) |
+| `openclaw.plugin.json` | OpenClaw / ClawHub |
+| `distribution/platforms.json` | Platform support registry |
+
+## Rules
+
+- Root `skills/**` is the only skill source. Do not package a second copy.
+- Keep manifest versions in sync with `.codex-plugin/plugin.json`.
+- Plugin examples use `$sealos` (Codex) and `/sealos` (Claude Code).
+- `/sealos-deploy` examples belong only in `skills.sh` sections.
+- Platform support claims must match `distribution/platforms.json`.
+
+## Sync with documentation
+
+Install commands on [/get-started/install](/get-started/install) must match `distribution/platforms.json`. When install paths change, update both the JSON and the doc page in the same change set.
+
+## Validation
+
+```bash
+python3 scripts/validate-codex-plugin.py
+```

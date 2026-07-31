@@ -1,0 +1,25 @@
+---
+title: "Pipeline overview"
+description: "End-to-end deployment workflow from preflight to runtime verification."
+keywords: ["pipeline", "deploy", "phases"]
+---
+
+{/* TODO: High-level flowchart — DEPLOY vs UPDATE entry. */}
+
+## Pipeline entry
+
+After preflight passes, the agent detects deployment mode:
+
+- **DEPLOY** — full Phase 1 through 6.5
+- **UPDATE** — rebuild image, resolve digest, rollout in place
+
+See [Modes](/pipeline/modes) for detection logic.
+
+## Two deploy routes
+
+Within DEPLOY mode, Phase 1.5 chooses:
+
+1. **Official template fast path** — unique exact catalog match → Phase 6
+2. **Standard pipeline** — Phase 2 through 5.5 → Phase 6
+
+See [Phases](/pipeline/phases) for the full phase breakdown.

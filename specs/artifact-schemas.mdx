@@ -1,0 +1,25 @@
+---
+title: "Artifact schemas"
+description: "JSON schema contracts for files written under .sealos/."
+keywords: ["schemas", "json", "artifacts", "state.json"]
+---
+
+{/* TODO: Generate or maintain field tables from sealos-skills/schemas/*.json. */}
+
+## Schema index
+
+| Schema | File | Writer phase |
+| --- | --- | --- |
+| `config.schema.json` | `.sealos/config.json` | User (manual) |
+| `analysis.schema.json` | `.sealos/analysis.json` | Phase 1, enriched Phase 2 |
+| `template-references.schema.json` | `.sealos/template-references.json` | Phase 1.5 |
+| `build-result.schema.json` | `.sealos/build/<service>/build-result.json` | Phase 4 |
+| `state.schema.json` | `.sealos/state.json` | Phase 6.5 |
+
+## Validation
+
+```bash
+node skills/sealos-deploy/scripts/validate-artifacts.mjs --dir "$WORK_DIR"
+```
+
+{/* TODO: Document each schema's required fields and phase boundaries. */}

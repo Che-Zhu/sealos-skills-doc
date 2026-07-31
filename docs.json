@@ -1,53 +1,149 @@
 {
   "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
-  "name": "Mintlify Starter Kit",
+  "name": "Sealos Skills",
+  "description": "Documentation for the Sealos Skills plugin pack — usage, pipeline contracts, and skill specifications.",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#6312FF",
+    "light": "#6378FF",
+    "dark": "#4C0ECC"
   },
   "favicon": "/favicon.svg",
+  "logo": {
+    "light": "/logo/light.svg",
+    "dark": "/logo/dark.svg"
+  },
   "navigation": {
-    "pages": [
+    "tabs": [
       {
-        "group": "Getting Started",
-        "pages": [
-          "index",
-          "quickstart"
+        "tab": "Documentation",
+        "icon": "book-open",
+        "groups": [
+          {
+            "group": "Get started",
+            "icon": "rocket",
+            "pages": [
+              "index",
+              "get-started/prerequisites",
+              "get-started/install",
+              "get-started/first-deploy"
+            ]
+          },
+          {
+            "group": "Concepts",
+            "icon": "lightbulb",
+            "pages": [
+              "concepts/overview",
+              "concepts/architecture",
+              "concepts/terminology",
+              "concepts/distribution"
+            ]
+          },
+          {
+            "group": "Skills",
+            "icon": "puzzle-piece",
+            "pages": [
+              "skills/overview",
+              {
+                "group": "Primary skills",
+                "pages": [
+                  "skills/sealos-deploy",
+                  "skills/sealos-database",
+                  "skills/sealos-s3",
+                  "skills/sealos-canvas",
+                  "skills/sealos-app-builder"
+                ]
+              },
+              {
+                "group": "Supporting skills",
+                "expanded": false,
+                "pages": [
+                  "skills/cloud-native-readiness",
+                  "skills/dockerfile-skill",
+                  "skills/docker-to-sealos"
+                ]
+              }
+            ]
+          },
+          {
+            "group": "Deploy pipeline",
+            "icon": "diagram-project",
+            "pages": [
+              "pipeline/overview",
+              "pipeline/modes",
+              "pipeline/phases",
+              "pipeline/deployment-sources",
+              "pipeline/artifacts",
+              "pipeline/update-mode",
+              "pipeline/runtime-verification"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Specifications",
+        "icon": "file-lines",
+        "groups": [
+          {
+            "group": "Contracts",
+            "pages": [
+              "specs/overview",
+              "specs/template-format",
+              "specs/resource-floors",
+              "specs/conversion-rules",
+              "specs/artifact-schemas",
+              "specs/safety-rules"
+            ]
+          },
+          {
+            "group": "Contributing",
+            "pages": [
+              "contributing/overview",
+              "contributing/ssot-workflow",
+              "contributing/skill-authoring",
+              "contributing/validation",
+              "contributing/distribution"
+            ]
+          }
         ]
       }
     ],
     "global": {
       "anchors": [
         {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
+          "anchor": "GitHub — skills",
+          "href": "https://github.com/labring/sealos-skills",
+          "icon": "github"
         },
         {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
+          "anchor": "GitHub — docs",
+          "href": "https://github.com/labring/sealos-skills-doc",
+          "icon": "book"
+        },
+        {
+          "anchor": "Sealos Cloud",
+          "href": "https://sealos.io",
+          "icon": "cloud"
         }
       ]
     }
   },
-  "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
-  },
   "navbar": {
     "links": [
       {
-        "label": "Support",
-        "href": "mailto:hi@mintlify.com"
+        "label": "Skills repo",
+        "href": "https://github.com/labring/sealos-skills"
       }
     ],
     "primary": {
       "type": "button",
-      "label": "Dashboard",
-      "href": "https://app.mintlify.com"
+      "label": "Install",
+      "href": "/get-started/install"
+    }
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/labring/sealos-skills"
     }
   },
   "contextual": {
@@ -56,17 +152,8 @@
       "view",
       "chatgpt",
       "claude",
-      "perplexity",
-      "mcp",
       "cursor",
       "vscode"
     ]
-  },
-  "footer": {
-    "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
-    }
   }
 }
