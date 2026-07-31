@@ -1,96 +1,121 @@
 ---
 title: "Phase 1 — 项目评估"
-description: "项目形态、云原生就绪度与分析快照。"
+description: "记录项目事实，评分云原生就绪度，写入 analysis.json。"
 keywords: ["phase 1", "assess", "analysis.json"]
 ---
 
 ## 目的
 
-Phase 1 理解仓库可合理采用的部署形态，评分云原生就绪度，并为后续阶段记录已确认的项目事实。
+读取 `WORK_DIR` 证据，记录项目事实，评分云原生就绪度，写入 `.sealos/analysis.json`。
 
-仓库是来源边界，不是唯一可部署单元。Agent 不得假设只有仓库根目录可部署。不得因根目录是库、组件包或 monorepo 而停止。源码、README、workspace 脚本或 CI 支持的应用、文档站、静态站、Storybook 和示例均为有效部署形态。
+UPDATE 模式跳过 Phase 1。
 
-### 入口判断
+不得选择镜像，不得生成模板，不得创建云端资源。
 
-开始时 Agent 做内部判断：项目是否确定无法在 Sealos 上以任何合理方式运行？
+## 入口判断（黑名单）
 
-| 结果 | 动作 |
+采用黑名单模式。Agent 自行判断是否满足黑名单定义。
+
+**黑名单定义（须同时满足）：**
+
+1. 项目本身无法以云服务形式运行。
+2. 仓库内没有任何部分可以以云服务形式部署。
+
+仅当两项均 **100% 确认** 时 **STOP**。任一项不能 100% 确认时 **CONTINUE**。不得因不确定、低分或证据不足而 STOP。
+
+| 结果 | 条件 |
 | --- | --- |
-| 确定不可行 | 说明一条简短具体原因，然后 **STOP** |
-| 任何不确定 | 继续评估，无单独输出 |
+| **STOP** | 黑名单定义两项均 100% 确认 |
+| **CONTINUE** | 其余所有情况 |
 
-示例停止：无在线运行时且无合理容器路径的原生桌面应用。CLI、库、低分、缺少入口或证据薄弱单独不得停止 Phase 1。
+仓库是来源边界。
 
-此判断不产生产物、分数、报告、候选列表或用户确认。UPDATE 模式跳过 Phase 1，因部署模式识别已确认应用在运行。
-
-Phase 1 不是语言、框架或应用类型支持列表。它记录事实与风险。不得因未知语言、静态文件、未知框架、缺少包管理器、缺少运行时版本、缺少根启动命令或未识别端口而停止。
+此判断不产生产物、分数或用户提示。不能 100% 确认时直接继续评分。
 
 ## 输入
 
-| 输入 | 来源 |
-| --- | --- |
-| `WORK_DIR` | [运行入口](/pipeline/entry) |
-| 仓库与 commit 元数据 | [运行入口](/pipeline/entry) |
-| 项目源文件 | 依赖、启动配置、容器、CI、环境变量示例、文档 |
+| 输入 | 来源 | 必须 |
+| --- | --- | --- |
+| `WORK_DIR` | [运行入口](/pipeline/entry) | 是 |
+| `WORK_DIR_IS_TEMP` | [运行入口](/pipeline/entry) | 是 |
+| `runtime_profile` | [Phase 0](/pipeline/phases/phase-0-preflight) | 是 |
+| `REPO_NAME` | [运行入口](/pipeline/entry) | 是 |
+| `GITHUB_URL` | [运行入口](/pipeline/entry) | 否 |
+
+Phase 1 从 `WORK_DIR` 读取项目文件。不得要求上阶段未写入的字段。
 
 ## 输出
 
-| 输出 | 路径 | 说明 |
-| --- | --- | --- |
-| 分析快照 | `.sealos/analysis.json` | 事实、分数、供后续阶段使用的清单 |
+| 输出 | 路径 |
+| --- | --- |
+| 分析快照 | `.sealos/analysis.json` |
 
-`analysis.json` 包括：
+写入项目来源、就绪度分数（0–12）、语言、框架、端口、数据库、环境变量、容器事实、镜像与服务清单占位。
 
-- 项目来源、工作目录、仓库与分支
-- 0–12 就绪度分数及分项与风险
-- 语言、框架、包管理器、运行时、端口、数据库、环境变量、容器事实
-- 供 Phase 2 使用的镜像清单与服务清单占位
+`analysis.json` 是事实快照，不是部署许可。低分或字段为空时记录风险并继续。
 
-`analysis.json` 是事实快照，不是部署许可。低分、描述字段为空、缺少根入口或不熟悉应用类型记录风险并继续。
+未知事实写 `null`、`[]` 或 `{}`。不得编造默认值。
 
 ## 前置条件
 
+- [Phase 0](/pipeline/phases/phase-0-preflight) 已通过
 - [运行入口](/pipeline/entry) 已完成
-- 首次部署路径（非 UPDATE）
+- [部署模式识别](/pipeline/mode-detection) 结果为 **DEPLOY**
 
 ## 流程
 
-Agent 读取项目证据。不得猜测或编造未知事实的默认值。
+### 1. 创建产物目录
 
-就绪度检测器仅提供仓库信号。它不决定部署目标、运行时形态或是否继续。Agent 结合源码、文档、workspace 与 CI。检测器无输出不代表能力缺失。
+```bash
+mkdir -p "$WORK_DIR/.sealos"
+```
 
-Agent 记录：
+### 2. 评分
+
+若 Node.js 可用：
+
+```bash
+node "<SKILL_DIR>/scripts/score-model.mjs" "$WORK_DIR"
+```
+
+若 Node.js 不可用，按 `cloud-native-readiness/knowledge/criteria.md` 手动评分。
+
+分数低于 4 时警告用户并继续。分数不授权 STOP。
+
+### 3. 补充事实
+
+读取 README、依赖清单、Dockerfile、CI 配置、应用子目录。
+
+记录：
 
 - 语言、框架、包管理器、运行时版本
-- 启动方式、服务端口、数据库依赖
-- 已有容器配置
-- 环境变量分类
-- 无状态设计、外部化配置、扩缩容、生命周期、可观测性、服务边界
-- 云原生就绪度分数 0–12
+- 部署形态、服务边界、端口
+- 数据库依赖、环境变量（标注 `auto` / `required` / `optional`）
+- `has_dockerfile`、复杂度层级
 
-语言与包管理器使用开放字符串。静态项目可记录 `html`、`css`、`javascript`、`nginx`。未知值使用 `null`、`[]` 或 `{}`。
+检测器输出是参考信号，不是支持列表。检测器无输出不代表能力缺失。
 
-硬性要求属于后续阶段。Phase 3 仅对需构建的服务要求构建路径。Phase 5 仅在创建网络入口时需要容器端口。
+### 4. 写入 `analysis.json`
+
+符合 [analysis schema](/specs/artifact-schemas) 后写入。
 
 ## 停止条件
 
 | 结果 | 条件 |
 | --- | --- |
-| **STOP** | Agent 确定项目无法在 Sealos 上运行 |
-| **CONTINUE** | 任何不确定或正向评估 → Phase 1.5 |
+| **STOP** | 黑名单定义两项均 100% 确认 |
+| **CONTINUE** | 其余情况 → [Phase 1.5](/pipeline/phases/phase-1-5-template) |
 
 ## 验收标准
 
-- `.sealos/analysis.json` 存在且符合 [analysis schema](/specs/artifact-schemas)
-- 入口判断规则已遵循
-- 未知事实无编造默认值
+- `.sealos/analysis.json` 存在且通过 schema 校验
+- 黑名单定义已按两项条件核对
+- 未知事实无编造值
 
 ## Schema 链接
 
-- [产物 Schema — analysis.json](/specs/artifact-schemas)
+[产物 Schema — analysis.json](/specs/artifact-schemas)
 
 ## 实现映射
 
-| 规范章节 | 实现 |
-| --- | --- |
-| 评估与评分 | `skills/sealos-deploy/modules/pipeline.md`（Phase 1） |
+`skills/sealos-deploy/modules/pipeline.md`（Phase 1）

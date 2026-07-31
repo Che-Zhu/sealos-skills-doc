@@ -26,14 +26,14 @@ README 中的命令不得单独触发工具安装。
 
 ## 运行上下文
 
-物化完成后写入：
+物化完成后写入运行上下文：
 
-| 字段 | 说明 |
-| --- | --- |
-| `WORK_DIR` | 可分析、可构建的工作目录 |
-| `WORK_DIR_IS_TEMP` | GitHub URL 来源时为 `true` |
-| `GITHUB_URL` | 来自参数或 `git remote` |
-| `REPO_NAME` | 目录名或 URL 解析结果 |
+| 字段 | 说明 | 必须 |
+| --- | --- | --- |
+| `WORK_DIR` | 可分析、可构建的工作目录 | 是 |
+| `WORK_DIR_IS_TEMP` | GitHub URL 来源时为 `true`，否则为 `false` | 是 |
+| `REPO_NAME` | 目录名或 URL 解析结果 | 是 |
+| `GITHUB_URL` | 来自参数或 `git remote` | 否，非 GitHub 项目时为空 |
 
 完成后进入 [部署模式识别](/pipeline/mode-detection)。
 
