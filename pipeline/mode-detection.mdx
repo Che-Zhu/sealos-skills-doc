@@ -30,7 +30,7 @@ Agent 必须按以下顺序执行：
 
 首次部署中断时，Sealos Deploy 识别已完成的评估、官方模板选择、镜像构建或模板生成。
 
-Agent 仅在产物仍与当前项目和当前选择匹配时可恢复。官方模板进入 Phase 6 前须通过在线目录验证。Agent 不得仅凭本地记录和 YAML 信任。
+Agent 仅在产物仍与当前项目和当前选择匹配时可恢复。官方模板进入 Phase 6 前须再次对照 [labring-actions/templates `kb-0.9/template`](https://github.com/labring-actions/templates/tree/kb-0.9/template) 验证。Agent 不得仅凭本地记录和 YAML 信任。
 
 否则从合适的较早阶段重新开始。
 

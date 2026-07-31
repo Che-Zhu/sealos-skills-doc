@@ -6,7 +6,7 @@ keywords: ["phase 2", "discover", "topology", "digest"]
 
 ## 目的
 
-Phase 2 同时确认两件事：项目发布或使用的镜像，以及最终部署须保留的服务与依赖。它不是找到第一个镜像就停止的搜索。
+Phase 2 确认项目发布或使用的镜像，以及最终部署须保留的服务与依赖。从仓库采集项目事实，写入 `analysis.json` 清单字段。
 
 镜像证据与运行时拓扑分别收集。
 
@@ -16,6 +16,10 @@ Phase 2 同时确认两件事：项目发布或使用的镜像，以及最终部
 | --- | --- |
 | `analysis.json` | Phase 1 |
 | 项目源码与文档 | `analysis.json` → `work_dir` |
+
+## 前置条件
+
+- Phase 1 已完成，且未满足快速路径条件（见 [Phase 1](/pipeline/phases/phase-1-assess)）
 
 ## 输出
 

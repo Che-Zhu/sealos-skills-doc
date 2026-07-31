@@ -72,7 +72,6 @@
                       "pipeline/phases/index",
                       "pipeline/phases/phase-0-preflight",
                       "pipeline/phases/phase-1-assess",
-                      "pipeline/phases/phase-1-5-template",
                       "pipeline/phases/phase-2-discover",
                       "pipeline/phases/phase-3-build-prep",
                       "pipeline/phases/phase-4-build-push",

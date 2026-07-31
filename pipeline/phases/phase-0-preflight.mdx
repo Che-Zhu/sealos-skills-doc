@@ -109,7 +109,7 @@ mkdir -p "<work_dir>/.sealos"
 | `repo_name` | 目录名或 URL 解析结果 |
 | `github_url` | 来自参数或 `git remote`；非 GitHub 项目时为 `null` |
 
-Phase 0 结束时文件仅含上述字段。Phase 1 补充其余字段。
+Phase 0 结束时文件仅含上述字段。Phase 1 写入 `official_template`。项目事实由 Phase 2 写入。
 
 ### 7. 启动部署日志
 
@@ -136,7 +136,7 @@ Phase 0 结束时文件仅含上述字段。Phase 1 补充其余字段。
 
 ## Schema 链接
 
-步骤 6 写入的部分 `analysis.json` 在 Phase 1 完成前不要求通过完整 schema 校验。见 [产物](/pipeline/artifacts)。
+步骤 6 写入的部分 `analysis.json` 在 Phase 2 完成前不要求通过完整 schema 校验。见 [产物](/pipeline/artifacts)。
 
 ## 实现映射
 

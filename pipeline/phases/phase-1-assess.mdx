@@ -1,106 +1,114 @@
 ---
 title: "Phase 1 — 项目评估"
-description: "记录已确认的项目事实，写入 analysis.json。"
-keywords: ["phase 1", "assess", "analysis.json"]
+description: "弄清项目能否部署，选择路径，写入 official_template。"
+keywords: ["phase 1", "assess", "analysis.json", "official template"]
 ---
 
 ## 目的
 
-读取 `analysis.json` 中的 `work_dir` 证据，补充 [Phase 0](/pipeline/phases/phase-0-preflight) 写入的字段，记录已确认的项目事实。
+判断项目能否以云服务形式部署。选择快速路径或标准路径。写入 `official_template`。
 
-UPDATE 模式跳过 Phase 1。
+UPDATE 模式跳过本 Phase。
 
-不得评分，不得选择镜像，不得生成模板，不得创建云端资源。
+不得评分。不得选择镜像。不得执行 [Phase 5](/pipeline/phases/phase-5-template) 式模板生成。不得创建云端资源。不得拉取 YAML。不得写入 `.sealos/template/index.yaml`。
 
-## 入口判断（黑名单）
+## 黑名单
 
-采用黑名单模式。Agent 自行判断是否满足黑名单定义。
+两项均 **100% 确认** 时 **STOP**，否则 **CONTINUE**。不得因不确定或证据不足而 STOP。
 
-**黑名单定义（须同时满足）：**
-
-1. 项目本身无法以云服务形式运行。
-2. 仓库内没有任何部分可以以云服务形式部署。
-
-仅当两项均 **100% 确认** 时 **STOP**。任一项不能 100% 确认时 **CONTINUE**。不得因不确定或证据不足而 STOP。
-
-| 结果 | 条件 |
+| # | 条件 |
 | --- | --- |
-| **STOP** | 黑名单定义两项均 100% 确认 |
-| **CONTINUE** | 其余所有情况 |
+| 1 | 项目本身无法以云服务形式运行 |
+| 2 | 仓库内无任何部分可以云服务部署 |
 
-仓库是来源边界。
-
-此判断不产生产物或用户提示。不能 100% 确认时直接继续事实采集。
+仓库是来源边界。不写产物。不对用户提示。
 
 ## 输入
 
 | 输入 | 来源 | 必须 |
 | --- | --- | --- |
 | `analysis.json` | [Phase 0](/pipeline/phases/phase-0-preflight) | 是 |
+| 官方模板目录 | [`kb-0.9/template`](https://github.com/labring-actions/templates/tree/kb-0.9/template) | 是 |
 
 Phase 0 须已写入 `runtime_profile`、`work_dir`、`repo_name`。`github_url` 可为 `null`。
-
-Phase 1 从 `analysis.json` 的 `work_dir` 读取项目文件。不得要求上阶段未写入的字段。
 
 ## 输出
 
 | 输出 | 路径 |
 | --- | --- |
-| 分析快照 | `.sealos/analysis.json` |
+| `official_template` | `.sealos/analysis.json` |
 
-写入语言、框架、端口、数据库、环境变量、容器事实、镜像与服务清单占位，以及已确认的风险备注。
+```json
+{
+  "official_template": "https://raw.githubusercontent.com/labring-actions/templates/<commit>/template/<name>/index.yaml"
+}
+```
 
-`analysis.json` 是事实快照，不是部署许可。字段为空或存在风险时记录并继续。
+唯一精确匹配 → URL 字符串。否则 → `null`。与是否走快速路径无关。
 
-未知事实写 `null`、`[]` 或 `{}`。不得编造默认值。
+项目事实由 [Phase 2](/pipeline/phases/phase-2-discover) 写入 `analysis.json`。
 
 ## 前置条件
 
-- [Phase 0](/pipeline/phases/phase-0-preflight) 已通过，且 `.sealos/analysis.json` 含 `runtime_profile`、`work_dir`、`repo_name`
-- [部署模式识别](/pipeline/mode-detection) 结果为 **DEPLOY**
+- [Phase 0](/pipeline/phases/phase-0-preflight) 已通过
+- [部署模式识别](/pipeline/mode-detection) 为 **DEPLOY**
 
 ## 流程
 
-### 1. 读取已有 `analysis.json`
+### 1. 黑名单判断
 
-读取 `.sealos/analysis.json`。保留 `runtime_profile`、`work_dir`、`repo_name`、`github_url`，不得修改。
+见上节。通过后继续。
 
-### 2. 采集事实
+### 2. 读取 `analysis.json`
 
-读取 README、依赖清单、Dockerfile、CI 配置、应用子目录。
+保留 `runtime_profile`、`work_dir`、`repo_name`、`github_url`。不得修改。
 
-记录：
+### 3. 官方模板精确匹配
 
-- 语言、框架、包管理器、运行时版本
-- 部署形态、服务边界、端口
-- 数据库依赖、环境变量（标注 `auto` / `required` / `optional`）
-- `has_dockerfile`、复杂度层级
-- 已确认风险（缺失入口、非常见运行时、证据冲突等）
+对照 [labring-actions/templates `kb-0.9/template`](https://github.com/labring-actions/templates/tree/kb-0.9/template) 做精确匹配。
 
-检测器或脚本输出是参考信号，不是支持列表。无输出不代表能力缺失。
+精确匹配 = 模板声明与当前来源项目一致。不得按名称、语言或框架模糊匹配。不得做相似度匹配。
 
-### 3. 写入 `analysis.json`
+| 匹配结果 | `official_template` |
+| --- | --- |
+| 无匹配、多匹配 | `null` |
+| 目录不可达 | `null`（不 STOP） |
+| 唯一精确匹配 | 该模板 `index.yaml` 的 raw URL |
 
-在已有文件上补充字段。保留 Phase 0 写入的 `runtime_profile`、`work_dir`、`repo_name`、`github_url`。符合 [analysis schema](/specs/artifact-schemas) 后写入。
+唯一精确匹配时，无论后续走快速路径或标准路径，均写入上述 URL。
+
+**快速路径**（跳过 Phase 2–5.5）须同时满足：
+
+| 条件 | 要求 |
+| --- | --- |
+| `official_template` | 非 `null` |
+| `runtime_profile` | `sandbox`，或 `local` 且无未提交更改（排除 `.sealos/`） |
+
+`sandbox` 不核对未提交更改。
+
+`local` 有未提交更改 → `official_template` 仍为非 `null`，走标准路径。
+
+### 4. 写入 `analysis.json`
+
+写入 `official_template`。保留 Phase 0 四字段。本阶段不要求通过完整 [schema](/specs/artifact-schemas)。
 
 ## 停止条件
 
 | 结果 | 条件 |
 | --- | --- |
-| **STOP** | 黑名单定义两项均 100% 确认 |
-| **CONTINUE** | 其余情况 → [Phase 1.5](/pipeline/phases/phase-1-5-template) |
+| **STOP** | 黑名单两项均 100% 确认 |
+| **CONTINUE → Phase 5.9** | `official_template` 非 `null`，且满足快速路径条件 |
+| **CONTINUE → Phase 2** | 其余情况 |
 
 ## 验收标准
 
-- `.sealos/analysis.json` 存在且通过 schema 校验
-- 黑名单定义已按两项条件核对
-- `runtime_profile`、`work_dir`、`repo_name`、`github_url` 未被修改
-- 未知事实无编造值
-- 未写入评分或就绪度分数字段
+- `official_template` 与匹配结果一致
+- Phase 0 四字段未改
+- 未写入 `template/index.yaml`
 
 ## Schema 链接
 
-[产物 Schema — analysis.json](/specs/artifact-schemas)
+[产物 Schema](/specs/artifact-schemas)
 
 ## 实现映射
 
