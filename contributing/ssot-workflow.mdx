@@ -23,6 +23,23 @@ keywords: ["ssot", "single source of truth", "workflow"]
 
 新增或修改行为规范时，先编辑根路径中文页面，再更新 `en/` 对应翻译。
 
+## 实现对照分支
+
+撰写、迁移或核对 `sealos-deploy` 规范时，以 [`sealos-skills` 的 `codex/review-sealos-deploy` 分支](https://github.com/labring/sealos-skills/tree/codex/review-sealos-deploy) 为**对照实现**：
+
+| 对照文件 | 路径 |
+| --- | --- |
+| 流水线模块 | `skills/sealos-deploy/modules/pipeline.md`、`preflight.md`、`runtime-truth.md` |
+| 转换与质量门 | `skills/docker-to-sealos/references/`、`scripts/quality_gate.py` |
+| 产物 schema | `skills/sealos-deploy/schemas/*.json` |
+| 验收用例 | `skills/sealos-deploy/evals/evals.json` |
+
+`main` 分支、[旧 Wiki](https://github.com/labring/sealos-skills/wiki/Sealos-Deploy-Lifecycle) 与本地 `modules/*.md` 仅作历史参考。**不得**在未核对 `codex/review-sealos-deploy` 的情况下写入新规范。
+
+## 中文写作
+
+根路径中文页面必须遵循 [/contributing/chinese-style](/contributing/chinese-style)（基于简明技术英语 pragmatic 模式）。
+
 ## 变更顺序
 
 <Steps>
@@ -71,4 +88,4 @@ keywords: ["ssot", "single source of truth", "workflow"]
 4. **转换规则** — 先建索引，逐步补充细节
 5. **安装与分发** — 从 `platforms.json` 同步
 
-带 `{/* TODO */}` 的页面是待从 `sealos-skills` 迁移内容的占位页。
+带 `{/* TODO */}` 的页面是待从 `codex/review-sealos-deploy` 迁移并对齐的占位页。

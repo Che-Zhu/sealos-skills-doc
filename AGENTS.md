@@ -14,11 +14,12 @@ This repository (`sealos-skills-doc`) is the **single source of truth** for Seal
 
 1. **Specs live here first.** Change `/skills/`, `/pipeline/`, or `/specs/` pages before changing `sealos-skills` implementation.
 2. **Chinese is authoritative.** Root-path pages (default `zh-Hans`) are the normative SSOT. The `en/` directory is an English translation and may lag behind Chinese.
-3. **Do not duplicate normative content** in `SKILL.md` without a corresponding doc page.
-3. **Pages with `{/* TODO */}`** are structural placeholders awaiting content migration from `sealos-skills`.
-4. **Cross-link both repos** in PR descriptions when behavior changes.
+3. **Implementation reference branch.** When migrating or reconciling `sealos-deploy` behavior, use [`sealos-skills` `codex/review-sealos-deploy`](https://github.com/labring/sealos-skills/tree/codex/review-sealos-deploy). Do not treat `main`, the old wiki, or stale `modules/*.md` on other branches as source material.
+4. **Do not duplicate normative content** in `SKILL.md` without a corresponding doc page.
+5. **Pages with `{/* TODO */}`** are placeholders awaiting alignment with `codex/review-sealos-deploy`.
+6. **Cross-link both repos** in PR descriptions when behavior changes.
 
-See [/contributing/ssot-workflow](/contributing/ssot-workflow) for the full change process.
+See [/contributing/ssot-workflow](/contributing/ssot-workflow) for the full change process. Chinese pages must follow [/contributing/chinese-style](/contributing/chinese-style) (STE pragmatic rules adapted for Chinese).
 
 ## Terminology
 
@@ -47,7 +48,9 @@ Every page under `skills/` must include: Purpose, When to use, Prerequisites, Wo
 
 ## Style
 
-- Second person ("you"), active voice
+Chinese root-path pages follow [/contributing/chinese-style](/contributing/chinese-style): short sentences, one fact per sentence, consistent terminology, **必须/不得** for requirements. English `en/` pages follow the same STE pragmatic limits (20-word procedural, 25-word descriptive sentences).
+
+- Second person ("you" / 「你」), active voice
 - Sentence case for headings
 - No emoji, no marketing language
 - Code blocks must have language tags
