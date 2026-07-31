@@ -1,107 +1,89 @@
 ---
 title: "Phase 0 — 部署前环境检查"
-description: "环境检查、源码物化与 Sealos 认证。"
+description: "判定 sealos-deploy 能否在当前环境运行。"
 keywords: ["phase 0", "preflight", "environment"]
 ---
 
 ## 目的
 
-Phase 0 在进入部署流程前完成两件事：
+判定当前环境能否运行 `sealos-deploy`。
 
-1. 确保本地环境已安装并配置 Sealos Deploy 生命周期需要的依赖。
-2. 确认并完整获取项目源码，以及 Sealos Cloud 区域、登录状态和目标工作空间。
-
-Phase 0 **不**判断应用是否可部署，不选择或构建镜像，不生成模板，不创建云端资源，也不在项目中创建 `.sealos/`。
+不得解析项目来源，不得物化源码，不得判断可部署性，不得构建镜像，不得生成模板，不得创建云端资源，不得写入 `.sealos/`。
 
 ## 输入
 
 | 输入 | 来源 |
 | --- | --- |
-| 项目来源 | GitHub URL、本地路径或当前目录 |
-| 平台上下文 | 操作系统与可用包管理器 |
-| 已有本地 checkout | 本地目录来源时 |
+| `SEALAI_DEPLOY_TASK_ID` | 进程环境变量 |
+| 主机环境 | OS、包管理器 |
 
 ## 输出
 
 | 输出 | 说明 |
 | --- | --- |
-| 已验证的依赖 | 当前路径实际需要的工具 |
-| `WORK_DIR` | 唯一、可分析、可构建的项目工作目录 |
-| 仓库元数据 | 分支与 commit（如适用） |
-| Sealos 上下文 | 区域、工作空间 namespace、可用 kubeconfig |
-| 部署日志 | 贯穿后续各阶段 |
-
-Phase 0 不写入 `analysis.json`、`state.json`、模板、构建结果或其他 `.sealos/` 文件。
+| `runtime_profile` | `local` 或 `sandbox` |
+| 结果 | `CONTINUE` 或 `STOP` |
 
 ## 前置条件
 
-无。Phase 0 是流水线入口。
+无。
 
 ## 流程
 
-### 依赖检查
+### 1. 判定 `runtime_profile`
 
-在选定路径需要时，检查下列工具：
-
-| 工具 | 何时需要 |
+| `SEALAI_DEPLOY_TASK_ID` | `runtime_profile` |
 | --- | --- |
-| Git | 始终 |
-| 源码获取工具 | 普通 Git checkout 无法物化 commit 时（如 Git LFS） |
-| Node.js 18+ | 后续阶段需要脚本模式时 |
-| Docker CLI 与运行中的 daemon | 可能本地构建时 |
-| Docker Buildx | 可能本地构建时 |
-| GitHub CLI（`gh`） | 可能推送 GHCR 时；须已登录 `github.com` 且具备 `write:packages` |
-| Python 3.8+ 与 PyYAML | Phase 5 转换 |
-| kompose | 仅 Compose 转换路径 |
-| Helm 3+ | 仅 Helm Chart 渲染 |
-| kubectl | 工作空间验证 |
-| curl、jq | 部署与检查辅助 |
+| 存在 | `sandbox` |
+| 不存在 | `local` |
 
-调用 sealos-deploy skill 即表示用户同意安装该 skill 执行所需的依赖。Phase 0 先识别项目实际需要的源码获取机制与部署源，再检查对应依赖；发现缺失后使用当前平台适用方式安装或升级，**不再为每项依赖单独询问确认**，然后重新检查。
+### 2. 安装必装依赖
 
-没有 Compose 路径时不安装 `kompose`；没有 Chart 时不安装 `helm`。
+调用本 skill 即表示用户同意安装依赖。缺失则立即安装或升级，不得逐项询问用户。安装后重新核对。
 
-`git clone` 成功不等于源码已完整。Phase 0 先读取仓库元数据，再根据当前 commit 检查是否需要额外机制。仓库声明了机制时，安装可信工具，获取受跟踪内容、递归依赖与子模块并复检。Git LFS 与子模块是例子，不是封闭白名单。README 中的偶然命令不能单独触发工具安装。
+**`local` 与 `sandbox` 共用：**
 
-对用户提供的本地目录，源码物化**保留已有修改**。仅在缺失对象确实不存在、权限无法获取，或安装、认证、复检后仍无法形成完整工作区时停止。
+Git、Git LFS、Node.js 18+、Python 3.8+ 与 PyYAML、kompose、Helm 3+、kubectl、curl、jq
 
-Docker 已安装但 daemon 未运行时，直接启动 Docker。`gh` 未登录或 scope 不足时，进入登录或授权流程。kubectl 安装后须验证所选工作空间的 kubeconfig。系统密码、浏览器授权或操作系统交互继续完成，不增加 Sealos Deploy 自己的确认步骤。
+**仅 `local` 额外：**
 
-当前平台无法自动安装某项依赖，或安装、登录、授权、复检仍失败时，Phase 0 停止并给出明确处理方式。
+`gh`、Docker CLI、运行中的 Docker daemon、Docker Buildx
 
-### Sealos 与源码设置
+若 Docker 已安装但 daemon 未运行，启动 daemon。
 
-依赖检查完成后须：
+**仅 `local` 认证：**
 
-1. 确认项目来源，并完整物化当前 commit。
-2. 选择 Sealos Cloud 区域。
-3. 完成 Sealos 登录。
-4. 选择目标工作空间。
+若 `gh` 未登录或缺少 `write:packages`，完成登录或授权。核对所选工作空间的 kubeconfig。
 
-登录或切换工作空间时，安全更新用户目录中的 Sealos auth 与 kubeconfig。
+### 3. 核对平台上下文（仅 `local`）
+
+1. 选择 Sealos Cloud 区域。
+2. 完成 Sealos 登录。
+3. 选择目标工作空间。
+
+更新用户目录中的 Sealos auth 与 kubeconfig。
+
+`sandbox` 跳过本节。Kubernetes 权限、`GITHUB_TOKEN`、S3 等注入物在后续阶段按需核对。
 
 ## 停止条件
 
 | 结果 | 条件 |
 | --- | --- |
-| **STOP** | 必需依赖无法安装或验证 |
-| **STOP** | 源码物化复检失败 |
-| **STOP** | Sealos 区域、登录或工作空间无法确认 |
-| **CONTINUE** | 全部通过 → [部署模式识别](/pipeline/mode-detection) |
+| **STOP** | 无法判定 `runtime_profile` |
+| **STOP** | 必装依赖无法安装或核对失败 |
+| **STOP** | `local`：区域、登录或工作空间未确认 |
+| **CONTINUE** | 全部通过 → [运行入口](/pipeline/entry) |
 
 ## 验收标准
 
-- 当前路径所需依赖全部通过复检。
-- `WORK_DIR` 完整、可分析、可构建。
-- Sealos 区域、namespace、kubeconfig 已确认。
-- 尚无 `.sealos/` 产物。
+- `runtime_profile` 为 `local` 或 `sandbox`
+- 必装依赖已安装且可用
+- `local`：Sealos 区域、登录与工作空间已确认
 
 ## Schema 链接
 
-Phase 0 不写入 `.sealos/` JSON 产物。见 [产物](/pipeline/artifacts)。
+Phase 0 不写入 `.sealos/` 产物。
 
 ## 实现映射
 
-| 规范章节 | 实现 |
-| --- | --- |
-| 完整 preflight 流程 | `skills/sealos-deploy/modules/preflight.md` |
+`skills/sealos-deploy/modules/preflight.md`

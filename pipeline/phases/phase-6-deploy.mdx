@@ -16,7 +16,7 @@ Phase 6 接受 Phase 1.5 的官方模板或 Phase 5 生成的模板。
 | --- | --- |
 | 模板 | `.sealos/template/index.yaml` |
 | 模板输入 | Phase 5.5 或 Phase 6 收集 |
-| Namespace | Phase 0 kubeconfig |
+| Namespace | Phase 0（`local`） |
 
 ## 输出
 
@@ -28,7 +28,7 @@ Phase 6 接受 Phase 1.5 的官方模板或 Phase 5 生成的模板。
 
 ## 流程
 
-1. 从 Phase 0 kubeconfig 读取 namespace。为空、无效或与工作空间不匹配则停止。不得回退到 `default`。
+1. 从 Phase 0 准备的 kubeconfig 读取 namespace。为空、无效或与工作空间不匹配则停止。不得回退到 `default`。
 2. 用最终模板与输入运行部署预检。不创建资源。
 3. 预检成功后提交一次真实创建请求。预检与创建使用相同模板字节与参数。
 4. 从白名单响应或唯一线上 Instance 匹配提取 `APP_NAME`。

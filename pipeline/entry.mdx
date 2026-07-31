@@ -1,20 +1,41 @@
 ---
 title: "运行入口"
-description: "每次 Sealos Deploy 运行的项目来源与部署日志。"
+description: "项目来源解析、源码物化与部署日志。"
 keywords: ["entry", "github", "local", "logging"]
 ---
 
-## 项目来源
+Phase 0 通过后执行。解析项目来源，物化源码，建立 `WORK_DIR`。
 
-Sealos Deploy 接受三种项目来源：
+## 项目来源
 
 | 来源 | 行为 |
 | --- | --- |
-| GitHub 仓库 URL | 克隆仓库后部署 |
-| 本地项目目录 | 部署指定目录 |
-| 当前项目 | 未提供 URL 或路径时，部署当前工作目录 |
+| GitHub 仓库 URL | 克隆到临时目录 |
+| 本地项目目录 | 使用指定路径 |
+| 当前项目 | 使用 `$(pwd)` |
 
-源码物化规则见 [Phase 0](/pipeline/phases/phase-0-preflight)。
+## 物化源码
+
+确认项目来源。物化当前 commit 的完整工作区。
+
+获取子模块与 LFS 对象。物化后重新核对。
+
+若来源为本地目录，保留已有修改。
+
+README 中的命令不得单独触发工具安装。
+
+## 运行上下文
+
+物化完成后写入：
+
+| 字段 | 说明 |
+| --- | --- |
+| `WORK_DIR` | 可分析、可构建的工作目录 |
+| `WORK_DIR_IS_TEMP` | GitHub URL 来源时为 `true` |
+| `GITHUB_URL` | 来自参数或 `git remote` |
+| `REPO_NAME` | 目录名或 URL 解析结果 |
+
+完成后进入 [部署模式识别](/pipeline/mode-detection)。
 
 ## 部署日志
 
