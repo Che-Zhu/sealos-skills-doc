@@ -25,10 +25,7 @@ sidebarTitle: "sealos-deploy"
 
 <Steps>
   <Step title="部署前环境检查">
-    [Phase 0](/pipeline/phases/phase-0-preflight) — 判定 skill 能否运行
-  </Step>
-  <Step title="运行入口">
-    [项目来源与源码物化](/pipeline/entry)
+    [Phase 0](/pipeline/phases/phase-0-preflight) — 环境、源码物化、写入 `analysis.json`
   </Step>
   <Step title="部署模式识别">
     [DEPLOY 或 UPDATE](/pipeline/mode-detection)
@@ -48,8 +45,8 @@ sidebarTitle: "sealos-deploy"
 
 | 模式 | 时机 | 阶段 |
 | --- | --- | --- |
-| DEPLOY | 无此应用运行部署 | 0 → 运行入口 → 部署模式识别 → 1–6.5 |
-| UPDATE | 识别到已有应用 | 0 → 运行入口 → 部署模式识别 → U1–U3 |
+| DEPLOY | 无此应用运行部署 | 0 → 部署模式识别 → 1–6.5 |
+| UPDATE | 识别到已有应用 | 0 → 部署模式识别 → U1–U3 |
 
 ## 产物
 

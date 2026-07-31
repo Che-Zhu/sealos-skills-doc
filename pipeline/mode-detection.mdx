@@ -4,13 +4,13 @@ description: "DEPLOY 与 UPDATE 识别、中断恢复与 GitHub 桥接状态。"
 keywords: ["mode", "update", "state.json", "interrupt"]
 ---
 
-[运行入口](/pipeline/entry) 完成后，Sealos Deploy 判断本次运行是**首次部署**还是对已有应用的**更新**。
+[Phase 0](/pipeline/phases/phase-0-preflight) 完成后，读取 `.sealos/analysis.json` 中的 `work_dir` 与 `github_url`，判断本次运行是**首次部署**还是对已有应用的**更新**。
 
 ## 部署模式识别步骤
 
 Agent 必须按以下顺序执行：
 
-1. **恢复桥接状态**（仅 GitHub 临时 checkout）：从 `~/.sealos/deployments/github.com/<owner>/<repo>/state.json` 恢复到当前 `WORK_DIR`。
+1. **恢复桥接状态**（仅 `analysis.json` 中 `github_url` 非空且 `work_dir` 为本次克隆的临时目录）：从 `~/.sealos/deployments/github.com/<owner>/<repo>/state.json` 恢复到 `work_dir`。
 2. **读取部署状态**：读取 `.sealos/state.json`。若存在 `last_deploy`，进入步骤 4。
 3. **集群发现**（无 `last_deploy` 时）：用 kubectl 在工作空间查找与项目匹配的旧部署。发现完整且无歧义匹配时，向用户确认并写入 state，再进入步骤 4。用户否认或无匹配 → **DEPLOY 模式**。
 4. **验证线上状态**：对每个 `last_deploy.services[]` 工作负载确认容器仍在运行，且镜像 digest 与记录一致。kubectl 不可用时告知用户并进入 **DEPLOY 模式**。状态与集群矛盾时停止并让用户核对，不得静默新建重复部署。

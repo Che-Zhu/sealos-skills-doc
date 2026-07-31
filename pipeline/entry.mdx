@@ -1,44 +1,9 @@
 ---
 title: "运行入口"
-description: "项目来源解析、源码物化与部署日志。"
+description: "已合并至 Phase 0。"
 keywords: ["entry", "github", "local", "logging"]
 ---
 
-Phase 0 通过后执行。解析项目来源，物化源码，建立 `WORK_DIR`。
+本页已合并至 [Phase 0 — 部署前环境检查](/pipeline/phases/phase-0-preflight)。
 
-## 项目来源
-
-| 来源 | 行为 |
-| --- | --- |
-| GitHub 仓库 URL | 克隆到临时目录 |
-| 本地项目目录 | 使用指定路径 |
-| 当前项目 | 使用 `$(pwd)` |
-
-## 物化源码
-
-确认项目来源。物化当前 commit 的完整工作区。
-
-获取子模块与 LFS 对象。物化后重新核对。
-
-若来源为本地目录，保留已有修改。
-
-README 中的命令不得单独触发工具安装。
-
-## 运行上下文
-
-物化完成后写入运行上下文：
-
-| 字段 | 说明 | 必须 |
-| --- | --- | --- |
-| `WORK_DIR` | 可分析、可构建的工作目录 | 是 |
-| `WORK_DIR_IS_TEMP` | GitHub URL 来源时为 `true`，否则为 `false` | 是 |
-| `REPO_NAME` | 目录名或 URL 解析结果 | 是 |
-| `GITHUB_URL` | 来自参数或 `git remote` | 否，非 GitHub 项目时为空 |
-
-完成后进入 [部署模式识别](/pipeline/mode-detection)。
-
-## 部署日志
-
-每次运行创建统一的部署日志。日志贯穿所有阶段，记录阶段边界、关键决策、失败原因与重试。
-
-Agent 不得省略日志中的阶段边界。
+项目来源、源码物化与 `analysis.json` 初始字段（`runtime_profile`、`work_dir`、`repo_name`、`github_url`）均见 Phase 0 流程步骤 4–6。

@@ -20,16 +20,15 @@ Sealos Deploy 一共定义 **14 个具名 Phase**：
 | --- | --- |
 | 主部署生命周期 | Phase 0、1、1.5、2、3、4、5、5.5、5.9、6、6.5 |
 | 已有应用更新 | Phase U1、U2、U3 |
-| 未编号环节 | 运行入口、部署模式识别、中断恢复、状态记录、清理 |
+| 未编号环节 | 部署模式识别、中断恢复、状态记录、清理 |
 
-Phase 0 和 [运行入口](/pipeline/entry) 是每次运行的共同入口。[部署模式识别](/pipeline/mode-detection) 在运行入口之后执行。Phase 1 仅在 DEPLOY 模式下执行。
+Phase 0 与 [部署模式识别](/pipeline/mode-detection) 是每次运行的共同入口。Phase 1 仅在 DEPLOY 模式下执行。
 
 ## 首次部署路径
 
 ```mermaid
 flowchart TD
   P0[Phase 0 部署前环境检查]
-  EN[运行入口]
   MD[部署模式识别]
   P1[Phase 1 项目评估]
   P15[Phase 1.5 官方模板]
@@ -42,7 +41,7 @@ flowchart TD
   P6[Phase 6 部署]
   P65[Phase 6.5 运行验收]
 
-  P0 --> EN --> MD
+  P0 --> MD
   MD -->|首次部署| P1
   P1 --> P15
   P15 -->|精确官方匹配| P59
@@ -50,9 +49,9 @@ flowchart TD
   P2 --> P3 --> P4 --> P5 --> P55 --> P59 --> P6 --> P65
 ```
 
-**官方模板路径：** 部署前环境检查 → 运行入口 → 部署模式识别 → 项目评估 → 唯一精确匹配 → 原样复用官方模板 → 收集模板输入 → **Phase 5.9 部署预检（YAML dry-run）** → 部署 → 运行验收 → 状态记录
+**官方模板路径：** 部署前环境检查 → 部署模式识别 → 项目评估 → 唯一精确匹配 → 原样复用官方模板 → 收集模板输入 → **Phase 5.9 部署预检（YAML dry-run）** → 部署 → 运行验收 → 状态记录
 
-**标准构建路径：** 部署前环境检查 → 运行入口 → 部署模式识别 → 项目评估 → 无可用官方模板 → 镜像与拓扑发现 → 逐服务构建或复用镜像 → 模板生成 → 应用配置 → **Phase 5.9 部署预检（YAML dry-run）** → 部署 → 运行验收 → 状态记录
+**标准构建路径：** 部署前环境检查 → 部署模式识别 → 项目评估 → 无可用官方模板 → 镜像与拓扑发现 → 逐服务构建或复用镜像 → 模板生成 → 应用配置 → **Phase 5.9 部署预检（YAML dry-run）** → 部署 → 运行验收 → 状态记录
 
 Phase 5.9 在 Phase 6 之前执行。Agent 必须对最终 YAML 运行 dry-run。只有 dry-run 通过，才能进入部署阶段。
 
@@ -66,7 +65,7 @@ Phase 5.9 在 Phase 6 之前执行。Agent 必须对最终 YAML 运行 dry-run�
 
 | Phase | 名称 | 主要任务 |
 | --- | --- | --- |
-| [Phase 0](/pipeline/phases/phase-0-preflight) | 部署前环境检查 | 判定 skill 能否运行 |
+| [Phase 0](/pipeline/phases/phase-0-preflight) | 部署前环境检查 | 环境、源码物化、写入 `analysis.json`（来源与 `runtime_profile`） |
 | [Phase 1](/pipeline/phases/phase-1-assess) | 项目评估 | DEPLOY 模式下记录事实，写入 analysis.json |
 | [Phase 1.5](/pipeline/phases/phase-1-5-template) | 官方模板复用 | 精确匹配则进入 Phase 5.9，否则进入 Phase 2 |
 | [Phase 2](/pipeline/phases/phase-2-discover) | 镜像与拓扑发现 | 镜像清单、服务拓扑、digest 固定 |
@@ -83,7 +82,6 @@ Phase 5.9 在 Phase 6 之前执行。Agent 必须对最终 YAML 运行 dry-run�
 
 ## 相关页面
 
-- [运行入口](/pipeline/entry)
 - [部署模式识别](/pipeline/mode-detection)
 - [产物](/pipeline/artifacts)
 - [状态与完成](/pipeline/state-and-completion)

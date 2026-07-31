@@ -29,7 +29,7 @@ keywords: ["artifacts", "state.json", "analysis.json", "template"]
 
 | 文件 | 写入阶段 | 读取阶段 | 说明 |
 | --- | --- | --- | --- |
-| `analysis.json` | Phase 1–2 | Phase 3–5 | 项目事实、清单与部署源 |
+| `analysis.json` | Phase 0（`runtime_profile`、`work_dir`、`repo_name`、`github_url`）、Phase 1–2 | Phase 3–5 | 运行环境、项目来源、事实、清单与部署源 |
 | `template-references.json` | Phase 1.5 | 恢复 | 官方模板匹配与路径决策 |
 | `template/index.yaml` | Phase 1.5 或 5 | Phase 5.5、6 | Canonical 部署模板 |
 | `build/*/build-result.json` | Phase 4 | Phase 5 | 构建 digest 与拉取元数据 |

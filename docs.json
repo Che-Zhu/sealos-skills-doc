@@ -65,7 +65,6 @@
                 "icon": "diagram-project",
                 "pages": [
                   "pipeline/overview",
-                  "pipeline/entry",
                   "pipeline/mode-detection",
                   {
                     "group": "阶段",
@@ -198,7 +197,6 @@
                 "icon": "diagram-project",
                 "pages": [
                   "en/pipeline/overview",
-                  "en/pipeline/entry",
                   "en/pipeline/mode-detection",
                   {
                     "group": "Phases",

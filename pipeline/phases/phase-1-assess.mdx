@@ -6,7 +6,7 @@ keywords: ["phase 1", "assess", "analysis.json"]
 
 ## 目的
 
-读取 `WORK_DIR` 证据，记录项目事实，评分云原生就绪度，写入 `.sealos/analysis.json`。
+读取 `analysis.json` 中的 `work_dir` 证据，补充 [Phase 0](/pipeline/phases/phase-0-preflight) 写入的字段，记录项目事实，评分云原生就绪度。
 
 UPDATE 模式跳过 Phase 1。
 
@@ -36,13 +36,11 @@ UPDATE 模式跳过 Phase 1。
 
 | 输入 | 来源 | 必须 |
 | --- | --- | --- |
-| `WORK_DIR` | [运行入口](/pipeline/entry) | 是 |
-| `WORK_DIR_IS_TEMP` | [运行入口](/pipeline/entry) | 是 |
-| `runtime_profile` | [Phase 0](/pipeline/phases/phase-0-preflight) | 是 |
-| `REPO_NAME` | [运行入口](/pipeline/entry) | 是 |
-| `GITHUB_URL` | [运行入口](/pipeline/entry) | 否 |
+| `analysis.json` | [Phase 0](/pipeline/phases/phase-0-preflight) | 是 |
 
-Phase 1 从 `WORK_DIR` 读取项目文件。不得要求上阶段未写入的字段。
+Phase 0 须已写入 `runtime_profile`、`work_dir`、`repo_name`。`github_url` 可为 `null`。
+
+Phase 1 从 `analysis.json` 的 `work_dir` 读取项目文件。不得要求上阶段未写入的字段。
 
 ## 输出
 
@@ -58,24 +56,21 @@ Phase 1 从 `WORK_DIR` 读取项目文件。不得要求上阶段未写入的字
 
 ## 前置条件
 
-- [Phase 0](/pipeline/phases/phase-0-preflight) 已通过
-- [运行入口](/pipeline/entry) 已完成
+- [Phase 0](/pipeline/phases/phase-0-preflight) 已通过，且 `.sealos/analysis.json` 含 `runtime_profile`、`work_dir`、`repo_name`
 - [部署模式识别](/pipeline/mode-detection) 结果为 **DEPLOY**
 
 ## 流程
 
-### 1. 创建产物目录
+### 1. 读取已有 `analysis.json`
 
-```bash
-mkdir -p "$WORK_DIR/.sealos"
-```
+读取 `.sealos/analysis.json`。保留 `runtime_profile`、`work_dir`、`repo_name`、`github_url`，不得修改。
 
 ### 2. 评分
 
 若 Node.js 可用：
 
 ```bash
-node "<SKILL_DIR>/scripts/score-model.mjs" "$WORK_DIR"
+node "<SKILL_DIR>/scripts/score-model.mjs" "$(jq -r '.work_dir' .sealos/analysis.json)"
 ```
 
 若 Node.js 不可用，按 `cloud-native-readiness/knowledge/criteria.md` 手动评分。
@@ -97,7 +92,7 @@ node "<SKILL_DIR>/scripts/score-model.mjs" "$WORK_DIR"
 
 ### 4. 写入 `analysis.json`
 
-符合 [analysis schema](/specs/artifact-schemas) 后写入。
+在已有文件上补充字段。保留 Phase 0 写入的 `runtime_profile`、`work_dir`、`repo_name`、`github_url`。符合 [analysis schema](/specs/artifact-schemas) 后写入。
 
 ## 停止条件
 
@@ -110,6 +105,7 @@ node "<SKILL_DIR>/scripts/score-model.mjs" "$WORK_DIR"
 
 - `.sealos/analysis.json` 存在且通过 schema 校验
 - 黑名单定义已按两项条件核对
+- `runtime_profile`、`work_dir`、`repo_name`、`github_url` 未被修改
 - 未知事实无编造值
 
 ## Schema 链接

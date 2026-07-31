@@ -1,14 +1,14 @@
 ---
 title: "Phase 0 — 部署前环境检查"
-description: "判定 sealos-deploy 能否在当前环境运行。"
+description: "环境检查、项目来源、源码物化、写入 runtime_profile。"
 keywords: ["phase 0", "preflight", "environment"]
 ---
 
 ## 目的
 
-判定当前环境能否运行 `sealos-deploy`。
+判定当前环境能否运行 `sealos-deploy`。解析项目来源，物化源码，将 `runtime_profile`、`work_dir`、`repo_name`、`github_url` 写入 `.sealos/analysis.json`。
 
-不得解析项目来源，不得物化源码，不得判断可部署性，不得构建镜像，不得生成模板，不得创建云端资源，不得写入 `.sealos/`。
+不得判断可部署性，不得构建镜像，不得生成模板，不得创建云端资源。
 
 ## 输入
 
@@ -16,12 +16,14 @@ keywords: ["phase 0", "preflight", "environment"]
 | --- | --- |
 | `SEALAI_DEPLOY_TASK_ID` | 进程环境变量 |
 | 主机环境 | OS、包管理器 |
+| 项目来源 | skill 调用参数：GitHub URL、本地路径；无参数时使用 `$(pwd)` |
 
 ## 输出
 
 | 输出 | 说明 |
 | --- | --- |
-| `runtime_profile` | `local` 或 `sandbox` |
+| `.sealos/analysis.json` | 含 `runtime_profile`、`work_dir`、`repo_name`、`github_url` |
+| 部署日志 | 从本阶段起记录阶段边界 |
 | 结果 | `CONTINUE` 或 `STOP` |
 
 ## 前置条件
@@ -65,6 +67,54 @@ Git、Git LFS、Node.js 18+、Python 3.8+ 与 PyYAML、kompose、Helm 3+、kubec
 
 `sandbox` 跳过本节。Kubernetes 权限、`GITHUB_TOKEN`、S3 等注入物在后续阶段按需核对。
 
+### 4. 解析项目来源
+
+| 来源 | 行为 |
+| --- | --- |
+| GitHub 仓库 URL | 克隆到临时目录 |
+| 本地项目目录 | 使用指定路径 |
+| 无参数 | 使用 `$(pwd)` |
+
+解析 `repo_name`。若存在 GitHub 远程，记录 `github_url`。步骤 6 一并写入 `analysis.json`。
+
+### 5. 物化源码
+
+物化当前 commit 的完整工作区。获取子模块与 LFS 对象。物化后重新核对。
+
+若来源为本地目录，保留已有修改。
+
+README 中的命令不得单独触发工具安装。
+
+### 6. 写入 `analysis.json`
+
+```bash
+mkdir -p "<work_dir>/.sealos"
+```
+
+写入 `.sealos/analysis.json`：
+
+```json
+{
+  "runtime_profile": "local",
+  "work_dir": "/path/to/project",
+  "repo_name": "my-app",
+  "github_url": "https://github.com/owner/repo"
+}
+```
+
+| 字段 | 说明 |
+| --- | --- |
+| `runtime_profile` | 与步骤 1 一致：`local` 或 `sandbox` |
+| `work_dir` | 可分析、可构建的工作目录绝对路径 |
+| `repo_name` | 目录名或 URL 解析结果 |
+| `github_url` | 来自参数或 `git remote`；非 GitHub 项目时为 `null` |
+
+Phase 0 结束时文件仅含上述字段。Phase 1 补充其余字段。
+
+### 7. 启动部署日志
+
+创建部署日志。记录 Phase 0 阶段边界与关键决策。后续各阶段继续追加。
+
 ## 停止条件
 
 | 结果 | 条件 |
@@ -72,17 +122,21 @@ Git、Git LFS、Node.js 18+、Python 3.8+ 与 PyYAML、kompose、Helm 3+、kubec
 | **STOP** | 无法判定 `runtime_profile` |
 | **STOP** | 必装依赖无法安装或核对失败 |
 | **STOP** | `local`：区域、登录或工作空间未确认 |
-| **CONTINUE** | 全部通过 → [运行入口](/pipeline/entry) |
+| **STOP** | 项目来源无法解析或源码物化失败 |
+| **STOP** | 无法写入 `analysis.json` |
+| **CONTINUE** | 全部通过 → [部署模式识别](/pipeline/mode-detection) |
 
 ## 验收标准
 
 - `runtime_profile` 为 `local` 或 `sandbox`
 - 必装依赖已安装且可用
 - `local`：Sealos 区域、登录与工作空间已确认
+- `.sealos/analysis.json` 存在且包含 `runtime_profile`、`work_dir`、`repo_name`
+- `work_dir` 完整、可分析、可构建
 
 ## Schema 链接
 
-Phase 0 不写入 `.sealos/` 产物。
+步骤 6 写入的部分 `analysis.json` 在 Phase 1 完成前不要求通过完整 schema 校验。见 [产物](/pipeline/artifacts)。
 
 ## 实现映射
 
