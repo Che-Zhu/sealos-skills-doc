@@ -4,15 +4,11 @@ description: "Deploy projects to Sealos Cloud from your AI agent. Usage guides, 
 keywords: ["sealos", "skills", "deploy", "ai agent", "codex", "claude code"]
 ---
 
-Sealos Skills is a plugin-first skill pack for AI agents. It inspects a project, prepares deployment artifacts, connects cloud databases and object storage, builds or reuses container images, and deploys to [Sealos Cloud](https://sealos.io).
+Sealos Skills is a plugin-first skill pack for AI agents. It inspects a project and prepares deployment artifacts. It connects cloud databases and object storage. It builds or reuses container images. Then it deploys to [Sealos Cloud](https://sealos.io).
 
-<Note>
-This documentation site is the **single source of truth** for skill behavior, pipeline contracts, and user-facing specifications. The [`sealos-skills`](https://github.com/labring/sealos-skills) repository implements these docs.
-</Note>
-
-<Columns cols={2}>
+<Columns cols={3}>
   <Card title="Install" icon="download" href="/get-started/install">
-    Install the plugin in Codex, Claude Code, or via skills.sh.
+    Install the plugin in Codex, Claude Code, or skills.sh.
   </Card>
   <Card title="First deploy" icon="rocket" href="/get-started/first-deploy">
     Deploy a local or GitHub project to Sealos Cloud.
@@ -20,22 +16,13 @@ This documentation site is the **single source of truth** for skill behavior, pi
   <Card title="Skills" icon="puzzle-piece" href="/skills/overview">
     Browse all skills and their responsibilities.
   </Card>
-  <Card title="Deploy pipeline" icon="diagram-project" href="/pipeline/overview">
-    Understand the Phase 0–6.5 deployment workflow.
-  </Card>
-  <Card title="Specifications" icon="file-lines" href="/specs/overview">
-    Template format, artifact schemas, and conversion rules.
-  </Card>
-  <Card title="Contributing" icon="code" href="/contributing/overview">
-    Author skills, validate changes, and keep docs in sync.
-  </Card>
 </Columns>
 
 ## What you can do
 
-- Deploy a local or GitHub project to Sealos Cloud
-- Create and wire cloud databases (Postgres, MySQL, Redis, MongoDB)
-- Create and wire S3-compatible object storage
+- Deploy from a local folder or a GitHub repository
+- Create and connect cloud databases (Postgres, MySQL, Redis, MongoDB)
+- Create and connect S3-compatible object storage
 - View deployed resources in a local read-only canvas
 - Build Sealos Desktop apps with SDK integration
 
