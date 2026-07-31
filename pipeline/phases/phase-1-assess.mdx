@@ -1,16 +1,16 @@
 ---
 title: "Phase 1 — 项目评估"
-description: "记录项目事实，评分云原生就绪度，写入 analysis.json。"
+description: "记录已确认的项目事实，写入 analysis.json。"
 keywords: ["phase 1", "assess", "analysis.json"]
 ---
 
 ## 目的
 
-读取 `analysis.json` 中的 `work_dir` 证据，补充 [Phase 0](/pipeline/phases/phase-0-preflight) 写入的字段，记录项目事实，评分云原生就绪度。
+读取 `analysis.json` 中的 `work_dir` 证据，补充 [Phase 0](/pipeline/phases/phase-0-preflight) 写入的字段，记录已确认的项目事实。
 
 UPDATE 模式跳过 Phase 1。
 
-不得选择镜像，不得生成模板，不得创建云端资源。
+不得评分，不得选择镜像，不得生成模板，不得创建云端资源。
 
 ## 入口判断（黑名单）
 
@@ -21,7 +21,7 @@ UPDATE 模式跳过 Phase 1。
 1. 项目本身无法以云服务形式运行。
 2. 仓库内没有任何部分可以以云服务形式部署。
 
-仅当两项均 **100% 确认** 时 **STOP**。任一项不能 100% 确认时 **CONTINUE**。不得因不确定、低分或证据不足而 STOP。
+仅当两项均 **100% 确认** 时 **STOP**。任一项不能 100% 确认时 **CONTINUE**。不得因不确定或证据不足而 STOP。
 
 | 结果 | 条件 |
 | --- | --- |
@@ -30,7 +30,7 @@ UPDATE 模式跳过 Phase 1。
 
 仓库是来源边界。
 
-此判断不产生产物、分数或用户提示。不能 100% 确认时直接继续评分。
+此判断不产生产物或用户提示。不能 100% 确认时直接继续事实采集。
 
 ## 输入
 
@@ -48,9 +48,9 @@ Phase 1 从 `analysis.json` 的 `work_dir` 读取项目文件。不得要求上�
 | --- | --- |
 | 分析快照 | `.sealos/analysis.json` |
 
-写入项目来源、就绪度分数（0–12）、语言、框架、端口、数据库、环境变量、容器事实、镜像与服务清单占位。
+写入语言、框架、端口、数据库、环境变量、容器事实、镜像与服务清单占位，以及已确认的风险备注。
 
-`analysis.json` 是事实快照，不是部署许可。低分或字段为空时记录风险并继续。
+`analysis.json` 是事实快照，不是部署许可。字段为空或存在风险时记录并继续。
 
 未知事实写 `null`、`[]` 或 `{}`。不得编造默认值。
 
@@ -65,19 +65,7 @@ Phase 1 从 `analysis.json` 的 `work_dir` 读取项目文件。不得要求上�
 
 读取 `.sealos/analysis.json`。保留 `runtime_profile`、`work_dir`、`repo_name`、`github_url`，不得修改。
 
-### 2. 评分
-
-若 Node.js 可用：
-
-```bash
-node "<SKILL_DIR>/scripts/score-model.mjs" "$(jq -r '.work_dir' .sealos/analysis.json)"
-```
-
-若 Node.js 不可用，按 `cloud-native-readiness/knowledge/criteria.md` 手动评分。
-
-分数低于 4 时警告用户并继续。分数不授权 STOP。
-
-### 3. 补充事实
+### 2. 采集事实
 
 读取 README、依赖清单、Dockerfile、CI 配置、应用子目录。
 
@@ -87,10 +75,11 @@ node "<SKILL_DIR>/scripts/score-model.mjs" "$(jq -r '.work_dir' .sealos/analysis
 - 部署形态、服务边界、端口
 - 数据库依赖、环境变量（标注 `auto` / `required` / `optional`）
 - `has_dockerfile`、复杂度层级
+- 已确认风险（缺失入口、非常见运行时、证据冲突等）
 
-检测器输出是参考信号，不是支持列表。检测器无输出不代表能力缺失。
+检测器或脚本输出是参考信号，不是支持列表。无输出不代表能力缺失。
 
-### 4. 写入 `analysis.json`
+### 3. 写入 `analysis.json`
 
 在已有文件上补充字段。保留 Phase 0 写入的 `runtime_profile`、`work_dir`、`repo_name`、`github_url`。符合 [analysis schema](/specs/artifact-schemas) 后写入。
 
@@ -107,6 +96,7 @@ node "<SKILL_DIR>/scripts/score-model.mjs" "$(jq -r '.work_dir' .sealos/analysis
 - 黑名单定义已按两项条件核对
 - `runtime_profile`、`work_dir`、`repo_name`、`github_url` 未被修改
 - 未知事实无编造值
+- 未写入评分或就绪度分数字段
 
 ## Schema 链接
 

@@ -66,7 +66,7 @@ Phase 5.9 在 Phase 6 之前执行。Agent 必须对最终 YAML 运行 dry-run�
 | Phase | 名称 | 主要任务 |
 | --- | --- | --- |
 | [Phase 0](/pipeline/phases/phase-0-preflight) | 部署前环境检查 | 环境、源码物化、写入 `analysis.json`（来源与 `runtime_profile`） |
-| [Phase 1](/pipeline/phases/phase-1-assess) | 项目评估 | DEPLOY 模式下记录事实，写入 analysis.json |
+| [Phase 1](/pipeline/phases/phase-1-assess) | 项目评估 | DEPLOY 模式下采集事实，写入 `analysis.json` |
 | [Phase 1.5](/pipeline/phases/phase-1-5-template) | 官方模板复用 | 精确匹配则进入 Phase 5.9，否则进入 Phase 2 |
 | [Phase 2](/pipeline/phases/phase-2-discover) | 镜像与拓扑发现 | 镜像清单、服务拓扑、digest 固定 |
 | [Phase 3](/pipeline/phases/phase-3-build-prep) | 构建定义准备 | 逐服务 Dockerfile 与构建定义 |
