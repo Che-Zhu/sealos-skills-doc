@@ -1,21 +1,29 @@
 ---
 title: "Update mode"
-description: "In-place image rollout when an existing deployment is detected."
-keywords: ["update", "rollout", "rollback"]
+description: "In-place update when an existing deployment is detected."
+keywords: ["update", "rollout", "phase u1", "phase u2", "phase u3"]
 ---
 
-## When UPDATE mode runs
+When [mode detection](/pipeline/mode-detection) finds a running app, the user may update it instead of creating a new instance.
 
-{/* TODO: state.json last_deploy + live kubectl verification. */}
+UPDATE mode runs **Phase U1, U2, and U3**. It skips Phase 1, discovery, template generation, and full deploy.
 
-## UPDATE workflow
+## Update phases
 
-{/* TODO: Build & Push → resolve digest → kubectl set image → verify rollout. */}
-
-## Auto-rollback
-
-{/* TODO: Rollback behavior on failed rollout verification. */}
+| Phase | Page | Task |
+| --- | --- | --- |
+| U1 | [Prepare update](/pipeline/update/phase-u1-prepare) | Select services to rebuild or workloads to restart |
+| U2 | [Apply update](/pipeline/update/phase-u2-apply) | Replace images or trigger restarts |
+| U3 | [Verify and rollback](/pipeline/update/phase-u3-verify-rollback) | Confirm rollout or restore previous digests |
 
 ## Skipped phases
 
-{/* TODO: UPDATE skips assess, template, and deploy phases. */}
+UPDATE does not re-run:
+
+- Phase 1 assess
+- Phase 2–5.5 discovery, build, and template generation
+- Phase 6 full template deploy
+
+## Completion
+
+An update completes when rollout succeeds and state is recorded. On failure, Phase U3 rolls back to the last known good digests. See [State and completion](/pipeline/state-and-completion).

@@ -1,0 +1,61 @@
+---
+title: "Phase 3 — Build prep"
+description: "Per-service Dockerfile and build definition preparation."
+keywords: ["phase 3", "dockerfile", "build prep"]
+---
+
+## Purpose
+
+Phase 3 prepares build definitions only for services that will run as containers and lack a reusable image digest. Services converting to Sealos-native resources in Phase 5 may skip this phase.
+
+Each service gets its own build directory, Dockerfile path, target, and build args. A Dockerfile at the repo root does not cover all services in a multi-service project.
+
+## Inputs
+
+| Input | Source |
+| --- | --- |
+| `service_inventory` | Phase 2 |
+| Project source | `WORK_DIR` |
+
+## Outputs
+
+| Output | Location | Description |
+| --- | --- | --- |
+| Build definitions | `service_inventory` entries | Context, Dockerfile, target, arg names for Phase 4 |
+
+Phase 3 does not build images, choose registries, set digests, change topology, or write build results.
+
+## Procedure
+
+When a service already has a Dockerfile, reuse it by default. Do not rewrite for single-stage build, root user, cache order, or floating base tags unless build or startup would fail, or Phase 4 proves failure.
+
+When Phase 4 proves `FROM` or `COPY --from` images are inaccessible, return to Phase 3. Rebuild from source with accessible bases. Do not only swap `FROM` and assume entrypoint, paths, user, and ports stay valid.
+
+When no Dockerfile exists, generate a minimal build definition from project evidence. Static builds may end in Nginx or similar. Preserve existing `.dockerignore`. Generate one only when missing.
+
+Missing root start command, no listening port in source, or missing detector runtime contract are not stop conditions. One failed approach does not end Phase 3 if another reasonable path exists.
+
+Build arg values resolve in Phase 4. Secret values must not be written to analysis or build results.
+
+## Stop conditions
+
+| Result | Condition |
+| --- | --- |
+| **CONTINUE → Phase 4** | All required services have build definitions |
+| **STOP** | No credible build path remains after bounded retries from Phase 4 |
+
+## Acceptance
+
+- Each build-bound service has context, Dockerfile, and target recorded
+- No topology changes
+- No images built yet
+
+## Schema links
+
+- [Artifact schemas](/specs/artifact-schemas)
+
+## Implementation map
+
+| Spec section | Implementation |
+| --- | --- |
+| Dockerfile integration | `skills/sealos-deploy/modules/dockerfile-integration.md` |
