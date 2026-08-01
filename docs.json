@@ -202,14 +202,12 @@
                       "en/pipeline/phases/index",
                       "en/pipeline/phases/phase-0-preflight",
                       "en/pipeline/phases/phase-1-assess",
-                      "en/pipeline/phases/phase-1-5-template",
                       "en/pipeline/phases/phase-2-discover",
-                      "en/pipeline/phases/phase-3-build-prep",
-                      "en/pipeline/phases/phase-4-build-push",
-                      "en/pipeline/phases/phase-5-template",
-                      "en/pipeline/phases/phase-5-5-configure",
-                      "en/pipeline/phases/phase-6-deploy",
-                      "en/pipeline/phases/phase-6-5-runtime-truth"
+                      "en/pipeline/phases/phase-3-build-push",
+                      "en/pipeline/phases/phase-4-template",
+                      "en/pipeline/phases/phase-4-5-configure",
+                      "en/pipeline/phases/phase-5-deploy",
+                      "en/pipeline/phases/phase-5-5-runtime-truth"
                     ]
                   },
                   {

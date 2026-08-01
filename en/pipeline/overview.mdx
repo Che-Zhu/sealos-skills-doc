@@ -4,25 +4,25 @@ description: "Sealos Deploy lifecycle from preflight through runtime verificatio
 keywords: ["pipeline", "deploy", "lifecycle", "phases"]
 ---
 
-Sealos Deploy is the entry point and orchestrator for full project deployments. It accepts a GitHub repository, a local project directory, or the current working directory. It judges whether the project can run on Sealos, reuses a matching official template when possible, otherwise prepares container images and a Sealos deployment template. It then deploys, verifies runtime behavior, and recognizes existing apps on later runs.
+Sealos Deploy is the entry point and orchestrator for full project deployments. It accepts a GitHub repository, a local project directory, or the current working directory. It judges whether the project can run on Sealos, reuses a matching [official template catalog](https://github.com/labring-actions/templates/tree/kb-0.9/template) entry when possible, otherwise prepares container images and a Sealos deployment template. It then deploys, verifies runtime behavior, and recognizes existing apps on later runs.
 
 This specification describes **what Sealos Deploy does**. It does not document internal scripts, implementation details, or other skills.
 
 <Note>
-This section is the **single source of truth** for the `sealos-deploy` lifecycle. It replaces the [Sealos Deploy Lifecycle wiki](https://github.com/labring/sealos-skills/wiki/Sealos-Deploy-Lifecycle) as the authoritative reference.
+This section is the **single source of truth** for the `sealos-deploy` lifecycle. Compare implementation on the [`sealos-skills` `codex/review-sealos-deploy` branch](https://github.com/labring/sealos-skills/tree/codex/review-sealos-deploy). The legacy wiki is historical reference only.
 </Note>
 
 ## Named phases
 
-Sealos Deploy defines **13 named phases**:
+Sealos Deploy defines **12 named phases**:
 
 | Category | Phases |
 | --- | --- |
-| Main deploy lifecycle | Phase 0, 1, 1.5, 2, 3, 4, 5, 5.5, 6, 6.5 |
+| Main deploy lifecycle | Phase 0, 1, 2, 3, 4, 4.5, 4.9, 5, 5.5 |
 | Existing-app update | Phase U1, U2, U3 |
 | Unnumbered lifecycle | Mode detection, interrupt recovery, state recording, cleanup |
 
-Phase 0 and mode detection are the shared entry for every run. Phase 1 runs only on the first-deploy path.
+Phase 0 and [mode detection](/en/pipeline/mode-detection) are the shared entry for every run. Phase 1 runs only in DEPLOY mode.
 
 ## First-deploy routes
 
@@ -31,27 +31,31 @@ flowchart TD
   P0[Phase 0 Preflight]
   MD[Mode detection]
   P1[Phase 1 Assess]
-  P15[Phase 1.5 Official template]
   P2[Phase 2 Discover]
-  P3[Phase 3 Build prep]
-  P4[Phase 4 Build and push]
-  P5[Phase 5 Template]
-  P55[Phase 5.5 Configure]
-  P6[Phase 6 Deploy]
-  P65[Phase 6.5 Runtime truth]
+  P3[Phase 3 Build and push]
+  P4[Phase 4 Template]
+  P45[Phase 4.5 Configure]
+  P49[Phase 4.9 Deploy precheck]
+  P5[Phase 5 Deploy]
+  P55[Phase 5.5 Runtime truth]
 
   P0 --> MD
   MD -->|First deploy| P1
-  P1 --> P15
-  P15 -->|Exact official match| P6
-  P15 -->|No exact match| P2
-  P2 --> P3 --> P4 --> P5 --> P55 --> P6 --> P65
-  P6 --> P65
+  P1 -->|Exact official match| P49
+  P1 -->|Standard path| P2
+  P2 --> P4
+  P4 -->|Build required| P3
+  P3 --> P4
+  P4 --> P45 --> P49 --> P5 --> P55
 ```
 
-**Official template path:** preflight → mode detection → assess → unique exact catalog match → reuse official template as-is → collect template inputs → deploy → runtime truth → state recording
+**Official template path:** preflight → mode detection → assess (fast path) → **Phase 4.9 deploy precheck** → Phase 5 collects template inputs → deploy → runtime truth → state recording
 
-**Standard build path:** preflight → mode detection → assess → no reusable official template → image and topology discovery → per-service image reuse or build → Sealos template generation → app configuration → deploy → runtime truth → state recording
+**Standard build path:** preflight → mode detection → assess → no fast path → **Phase 2** (`deployment-plan.json`) → **Phase 4** (Phase 3 build when needed) → template generation → configure → **Phase 4.9 deploy precheck (YAML dry-run)** → deploy → runtime truth → state recording
+
+One Sealos deploy maps to one full-repo template. Multi-service Compose projects must preserve full service topology.
+
+Phase 4.9 runs before Phase 5. The agent must dry-run the final YAML. Deploy proceeds only after dry-run passes.
 
 ## Update route
 
@@ -65,24 +69,22 @@ See [Update mode](/en/pipeline/update-mode) and [Phase U1–U3](/en/pipeline/upd
 
 | Phase | Name | Primary task |
 | --- | --- | --- |
-| [Phase 0](/en/pipeline/phases/phase-0-preflight) | Preflight | Environment, region, auth, workspace, and source materialization |
-| [Phase 1](/en/pipeline/phases/phase-1-assess) | Assess | Deployment shape, cloud-native readiness, project facts |
-| [Phase 1.5](/en/pipeline/phases/phase-1-5-template) | Official template | Exact catalog match → skip to Phase 6, else continue to Phase 2 |
-| [Phase 2](/en/pipeline/phases/phase-2-discover) | Discover | Image inventory, service topology, digest pinning |
-| [Phase 3](/en/pipeline/phases/phase-3-build-prep) | Build prep | Per-service Dockerfile and build definition |
-| [Phase 4](/en/pipeline/phases/phase-4-build-push) | Build and push | `linux/amd64` images to GHCR with digest |
-| [Phase 5](/en/pipeline/phases/phase-5-template) | Template | Generate canonical Sealos template |
-| [Phase 5.5](/en/pipeline/phases/phase-5-5-configure) | Configure | Collect inputs and confirm deploy |
-| [Phase 6](/en/pipeline/phases/phase-6-deploy) | Deploy | Create cloud resources |
-| [Phase 6.5](/en/pipeline/phases/phase-6-5-runtime-truth) | Runtime truth | Verify live behavior before success |
+| [Phase 0](/en/pipeline/phases/phase-0-preflight) | Preflight | Environment, source materialization, gitingest/railpack deps |
+| [Phase 1](/en/pipeline/phases/phase-1-assess) | Assess | Judge deployability, choose path |
+| [Phase 2](/en/pipeline/phases/phase-2-discover) | Discover | gitingest scout, subagent produces `deployment-plan.json` |
+| [Phase 3](/en/pipeline/phases/phase-3-build-push) | Build and push | `linux/amd64` images to GHCR |
+| [Phase 4](/en/pipeline/phases/phase-4-template) | Template | Generate canonical Sealos template |
+| [Phase 4.5](/en/pipeline/phases/phase-4-5-configure) | Configure | Collect inputs and confirm deploy |
+| Phase 4.9 | Deploy precheck | Dry-run final YAML before Phase 5 |
+| [Phase 5](/en/pipeline/phases/phase-5-deploy) | Deploy | Create cloud resources |
+| [Phase 5.5](/en/pipeline/phases/phase-5-5-runtime-truth) | Runtime truth | Verify live behavior before success |
 | [Phase U1](/en/pipeline/update/phase-u1-prepare) | Prepare update | Select services to rebuild or workloads to restart |
 | [Phase U2](/en/pipeline/update/phase-u2-apply) | Apply update | Replace images or trigger restarts |
 | [Phase U3](/en/pipeline/update/phase-u3-verify-rollback) | Verify and rollback | Confirm rollout or restore previous digests |
 
 ## Related pages
 
-- [部署模式识别](/en/pipeline/mode-detection)
-- [Mode detection](/en/pipeline/mode-detection) — DEPLOY vs UPDATE, interrupt recovery, GitHub bridge state
-- [Artifacts](/en/pipeline/artifacts) — `.sealos/` file layout
-- [State and completion](/en/pipeline/state-and-completion) — success criteria and `state.json`
-- [Cleanup boundaries](/en/pipeline/cleanup) — temp directories and deletion rules
+- [Mode detection](/en/pipeline/mode-detection)
+- [Artifacts](/en/pipeline/artifacts)
+- [State and completion](/en/pipeline/state-and-completion)
+- [Cleanup boundaries](/en/pipeline/cleanup)

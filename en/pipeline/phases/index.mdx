@@ -4,39 +4,33 @@ description: "Index of all Sealos Deploy lifecycle phases."
 keywords: ["phases", "index"]
 ---
 
-Each phase page follows the same contract layout: Purpose, Inputs, Outputs, Preconditions, Procedure, Stop conditions, Acceptance, and Schema links.
+Each phase page follows the same contract layout: purpose, inputs, outputs, preconditions, procedure, stop conditions, acceptance, and schema links.
 
 <CardGroup cols={2}>
   <Card title="Phase 0 — Preflight" icon="shield-check" href="/en/pipeline/phases/phase-0-preflight">
-    Environment, source materialization, Sealos auth.
+    Environment, source materialization, write `analysis.json`.
   </Card>
   <Card title="Phase 1 — Assess" icon="magnifying-glass" href="/en/pipeline/phases/phase-1-assess">
-    Deployment shape and readiness scoring.
-  </Card>
-  <Card title="Phase 1.5 — Official template" icon="file-code" href="/en/pipeline/phases/phase-1-5-template">
-    Exact catalog match fast path.
+    Judge deployability, choose fast or standard path.
   </Card>
   <Card title="Phase 2 — Discover" icon="network-wired" href="/en/pipeline/phases/phase-2-discover">
-    Images, topology, digest pinning.
+    gitingest scout, subagent produces deployment-plan.json.
   </Card>
-  <Card title="Phase 3 — Build prep" icon="hammer" href="/en/pipeline/phases/phase-3-build-prep">
-    Per-service build definitions.
-  </Card>
-  <Card title="Phase 4 — Build and push" icon="box" href="/en/pipeline/phases/phase-4-build-push">
+  <Card title="Phase 3 — Build and push" icon="box" href="/en/pipeline/phases/phase-3-build-push">
     GHCR build and digest capture.
   </Card>
-  <Card title="Phase 5 — Template" icon="file-lines" href="/en/pipeline/phases/phase-5-template">
-    Canonical Sealos template generation.
+  <Card title="Phase 4 — Template" icon="file-lines" href="/en/pipeline/phases/phase-4-template">
+    Generate canonical Sealos template.
   </Card>
-  <Card title="Phase 5.5 — Configure" icon="sliders" href="/en/pipeline/phases/phase-5-5-configure">
-    Input collection and deploy confirmation.
+  <Card title="Phase 4.5 — Configure" icon="sliders" href="/en/pipeline/phases/phase-4-5-configure">
+    Collect inputs and confirm deploy.
   </Card>
-  <Card title="Phase 6 — Deploy" icon="cloud" href="/en/pipeline/phases/phase-6-deploy">
+  <Card title="Phase 5 — Deploy" icon="cloud" href="/en/pipeline/phases/phase-5-deploy">
     Create cloud resources.
   </Card>
-  <Card title="Phase 6.5 — Runtime truth" icon="circle-check" href="/en/pipeline/phases/phase-6-5-runtime-truth">
-    Live verification before success.
+  <Card title="Phase 5.5 — Runtime truth" icon="circle-check" href="/en/pipeline/phases/phase-5-5-runtime-truth">
+    Live verification before deployment success.
   </Card>
 </CardGroup>
 
-See [Pipeline overview](/en/pipeline/overview) for route diagrams and [Update flow](/en/pipeline/update-mode) for Phase U1–U3.
+See [Pipeline overview](/en/pipeline/overview) for route diagrams. Update flow: [Update mode](/en/pipeline/update-mode) and Phase U1–U3.

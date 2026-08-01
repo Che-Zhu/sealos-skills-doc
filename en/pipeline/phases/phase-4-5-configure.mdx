@@ -1,0 +1,64 @@
+---
+title: "Phase 4.5 — Configure"
+description: "Collect template inputs and confirm deploy."
+keywords: ["phase 4.5", "configure", "confirmation"]
+---
+
+## Purpose
+
+Phase 4.5 applies to the standard build path only. Before deploy, the agent classifies template configuration into four groups:
+
+| Group | Examples |
+| --- | --- |
+| Auto-managed | App name, internal URLs, random secrets, managed infra connections |
+| User-required | Admin accounts, API keys, SMTP, OAuth credentials |
+| Optional | Feature flags and runtime params with sane defaults |
+| Fixed | Production mode, internal ports, paths |
+
+## Inputs
+
+| Input | Source |
+| --- | --- |
+| Generated template | `.sealos/template/index.yaml` |
+| User overrides | `.sealos/config.json` when present |
+
+## Outputs
+
+| Output | Description |
+| --- | --- |
+| Final input set | Values bound to template for Phase 5 |
+| User confirmation | Explicit deploy approval |
+
+## Procedure
+
+1. Explain required fields to the user.
+2. Collect required values.
+3. Offer optional changes.
+4. Mask sensitive values in logs and final summary.
+5. Re-validate the final template.
+6. Show region, images, dependencies, and config summary.
+7. Wait for explicit deploy confirmation.
+
+## Stop conditions
+
+| Result | Condition |
+| --- | --- |
+| **STOP** | User declines deploy |
+| **STOP** | Final template validation fails |
+| **CONTINUE → Phase 5** | User confirms and validation passes |
+
+## Acceptance
+
+- All required inputs collected
+- Sensitive values masked in logs
+- User confirmation recorded
+
+## Schema links
+
+- [Artifact schemas — config.json](/en/specs/artifact-schemas)
+
+## Implementation map
+
+| Spec section | Implementation |
+| --- | --- |
+| Configure gate | `skills/sealos-deploy/modules/pipeline.md` (Phase 4.5) |

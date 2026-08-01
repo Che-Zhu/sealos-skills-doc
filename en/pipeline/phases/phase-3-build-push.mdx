@@ -1,0 +1,70 @@
+---
+title: "Phase 3 — Build and push"
+description: "linux/amd64 image build and GHCR push with digest capture."
+keywords: ["phase 3", "build", "ghcr", "digest"]
+---
+
+## Purpose
+
+Phase 3 builds and pushes images only for services that still lack a reusable digest and will run as containers. One service needing build does not discard already verified images for other services.
+
+Docker, Buildx, Node.js 18+, and `gh` are required only when this phase actually runs.
+
+## Inputs
+
+| Input | Source |
+| --- | --- |
+| Build definitions | Phase 2 `deployment_plan` → `deployment-plan.json` |
+| Caller | Phase 4 entry branch (when build is required) |
+| GitHub auth | Phase 0 (`local`) |
+
+## Outputs
+
+| Output | Path | Description |
+| --- | --- | --- |
+| Per-service build result | `.sealos/build/{service-key}/build-result.json` | Digest, pull access, push metadata |
+
+## Procedure
+
+Sealos Deploy must:
+
+- Push newly built images to the current GitHub user's GHCR. The user does not choose the registry.
+- Check `gh` login and `write:packages` only when builds are pending.
+- Build for `linux/amd64`.
+- Execute per-service build definitions from `deployment-plan.json` (context, Dockerfile, railpack plan, etc.).
+- Tag with a unique version identifier per build.
+- Read digest from Buildx metadata for the same build.
+- Record whether anonymous pull works and whether deploy needs a pull secret.
+- Return build-definition failures to Phase 2 step 3 to revise `deployment-plan.json`. Keep auth, network, Docker, and push failures in Phase 3.
+
+Pull failures on Dockerfile bases during build are build-definition failures. Push failures to `ghcr.io/{user}/...` are Phase 3 execution failures.
+
+All private or indeterminate GHCR images in one app must share one normalized GHCR namespace. Mixed namespaces stop before cloud resource creation.
+
+Phase 2 may still reuse Docker Hub digests published by maintainers. New builds from this flow go to GHCR only.
+
+`build-result.json` passes `push.pull_access` to Phase 4. Only `ghcr_secret_required` or `indeterminate` successful builds attach pull-secret handling in the template.
+
+## Stop conditions
+
+| Result | Condition |
+| --- | --- |
+| **CONTINUE → Phase 4** | All required builds succeed or no builds were needed |
+| **RETURN → Phase 2** | Build definition failure for a service |
+| **STOP** | Phase 3 execution failure after remediation, or namespace conflict |
+
+## Acceptance
+
+- Each built service has `build-result.json` matching schema
+- Digests are immutable `repository@sha256:...`
+- Reused Phase 2 digests unchanged
+
+## Schema links
+
+- [Artifact schemas — build-result.json](/en/specs/artifact-schemas)
+
+## Implementation map
+
+| Spec section | Implementation |
+| --- | --- |
+| Build and push | `skills/sealos-deploy/scripts/build-push.mjs` |

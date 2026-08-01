@@ -1,0 +1,66 @@
+---
+title: "Phase 5 — Deploy"
+description: "Create cloud resources from the final template."
+keywords: ["phase 5", "deploy", "template api"]
+---
+
+## Purpose
+
+Phase 5 accepts `template/index.yaml` from the Phase 1 fast path or from Phase 4 generation.
+
+For official templates, collect required inputs and show optional defaults. Do not rewrite the official YAML or rebuild current source.
+
+## Inputs
+
+| Input | Source |
+| --- | --- |
+| Template | `.sealos/template/index.yaml` |
+| Template inputs | Phase 4.5 or Phase 5 collection |
+| Namespace | Phase 0 (`local`) |
+
+## Outputs
+
+| Output | Description |
+| --- | --- |
+| Live resources | App, workloads, network, storage, dependencies |
+| `APP_NAME` | From safe whitelist response or unique live discovery |
+| Pull secret | When private GHCR images require it |
+
+## Procedure
+
+1. Read namespace from Phase 0 kubeconfig. Stop if empty, invalid, or mismatched with workspace. Do not fall back to `default`.
+2. Run deploy precheck with final template and inputs. No resources created.
+3. On precheck success, submit one real create request. Precheck and create use identical template bytes and parameters.
+4. Extract `APP_NAME` from whitelist response or unique live Instance match.
+5. Create app pull secret in the same namespace when required.
+6. Wait for rollouts, Jobs, CronJobs, and operator-managed resources.
+7. Wait for public Service Endpoints before hitting Ingress or App URL.
+8. On not-ready workloads, read Pod status, events, and logs.
+
+If create returns unknown after timeout or 5xx, do not auto-retry or kubectl-fallback create. Read-only check recent Instance and App scope. Continue only on unique match.
+
+API success means resources exist, not that the app is usable. Phase 5.5 is required.
+
+## Stop conditions
+
+| Result | Condition |
+| --- | --- |
+| **STOP** | Namespace invalid, precheck fails, secret creation fails, unknown create without unique match |
+| **CONTINUE → Phase 5.5** | Resources created and rollout waits complete |
+
+## Acceptance
+
+- Precheck and create used identical template and inputs
+- `APP_NAME` resolved safely
+- Pull secret created when required before readiness checks
+
+## Schema links
+
+- [Template format](/en/specs/template-format)
+- [Safety rules](/en/specs/safety-rules)
+
+## Implementation map
+
+| Spec section | Implementation |
+| --- | --- |
+| Template deploy | `skills/sealos-deploy/scripts/deploy-template.mjs` |

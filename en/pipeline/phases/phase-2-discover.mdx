@@ -1,91 +1,112 @@
 ---
 title: "Phase 2 — Discover"
-description: "Image inventory, service topology, and digest pinning."
-keywords: ["phase 2", "discover", "topology", "digest"]
+description: "Scout the repository and produce deployment-plan.json."
+keywords: ["phase 2", "discover", "railpack", "gitingest", "deployment-plan"]
 ---
 
 ## Purpose
 
-Phase 2 confirms two things together: which images the project publishes or uses, and which services and dependencies the final deployment must keep. It is not a search that stops at the first image found.
+Determine the full runtime topology and build approach for one Sealos deploy of this repository. Produce `deployment-plan.json`.
 
-Image evidence and runtime topology are gathered separately.
+One Sealos deploy maps to **one full-repo template**. The plan must cover all relevant services (including databases, queues, and workers), not only the main app.
+
+Do not build or push images in this phase. Do not generate a Sealos template. Do not create cloud resources. Do not select a deployment source from `official_template` or modify the `official_template` field.
+
+UPDATE mode skips this phase.
 
 ## Inputs
 
 | Input | Source |
 | --- | --- |
-| `analysis.json` | Phase 1 |
-| Project source and docs | `WORK_DIR` |
+| `analysis.json` | Phase 0, Phase 1 |
+| Project source and docs | `analysis.json` → `work_dir` |
+| `railpack` | Installed in Phase 0 (`sandbox` preinstalled; `local` must be available) |
+| `gitingest` | Installed in Phase 0 |
 
 ## Outputs
 
 | Output | Path | Description |
 | --- | --- | --- |
-| Deployment source record | `.sealos/analysis.json` → `deployment_source` | Kind, path, `source_hash`, evidence |
-| Image inventory | `.sealos/analysis.json` → `image_inventory` | Selectors resolved to `repository@sha256:digest` |
-| Service inventory | `.sealos/analysis.json` → `service_inventory` | Full service list including databases and workers |
-| Rendered source | `.sealos/deployment-source/rendered.yaml` | Helm/Kubernetes paths only |
+| Deployment digest | `.sealos/phase-2/gitingest-digest.txt` | gitingest output (scope in step 2) |
+| Deployment plan | `.sealos/phase-2/deployment-plan.json` | Subagent output; JSON build and deploy guide |
+| `analysis.json` | `.sealos/analysis.json` | Includes `deployment_plan` path; fields for Phases 3–4 |
+
+Field-level contract for `deployment-plan.json` is TBD. The plan must at least describe full service topology, image or build approach per service, and evidence paths.
 
 See [Deployment sources](/en/pipeline/deployment-sources) for source kinds.
 
-## Image evidence order
+## Preconditions
 
-1. README image usage
-2. CI publish or push targets
-3. Compose `image` or `build` per service
-4. Helm values, rendered chart, official docs image refs
-5. Native Kubernetes manifest image refs
+- Phase 1 exit is **CONTINUE → Phase 2** (standard path)
 
-The agent must not guess Docker Hub or GHCR images from org or repo name. The agent must not treat fuzzy search results as deployable. A local `docker build -t` tag used only in README is not a published image. Dockerfile `FROM` is a build base, not the project's published app image.
+## Procedure
 
-## Topology evidence order
+### 1. Read `analysis.json`
 
-1. Root or project-specified Compose file
-2. Helm chart with `Chart.yaml` and templates
-3. Declared native Kubernetes YAML
-4. Implicit path when no explicit topology exists
+Read `work_dir`, `runtime_profile`, and related fields. Preserve Phase 0 and Phase 1 fields. Do not modify `official_template`.
 
-`implicit-single-service` is a compatibility artifact name. It means no Compose, Helm, or Kubernetes topology was adopted. It does not mean the repo root is the app or that only one service may exist.
+### 2. Main agent scout
 
-## Digest rules
+Read root `README*`, `CONTRIBUTING*`, and similar docs. Run `gitingest` in `work_dir` for deploy and CI evidence. Do not ingest the full repository source. Write output to `.sealos/phase-2/gitingest-digest.txt`.
 
-`latest`, `stable`, version tags, digests, and omitted tags are valid project input. The agent keeps the project's selector and resolves it to an immutable digest. Phase 2 does not pre-screen CPU architecture for third-party images. Compatibility is judged in Phase 6 and 6.5.
+Include file types such as:
 
-Detector output is evidence, not the final verdict. On the implicit path, the agent must confirm image ownership, service boundaries, and build context.
+- `README*`, `CONTRIBUTING*`
+- `docker-compose*`, `compose.y*ml`, `Dockerfile*`
+- `Chart.yaml`, Helm `values*.yaml`, `**/templates/**`
+- `**/k8s/**`, `**/deploy/**`, Kubernetes manifests
+- `Makefile`, `Procfile`, `fly.toml`, `render.yaml`, and other PaaS or scripted deploy config
+- `package.json`, `pnpm-workspace.yaml`, `turbo.json`, `nx.json`, `go.work`, `Cargo.toml`, `pyproject.toml`, and other workspace clues
+- `.github/workflows/**` and other CI config
 
-## Build skip rules
+Record README understanding and scout notes in the deploy log (natural language, a few sentences).
 
-Per service:
+### 3. Subagent — deployment plan
 
-- Resolved immutable digest → reuse, skip Phase 3 and 4 for that service
-- `build` only, no digest, credible source → Phase 3 and 4
-- Databases converting to KubeBlocks in Phase 5 may skip container build
+The main agent starts one subagent with:
 
-Only when every final container workload has a reusable image does the flow skip straight to Phase 5.
+- `analysis.json`
+- Path to `.sealos/phase-2/gitingest-digest.txt`
+- Verbal handoff from the main agent (findings and judgment, natural language)
 
-Databases and infrastructure are not removed because they are not the main app image.
+Tell the subagent: **produce a JSON plan that can build and deploy this project**; explore the repository; `railpack` is available (`info`, `plan`); write output to `.sealos/phase-2/deployment-plan.json`.
+
+The subagent decides how to explore and whether to run railpack. Do not guess published images from org or repo name.
+
+### 4. Write `analysis.json`
+
+```json
+{
+  "deployment_plan": ".sealos/phase-2/deployment-plan.json"
+}
+```
+
+Merge with existing Phase 0 and Phase 1 fields. Supplement Phases 3–4 fields from `deployment-plan.json` (such as `deployment_source`, `service_inventory`, `image_inventory`). Use `null`, `[]`, or `{}` for unknowns. Do not fabricate.
+
+Persist after [schema](/en/specs/artifact-schemas) validation.
 
 ## Stop conditions
 
 | Result | Condition |
 | --- | --- |
-| **CONTINUE → Phase 5** | All container workloads have reusable digests |
-| **CONTINUE → Phase 3** | One or more services need build definitions |
-| **STOP** | Required topology evidence cannot be resolved |
+| **STOP** | Subagent cannot produce a credible `deployment-plan.json` covering all relevant services |
+| **STOP** | `deployment-plan.json` or `analysis.json` cannot be written or pass schema |
+| **CONTINUE → Phase 4** | Plan and `analysis.json` are persisted |
+
+On Phase 3 build-definition failure, return to Phase 2 step 3 to revise `deployment-plan.json`.
 
 ## Acceptance
 
-- `deployment_source`, `image_inventory`, and `service_inventory` updated in `analysis.json`
-- No guessed image names
-- Full topology preserved including databases, queues, caches, workers
+- `deployment-plan.json` exists and covers all relevant services
+- `analysis.json` includes `deployment_plan` with correct path
+- `analysis.json` passes schema
 
 ## Schema links
 
+- [Artifacts](/en/pipeline/artifacts)
 - [Artifact schemas](/en/specs/artifact-schemas)
 - [Deployment sources](/en/pipeline/deployment-sources)
 
 ## Implementation map
 
-| Spec section | Implementation |
-| --- | --- |
-| Discovery and inspectors | `skills/sealos-deploy/modules/pipeline.md` (Phase 2) |
+`skills/sealos-deploy/modules/pipeline.md` (Phase 2)

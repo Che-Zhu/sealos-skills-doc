@@ -77,7 +77,8 @@ Hard requirements belong to later phases. Phase 3 needs a build path only for se
 | Result | Condition |
 | --- | --- |
 | **STOP** | Agent is certain the project cannot run on Sealos |
-| **CONTINUE** | Any uncertainty or positive assess → Phase 1.5 |
+| **CONTINUE → Phase 4.9** | `official_template` is non-null and fast-path conditions met |
+| **CONTINUE → Phase 2** | All other cases |
 
 ## Acceptance
 

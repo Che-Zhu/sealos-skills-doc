@@ -1,0 +1,68 @@
+---
+title: "Phase 5.5 — Runtime truth"
+description: "Live verification before deployment success."
+keywords: ["phase 5.5", "runtime truth", "verification"]
+---
+
+## Purpose
+
+Runtime truth judges success from live cloud state, not template output or API return codes alone.
+
+Phase 5.5 is mandatory for every deploy. Creating resources without runtime truth is not deploy success.
+
+## Inputs
+
+| Input | Source |
+| --- | --- |
+| Live resources | Phase 5 |
+| Access URLs | Ingress, App URL, internal endpoints |
+| Workload state | Pods, events, logs |
+
+## Outputs
+
+| Output | Path | Description |
+| --- | --- | --- |
+| Verified deployment | — | Human-visible success only after checks pass |
+| Updated state | `.sealos/state.json` | Written in [state and completion](/en/pipeline/state-and-completion) |
+
+## Verification checklist
+
+The agent must verify applicable items for the workload type:
+
+- [ ] App, workspace, resource scope, and access URLs confirmed
+- [ ] Workloads, internal links, and public ingress ready
+- [ ] Web apps reachable from real entry; core flow works after login or setup when needed
+- [ ] Init, migration, startup, and runtime logs reviewed
+- [ ] No `no matching manifest`, `no match for platform in manifest`, or `exec format error`
+- [ ] Stability window: alerts, restarts, OOM, readiness converged
+- [ ] Databases, object storage, workers, and cron tasks show expected core behavior
+
+## Failure handling
+
+**Architecture mismatch on reused third-party image:** when buildable source exists, build `linux/amd64` in Phase 2–3, update template, redeploy, and re-run Phase 5.5. Without buildable source, report incompatible service, image, and error. Do not guess other images or floating tags.
+
+**Resource exhaustion:** OOMKilled, restart loops, migration timeout, or readiness flap means current resources fail runtime truth. Raise CPU or memory to the next Sealos step, regenerate the same template, redeploy, and re-run Phase 5.5. Official template path cannot edit verified official YAML; disable reuse and return to standard path when resources cannot pass.
+
+## Stop conditions
+
+| Result | Condition |
+| --- | --- |
+| **STOP** | Required runtime checks fail after bounded remediation |
+| **CONTINUE → state recording** | All applicable checks pass |
+
+## Acceptance
+
+- Real entry, core behavior, logs, and stability pass for current workloads
+- Resource remediation loop completed when triggered
+- Ready for `state.json` write and schema validation
+
+## Schema links
+
+- [Artifact schemas — state.json](/en/specs/artifact-schemas)
+
+## Implementation map
+
+| Spec section | Implementation |
+| --- | --- |
+| Runtime truth | `skills/sealos-deploy/modules/runtime-truth.md` |
+| Live smoke | `skills/sealos-deploy/scripts/sealos-live-smoke.mjs` |
