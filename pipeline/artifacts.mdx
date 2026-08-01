@@ -30,13 +30,13 @@ keywords: ["artifacts", "state.json", "analysis.json", "template"]
 
 | 文件 | 写入阶段 | 读取阶段 | 说明 |
 | --- | --- | --- | --- |
-| `analysis.json` | Phase 0、Phase 1–2 | Phase 4–5 | 含 `deployment_plan` 路径及清单字段 |
-| `phase-2/deployment-plan.json` | Phase 2 | Phase 2、4、5 | Subagent 产出的部署与构建计划 |
+| `analysis.json` | Phase 0、Phase 1–2 | Phase 3–4 | 含 `deployment_plan` 路径及清单字段 |
+| `phase-2/deployment-plan.json` | Phase 2 | Phase 2、3、4 | Subagent 产出的部署与构建计划 |
 | `phase-2/gitingest-digest.txt` | Phase 2 | Phase 2 | gitingest 侦察输入 |
-| `template/index.yaml` | Phase 5 或后续官方模板路径 | Phase 5.5、6 | Canonical 部署模板 |
-| `build/*/build-result.json` | Phase 4 | Phase 5 | 构建 digest 与拉取元数据 |
-| `state.json` | Phase 6.5 后 | 部署模式识别、UPDATE | 部署状态与服务映射 |
-| `config.json` | 用户或 5.5 | Phase 5.5 | 用户配置覆盖 |
+| `template/index.yaml` | Phase 4 或后续官方模板路径 | Phase 4.5、5 | Canonical 部署模板 |
+| `build/*/build-result.json` | Phase 3 | Phase 4 | 构建 digest 与拉取元数据 |
+| `state.json` | Phase 5.5 后 | 部署模式识别、UPDATE | 部署状态与服务映射 |
+| `config.json` | 用户或 4.5 | Phase 4.5 | 用户配置覆盖 |
 
 `deployment-plan.json` 字段级契约待定。
 

@@ -29,7 +29,7 @@ UPDATE 模式跳过本 Phase。
 | --- | --- | --- |
 | 部署相关摘要 | `.sealos/phase-2/gitingest-digest.txt` | gitingest 输出（范围见步骤 2） |
 | 部署计划 | `.sealos/phase-2/deployment-plan.json` | Subagent 产出；JSON 构建与部署指南 |
-| `analysis.json` | `.sealos/analysis.json` | 含 `deployment_plan` 指向上述文件；Phase 4、5 所需字段 |
+| `analysis.json` | `.sealos/analysis.json` | 含 `deployment_plan` 指向上述文件；Phase 3、4 所需字段 |
 
 `deployment-plan.json` 字段级契约待定。计划至少须描述完整服务拓扑、各服务镜像或构建方式，并附证据路径。
 
@@ -81,7 +81,7 @@ Subagent 自行决定探索方式与是否运行 railpack。不得从组织或�
 }
 ```
 
-与 Phase 0、Phase 1 已有字段合并写入。根据 `deployment-plan.json` 补充 Phase 4、5 所需字段（如 `deployment_source`、`service_inventory`、`image_inventory`）。未知写 `null`、`[]` 或 `{}`。不得编造。
+与 Phase 0、Phase 1 已有字段合并写入。根据 `deployment-plan.json` 补充 Phase 3、4 所需字段（如 `deployment_source`、`service_inventory`、`image_inventory`）。未知写 `null`、`[]` 或 `{}`。不得编造。
 
 通过 [schema](/specs/artifact-schemas) 后落盘。
 
@@ -91,9 +91,9 @@ Subagent 自行决定探索方式与是否运行 railpack。不得从组织或�
 | --- | --- |
 | **STOP** | Subagent 无法产出覆盖全部相关服务的可信 `deployment-plan.json` |
 | **STOP** | `deployment-plan.json` 或 `analysis.json` 无法写入或通过 schema |
-| **CONTINUE → Phase 5** | 计划与 `analysis.json` 已落盘 |
+| **CONTINUE → Phase 4** | 计划与 `analysis.json` 已落盘 |
 
-Phase 4 构建定义失败时，可返回 Phase 2 步骤 3 修订 `deployment-plan.json`。
+Phase 3 构建定义失败时，可返回 Phase 2 步骤 3 修订 `deployment-plan.json`。
 
 ## 验收标准
 

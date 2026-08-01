@@ -14,11 +14,11 @@ Sealos Deploy 是完整项目部署请求的入口和编排器。它接收 GitHu
 
 ## 具名阶段
 
-Sealos Deploy 一共定义 **12 个具名 Phase**（原 Phase 3 已合并入 Phase 2）：
+Sealos Deploy 一共定义 **12 个具名 Phase**：
 
 | 类别 | 阶段 |
 | --- | --- |
-| 主部署生命周期 | Phase 0、1、2、4、5、5.5、5.9、6、6.5 |
+| 主部署生命周期 | Phase 0、1、2、3、4、4.5、4.9、5、5.5 |
 | 已有应用更新 | Phase U1、U2、U3 |
 | 未编号环节 | 部署模式识别、中断恢复、状态记录、清理 |
 
@@ -32,30 +32,30 @@ flowchart TD
   MD[部署模式识别]
   P1[Phase 1 项目评估]
   P2[Phase 2 发现与镜像准备]
-  P4[Phase 4 构建并推送]
-  P5[Phase 5 模板生成]
-  P55[Phase 5.5 应用配置]
-  P59[Phase 5.9 部署预检]
-  P6[Phase 6 部署]
-  P65[Phase 6.5 运行验收]
+  P3[Phase 3 构建并推送]
+  P4[Phase 4 模板生成]
+  P45[Phase 4.5 应用配置]
+  P49[Phase 4.9 部署预检]
+  P5[Phase 5 部署]
+  P55[Phase 5.5 运行验收]
 
   P0 --> MD
   MD -->|首次部署| P1
-  P1 -->|精确官方匹配| P59
+  P1 -->|精确官方匹配| P49
   P1 -->|标准路径| P2
-  P2 --> P5
-  P5 -->|须构建| P4
-  P4 --> P5
-  P5 --> P55 --> P59 --> P6 --> P65
+  P2 --> P4
+  P4 -->|须构建| P3
+  P3 --> P4
+  P4 --> P45 --> P49 --> P5 --> P55
 ```
 
-**官方模板路径：** 部署前环境检查 → 部署模式识别 → 项目评估（快速路径）→ **Phase 5.9 部署预检** → Phase 6 收集模板输入 → 部署 → 运行验收 → 状态记录
+**官方模板路径：** 部署前环境检查 → 部署模式识别 → 项目评估（快速路径）→ **Phase 4.9 部署预检** → Phase 5 收集模板输入 → 部署 → 运行验收 → 状态记录
 
-**标准构建路径：** 部署前环境检查 → 部署模式识别 → 项目评估 → 未走快速路径 → **Phase 2**（`deployment-plan.json`）→ **Phase 5**（按需 Phase 4 构建）→ 模板生成 → 应用配置 → **Phase 5.9 部署预检（YAML dry-run）** → 部署 → 运行验收 → 状态记录
+**标准构建路径：** 部署前环境检查 → 部署模式识别 → 项目评估 → 未走快速路径 → **Phase 2**（`deployment-plan.json`）→ **Phase 4**（按需 Phase 3 构建）→ 模板生成 → 应用配置 → **Phase 4.9 部署预检（YAML dry-run）** → 部署 → 运行验收 → 状态记录
 
 一次 Sealos 部署对应整仓一张模板；多服务 Compose 等项目须保留完整服务拓扑。
 
-Phase 5.9 在 Phase 6 之前执行。Agent 必须对最终 YAML 运行 dry-run。只有 dry-run 通过，才能进入部署阶段。
+Phase 4.9 在 Phase 5 之前执行。Agent 必须对最终 YAML 运行 dry-run。只有 dry-run 通过，才能进入部署阶段。
 
 ## 更新路径
 
@@ -70,17 +70,15 @@ Phase 5.9 在 Phase 6 之前执行。Agent 必须对最终 YAML 运行 dry-run�
 | [Phase 0](/pipeline/phases/phase-0-preflight) | 部署前环境检查 | 环境、源码物化、gitingest/railpack 依赖 |
 | [Phase 1](/pipeline/phases/phase-1-assess) | 项目评估 | 判断能否部署，选择路径 |
 | [Phase 2](/pipeline/phases/phase-2-discover) | 发现与镜像准备 | gitingest、`deployment-plan.json` |
-| [Phase 4](/pipeline/phases/phase-4-build-push) | 构建并推送 | `linux/amd64` 镜像推送到 GHCR |
-| [Phase 5](/pipeline/phases/phase-5-template) | 模板生成 | 生成 canonical Sealos 模板 |
-| [Phase 5.5](/pipeline/phases/phase-5-5-configure) | 交互式配置 | 收集输入并确认部署 |
-| Phase 5.9 | 部署预检 | 对最终 YAML 执行 dry-run，通过后进入 Phase 6 |
-| [Phase 6](/pipeline/phases/phase-6-deploy) | 部署 | 创建云端资源 |
-| [Phase 6.5](/pipeline/phases/phase-6-5-runtime-truth) | 运行事实验收 | 验证真实运行状态 |
+| [Phase 3](/pipeline/phases/phase-3-build-push) | 构建并推送 | `linux/amd64` 镜像推送到 GHCR |
+| [Phase 4](/pipeline/phases/phase-4-template) | 模板生成 | 生成 canonical Sealos 模板 |
+| [Phase 4.5](/pipeline/phases/phase-4-5-configure) | 交互式配置 | 收集输入并确认部署 |
+| Phase 4.9 | 部署预检 | 对最终 YAML 执行 dry-run，通过后进入 Phase 5 |
+| [Phase 5](/pipeline/phases/phase-5-deploy) | 部署 | 创建云端资源 |
+| [Phase 5.5](/pipeline/phases/phase-5-5-runtime-truth) | 运行事实验收 | 验证真实运行状态 |
 | [Phase U1](/pipeline/update/phase-u1-prepare) | 准备更新 | 选择重建服务或重启工作负载 |
 | [Phase U2](/pipeline/update/phase-u2-apply) | 应用更新 | 替换镜像或触发重启 |
 | [Phase U3](/pipeline/update/phase-u3-verify-rollback) | 验证与回滚 | 确认发布或恢复 digest |
-
-原 [Phase 3](/pipeline/phases/phase-3-build-prep) 已合并入 Phase 2。
 
 ## 相关页面
 

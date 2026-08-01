@@ -73,11 +73,11 @@
                       "pipeline/phases/phase-0-preflight",
                       "pipeline/phases/phase-1-assess",
                       "pipeline/phases/phase-2-discover",
-                      "pipeline/phases/phase-4-build-push",
-                      "pipeline/phases/phase-5-template",
-                      "pipeline/phases/phase-5-5-configure",
-                      "pipeline/phases/phase-6-deploy",
-                      "pipeline/phases/phase-6-5-runtime-truth"
+                      "pipeline/phases/phase-3-build-push",
+                      "pipeline/phases/phase-4-template",
+                      "pipeline/phases/phase-4-5-configure",
+                      "pipeline/phases/phase-5-deploy",
+                      "pipeline/phases/phase-5-5-runtime-truth"
                     ]
                   },
                   {
