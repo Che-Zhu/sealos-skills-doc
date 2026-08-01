@@ -16,7 +16,7 @@ keywords: ["deployment source", "compose", "helm", "kubernetes"]
 
 ## 来源选择优先级
 
-Phase 2 按拓扑证据顺序选择部署源。Compose、Helm 与 Kubernetes 显式文件优先于隐式路径。多个显式来源冲突时，Agent 须从项目证据（README、CI、文档）确定主拓扑，不得猜测。
+Phase 2 根据 `deployment-plan.json` 与 [部署源](/pipeline/deployment-sources) 规则选定 `deployment_source`。Compose、Helm 与 Kubernetes 显式文件优先于隐式路径。多个显式来源冲突时，须从 README、CI、文档确定主拓扑，不得猜测。一次 Sealos 部署须覆盖全部相关服务。
 
 ## 条件性源码物化
 

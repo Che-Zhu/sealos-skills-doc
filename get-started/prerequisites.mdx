@@ -14,9 +14,9 @@ keywords: ["prerequisites", "sealos account", "ghcr", "docker", "kubectl"]
 
 Phase 0 按运行环境自动检查并安装必装工具，无需用户逐项确认。完整规则见 [Phase 0 — 部署前环境检查](/pipeline/phases/phase-0-preflight)。
 
-**`local` 与 `sandbox` 共用：** Git、Git LFS、Node.js 18+、Python 3.8+ 与 PyYAML、kompose、Helm 3+、kubectl、curl、jq
+**`local` 与 `sandbox` 共用：** Git、Git LFS、Node.js 18+、Python 3.8+ 与 PyYAML、gitingest、kompose、Helm 3+、kubectl、curl、jq
 
-**仅 `local`：** `gh`（已登录且具备 `write:packages`）、Docker CLI、运行中的 Docker daemon、Docker Buildx
+**仅 `local`：** `gh`（已登录且具备 `write:packages`）、Docker CLI、运行中的 Docker daemon、Docker Buildx、railpack（`sandbox` 已预装 railpack）
 
 ## GitHub CLI 与 GHCR 访问
 

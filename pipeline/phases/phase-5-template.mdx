@@ -6,17 +6,27 @@ keywords: ["phase 5", "template", "conversion"]
 
 ## 目的
 
-Phase 5 仅属于标准构建路径。它读取 `analysis.json` 中的 `image_inventory`、`service_inventory`、`deployment_source`、端口、数据库与环境事实，产出含不可变镜像 digest 的完整 Sealos 模板。
+Phase 5 仅属于标准构建路径。它根据 `deployment-plan.json` 判断是否需要先构建镜像，再读取 `analysis.json` 中的清单与部署源事实，产出含不可变镜像 digest 的完整 Sealos 模板。
 
 当前实现不读取相似模板或目录 YAML。模板须遵循当前项目事实与转换规则。
+
+## 入口分支
+
+读取 `deployment_plan` 与 `deployment-plan.json`。按容器工作负载判断：
+
+| 情况 | 行为 |
+| --- | --- |
+| 每个容器工作负载均有可复用 digest | 跳过 Phase 4，继续本 Phase 模板生成 |
+| 一个或多个服务须构建 | **CONTINUE → Phase 4**；Phase 4 完成后返回本 Phase |
 
 ## 输入
 
 | 输入 | 来源 |
 | --- | --- |
-| `analysis.json` | Phase 0–2、Phase 4 |
-| 构建结果 | `.sealos/build/*/build-result.json` |
-| 部署源文件 | `.sealos/deployment-source/` |
+| `analysis.json` | Phase 0–2 |
+| `deployment-plan.json` | Phase 2（经 `analysis.json` → `deployment_plan`） |
+| 构建结果 | Phase 4（若本 Phase 入口分支曾进入 Phase 4） |
+| 部署源文件 | `.sealos/deployment-source/`（Phase 5 按需生成） |
 
 ## 输出
 
@@ -24,7 +34,7 @@ Phase 5 仅属于标准构建路径。它读取 `analysis.json` 中的 `image_in
 | --- | --- | --- |
 | Canonical 模板 | `.sealos/template/index.yaml` | 供 5.5、6 与恢复使用的单一模板 |
 | 资源映射 | `.sealos/deployment-source/resource-map.json` | 源到输出的对账 |
-| 拓扑证据 | `.sealos/topology-evidence/<app-name>.yaml` | 仅校验器使用 |
+| 拓扑证据 | `.sealos/topology-evidence/{app-name}.yaml` | 仅校验器使用 |
 
 ## 转换路径
 

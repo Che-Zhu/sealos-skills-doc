@@ -14,14 +14,15 @@ Phase 4 仅为仍缺少可复用 digest 且将以容器运行的服务构建并�
 
 | 输入 | 来源 |
 | --- | --- |
-| 构建定义 | Phase 3 `service_inventory` |
+| 构建定义 | Phase 2 `deployment_plan` → `deployment-plan.json` |
+| 调用方 | Phase 5 入口分支（须构建时） |
 | GitHub 认证 | Phase 0（`local`） |
 
 ## 输出
 
 | 输出 | 路径 | 说明 |
 | --- | --- | --- |
-| 逐服务构建结果 | `.sealos/build/<service-key>/build-result.json` | digest、拉取访问、推送元数据 |
+| 逐服务构建结果 | `.sealos/build/{service-key}/build-result.json` | digest、拉取访问、推送元数据 |
 
 ## 流程
 
@@ -30,13 +31,13 @@ Sealos Deploy 必须：
 - 将新构建镜像推送到当前 GitHub 用户的 GHCR。用户不选择 registry。
 - 仅在有待构建时检查 `gh` 登录与 `write:packages`。
 - 构建 `linux/amd64`。
-- 按服务使用 Phase 3 的 context、Dockerfile 与 target。
+- 按 `deployment-plan.json` 中各服务的构建定义执行（context、Dockerfile、railpack plan 等）。
 - 每次构建使用唯一版本标识打标签。
 - 从同次 Buildx 元数据读取 digest。
 - 记录匿名拉取是否可用及部署是否需要 pull secret。
-- Dockerfile 或输入失败返回 Phase 3。认证、网络、Docker 与推送失败留在 Phase 4。
+- 构建定义失败返回 Phase 2 步骤 3，修订 `deployment-plan.json`。认证、网络、Docker 与推送失败留在 Phase 4。
 
-构建中 Dockerfile 基础镜像拉取失败属构建定义失败。推送到 `ghcr.io/<user>/...` 失败属 Phase 4 执行失败。
+构建中 Dockerfile 基础镜像拉取失败属构建定义失败。推送到 `ghcr.io/{user}/...` 失败属 Phase 4 执行失败。
 
 应用中所有私有或不确定的 GHCR 镜像须共享一个规范化 GHCR namespace。混合 namespace 在创建云端资源前停止。
 
@@ -49,7 +50,7 @@ Phase 2 仍可复用维护者发布的 Docker Hub digest。本流程新构建仅
 | 结果 | 条件 |
 | --- | --- |
 | **CONTINUE → Phase 5** | 所有必需构建成功或无需构建 |
-| **RETURN → Phase 3** | 某服务构建定义失败 |
+| **RETURN → Phase 2** | 某服务构建定义失败 |
 | **STOP** | 补救后 Phase 4 执行失败，或 namespace 冲突 |
 
 ## 验收标准

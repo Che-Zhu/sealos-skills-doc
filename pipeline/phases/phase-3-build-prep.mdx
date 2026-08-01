@@ -1,61 +1,9 @@
 ---
 title: "Phase 3 — 构建定义准备"
-description: "逐服务 Dockerfile 与构建定义准备。"
+description: "已合并至 Phase 2。"
 keywords: ["phase 3", "dockerfile", "build prep"]
 ---
 
-## 目的
+本页已合并至 [Phase 2 — 发现与镜像准备](/pipeline/phases/phase-2-discover)。
 
-Phase 3 仅为将以容器运行且缺少可复用镜像 digest 的服务准备构建定义。Phase 5 转为 Sealos 原生资源的服务可跳过本阶段。
-
-每个服务有独立构建目录、Dockerfile 路径、target 与 build args。仓库根 Dockerfile 不覆盖多服务项目中所有服务。
-
-## 输入
-
-| 输入 | 来源 |
-| --- | --- |
-| `service_inventory` | Phase 2 |
-| 项目源码 | `analysis.json` → `work_dir` |
-
-## 输出
-
-| 输出 | 位置 | 说明 |
-| --- | --- | --- |
-| 构建定义 | `service_inventory` 条目 | context、Dockerfile、target、arg 名称供 Phase 4 |
-
-Phase 3 不构建镜像、不选 registry、不设置 digest、不改变拓扑、不写入构建结果。
-
-## 流程
-
-服务已有 Dockerfile 时默认复用。不得为单阶段构建、root 用户、缓存顺序或浮动基础标签重写，除非构建或启动会失败，或 Phase 4 证明失败。
-
-Phase 4 证明 `FROM` 或 `COPY --from` 镜像不可访问时，返回 Phase 3。用可访问基础从源码重建。不得仅替换 `FROM` 并假设 entrypoint、路径、用户与端口仍有效。
-
-无 Dockerfile 时，从项目证据生成最小构建定义。静态构建可终结于 Nginx 等。保留已有 `.dockerignore`。仅缺失时生成。
-
-缺少根启动命令、源码无监听端口或检测器无运行时契约不是停止条件。一种方式失败不结束 Phase 3，若另有合理路径。
-
-构建 arg 值在 Phase 4 解析。秘密值不得写入 analysis 或构建结果。
-
-## 停止条件
-
-| 结果 | 条件 |
-| --- | --- |
-| **CONTINUE → Phase 4** | 所有需构建服务有构建定义 |
-| **STOP** | Phase 4 有界重试后无可信构建路径 |
-
-## 验收标准
-
-- 每个需构建服务记录 context、Dockerfile 与 target
-- 拓扑未改变
-- 尚未构建镜像
-
-## Schema 链接
-
-- [产物 Schema](/specs/artifact-schemas)
-
-## 实现映射
-
-| 规范章节 | 实现 |
-| --- | --- |
-| Dockerfile 集成 | `skills/sealos-deploy/modules/dockerfile-integration.md` |
+构建计划由 Phase 2 Subagent 产出 `deployment-plan.json`。Phase 4 构建失败时可返回 Phase 2 修订计划。

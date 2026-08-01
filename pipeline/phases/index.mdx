@@ -13,11 +13,8 @@ keywords: ["phases", "index"]
   <Card title="Phase 1 — 项目评估" icon="magnifying-glass" href="/pipeline/phases/phase-1-assess">
     判断能否部署，选择快速或标准路径。
   </Card>
-  <Card title="Phase 2 — 镜像与拓扑发现" icon="network-wired" href="/pipeline/phases/phase-2-discover">
-    镜像清单、拓扑与 digest 固定。
-  </Card>
-  <Card title="Phase 3 — 构建定义准备" icon="hammer" href="/pipeline/phases/phase-3-build-prep">
-    逐服务 Dockerfile 与构建定义。
+  <Card title="Phase 2 — 发现与镜像准备" icon="network-wired" href="/pipeline/phases/phase-2-discover">
+    gitingest 侦察、Subagent 产出 deployment-plan.json。
   </Card>
   <Card title="Phase 4 — 构建并推送" icon="box" href="/pipeline/phases/phase-4-build-push">
     GHCR 构建与 digest 捕获。
@@ -36,4 +33,4 @@ keywords: ["phases", "index"]
   </Card>
 </CardGroup>
 
-路径图见 [流水线总览](/pipeline/overview)，更新流程见 [更新模式](/pipeline/update-mode) 与 Phase U1–U3。
+路径图见 [流水线总览](/pipeline/overview)。原 Phase 3 已合并入 Phase 2。更新流程见 [更新模式](/pipeline/update-mode) 与 Phase U1–U3。

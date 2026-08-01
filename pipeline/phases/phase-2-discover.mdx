@@ -1,95 +1,112 @@
 ---
-title: "Phase 2 — 镜像与拓扑发现"
-description: "镜像清单、服务拓扑与 digest 固定。"
-keywords: ["phase 2", "discover", "topology", "digest"]
+title: "Phase 2 — 发现与镜像准备"
+description: "侦察仓库、产出 deployment-plan.json 部署与构建计划。"
+keywords: ["phase 2", "discover", "railpack", "gitingest", "deployment-plan"]
 ---
 
 ## 目的
 
-Phase 2 确认项目发布或使用的镜像，以及最终部署须保留的服务与依赖。从仓库采集项目事实，写入 `analysis.json` 清单字段。
+确定本仓库一次 Sealos 部署的完整运行时拓扑与构建方式，产出 `deployment-plan.json`。
 
-镜像证据与运行时拓扑分别收集。
+一次 Sealos 部署对应**整仓一张模板**。计划须覆盖全部相关服务（含数据库、队列、worker），不得只写主应用。
+
+不得在本阶段实际构建或推送镜像。不得生成 Sealos 模板。不得创建云端资源。不得根据 `official_template` 选定部署源或修改 `official_template` 字段。
+
+UPDATE 模式跳过本 Phase。
 
 ## 输入
 
 | 输入 | 来源 |
 | --- | --- |
-| `analysis.json` | Phase 1 |
+| `analysis.json` | Phase 0、Phase 1 |
 | 项目源码与文档 | `analysis.json` → `work_dir` |
-
-## 前置条件
-
-- Phase 1 已完成，且未满足快速路径条件（见 [Phase 1](/pipeline/phases/phase-1-assess)）
+| `railpack` | Phase 0 已安装（`sandbox` 预装，`local` 须可用） |
+| `gitingest` | Phase 0 已安装 |
 
 ## 输出
 
 | 输出 | 路径 | 说明 |
 | --- | --- | --- |
-| 部署源记录 | `.sealos/analysis.json` → `deployment_source` | 类型、路径、`source_hash`、证据 |
-| 镜像清单 | `.sealos/analysis.json` → `image_inventory` | 选择器解析为 `repository@sha256:digest` |
-| 服务清单 | `.sealos/analysis.json` → `service_inventory` | 含数据库与 worker 的完整服务列表 |
-| 渲染源 | `.sealos/deployment-source/rendered.yaml` | 仅 Helm/Kubernetes 路径 |
+| 部署相关摘要 | `.sealos/phase-2/gitingest-digest.txt` | gitingest 输出（范围见步骤 2） |
+| 部署计划 | `.sealos/phase-2/deployment-plan.json` | Subagent 产出；JSON 构建与部署指南 |
+| `analysis.json` | `.sealos/analysis.json` | 含 `deployment_plan` 指向上述文件；Phase 4、5 所需字段 |
+
+`deployment-plan.json` 字段级契约待定。计划至少须描述完整服务拓扑、各服务镜像或构建方式，并附证据路径。
 
 部署源类型见 [部署源](/pipeline/deployment-sources)。
 
-## 镜像证据顺序
+## 前置条件
 
-1. README 中的镜像用法
-2. CI 发布或推送目标
-3. Compose 各服务的 `image` 或 `build`
-4. Helm values、渲染 chart、官方文档镜像引用
-5. 原生 Kubernetes 清单镜像引用
+- Phase 1 出口为 **CONTINUE → Phase 2**（标准路径）
 
-Agent 不得从组织或仓库名猜测 Docker Hub 或 GHCR 镜像。不得将模糊搜索结果视为可部署。README 中仅用于本地 `docker build -t` 的标签不是已发布镜像。Dockerfile `FROM` 是构建基础，不是项目已发布应用镜像。
+## 流程
 
-## 拓扑证据顺序
+### 1. 读取 `analysis.json`
 
-1. 根目录或项目指定的 Compose 文件
-2. 含 `Chart.yaml` 与 templates 的 Helm chart
-3. 声明的原生 Kubernetes YAML
-4. 无显式拓扑时的隐式路径
+读取 `work_dir`、`runtime_profile` 等。保留 Phase 0 与 Phase 1 已写字段，不得修改 `official_template`。
 
-`implicit-single-service` 是兼容性产物名称。表示未采用 Compose、Helm 或 Kubernetes 拓扑。不表示仓库根即应用，也不表示只能有一个服务。
+### 2. 主 Agent 侦察
 
-## Digest 规则
+阅读根目录 `README*`、`CONTRIBUTING*` 等。在 `work_dir` 运行 `gitingest`，ingest 部署与 CI 证据，不得 ingest 全仓源码。输出写入 `.sealos/phase-2/gitingest-digest.txt`。
 
-`latest`、`stable`、版本标签、digest 与省略标签均为有效项目输入。Agent 保留项目选择器并解析为不可变 digest。Phase 2 不预筛第三方镜像 CPU 架构。兼容性在 Phase 6 和 6.5 判断。
+须包含的文件类型示例：
 
-检测器输出是证据，不是最终裁决。隐式路径上 Agent 须确认镜像归属、服务边界与构建上下文。
+- `README*`、`CONTRIBUTING*`
+- `docker-compose*`、`compose.y*ml`、`Dockerfile*`
+- `Chart.yaml`、Helm `values*.yaml`、`**/templates/**`
+- `**/k8s/**`、`**/deploy/**`、Kubernetes 清单
+- `Makefile`、`Procfile`、`fly.toml`、`render.yaml` 等 PaaS 或脚本化部署配置
+- `package.json`、`pnpm-workspace.yaml`、`turbo.json`、`nx.json`、`go.work`、`Cargo.toml`、`pyproject.toml` 等工作区线索
+- `.github/workflows/**` 及其他 CI 配置
 
-## 构建跳过规则
+将 README 理解与侦察要点写入部署日志（自然语言，数句即可）。
 
-按服务：
+### 3. Subagent — 部署计划
 
-- 已解析不可变 digest → 复用，该服务跳过 Phase 3 和 4
-- 仅 `build`、无 digest、有可信源码 → Phase 3 和 4
-- Phase 5 转为 KubeBlocks 的数据库可跳过容器构建
+主 Agent 启动一个 Subagent。传入：
 
-仅当每个最终容器工作负载都有可复用镜像时，流程直接跳到 Phase 5。
+- `analysis.json`
+- `.sealos/phase-2/gitingest-digest.txt` 路径
+- 主 Agent 口头交接（发现与判断，自然语言）
 
-数据库与基础设施不因非主应用镜像而被移除。
+告知 Subagent：**需要一份能用于构建并部署本项目的 JSON 计划**；须自行探索仓库；`railpack` 可用（`info`、`plan`）；产出写入 `.sealos/phase-2/deployment-plan.json`。
+
+Subagent 自行决定探索方式与是否运行 railpack。不得从组织或仓库名猜测已发布镜像。
+
+### 4. 写入 `analysis.json`
+
+```json
+{
+  "deployment_plan": ".sealos/phase-2/deployment-plan.json"
+}
+```
+
+与 Phase 0、Phase 1 已有字段合并写入。根据 `deployment-plan.json` 补充 Phase 4、5 所需字段（如 `deployment_source`、`service_inventory`、`image_inventory`）。未知写 `null`、`[]` 或 `{}`。不得编造。
+
+通过 [schema](/specs/artifact-schemas) 后落盘。
 
 ## 停止条件
 
 | 结果 | 条件 |
 | --- | --- |
-| **CONTINUE → Phase 5** | 所有容器工作负载有可复用 digest |
-| **CONTINUE → Phase 3** | 一个或多个服务需要构建定义 |
-| **STOP** | 必需拓扑证据无法解析 |
+| **STOP** | Subagent 无法产出覆盖全部相关服务的可信 `deployment-plan.json` |
+| **STOP** | `deployment-plan.json` 或 `analysis.json` 无法写入或通过 schema |
+| **CONTINUE → Phase 5** | 计划与 `analysis.json` 已落盘 |
+
+Phase 4 构建定义失败时，可返回 Phase 2 步骤 3 修订 `deployment-plan.json`。
 
 ## 验收标准
 
-- `deployment_source`、`image_inventory`、`service_inventory` 已更新于 `analysis.json`
-- 无猜测镜像名
-- 完整拓扑保留，含数据库、队列、缓存、worker
+- `deployment-plan.json` 存在且覆盖全部相关服务
+- `analysis.json` 含 `deployment_plan` 且路径正确
+- `analysis.json` 通过 schema
 
 ## Schema 链接
 
+- [产物](/pipeline/artifacts)
 - [产物 Schema](/specs/artifact-schemas)
 - [部署源](/pipeline/deployment-sources)
 
 ## 实现映射
 
-| 规范章节 | 实现 |
-| --- | --- |
-| 发现与检测器 | `skills/sealos-deploy/modules/pipeline.md`（Phase 2） |
+`skills/sealos-deploy/modules/pipeline.md`（Phase 2）

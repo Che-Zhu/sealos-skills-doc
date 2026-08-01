@@ -45,11 +45,13 @@ keywords: ["phase 0", "preflight", "environment"]
 
 **`local` 与 `sandbox` 共用：**
 
-Git、Git LFS、Node.js 18+、Python 3.8+ 与 PyYAML、kompose、Helm 3+、kubectl、curl、jq
+Git、Git LFS、Node.js 18+、Python 3.8+ 与 PyYAML、[gitingest](https://pypi.org/project/gitingest/)（`pip install gitingest`）、kompose、Helm 3+、kubectl、curl、jq
 
 **仅 `local` 额外：**
 
-`gh`、Docker CLI、运行中的 Docker daemon、Docker Buildx
+`gh`、Docker CLI、运行中的 Docker daemon、Docker Buildx、[railpack](https://github.com/railwayapp/railpack)
+
+`sandbox` 环境已预装 railpack。`local` 须安装或升级 railpack 并核对 `railpack --help` 可用。
 
 若 Docker 已安装但 daemon 未运行，启动 daemon。
 
@@ -88,7 +90,7 @@ README 中的命令不得单独触发工具安装。
 ### 6. 写入 `analysis.json`
 
 ```bash
-mkdir -p "<work_dir>/.sealos"
+mkdir -p "{work_dir}/.sealos"
 ```
 
 写入 `.sealos/analysis.json`：
@@ -109,7 +111,7 @@ mkdir -p "<work_dir>/.sealos"
 | `repo_name` | 目录名或 URL 解析结果 |
 | `github_url` | 来自参数或 `git remote`；非 GitHub 项目时为 `null` |
 
-Phase 0 结束时文件仅含上述字段。Phase 1 写入 `official_template`。项目事实由 Phase 2 写入。
+Phase 0 结束时文件仅含上述字段。Phase 1 写入 `official_template`。部署发现与镜像准备由 Phase 2 写入。
 
 ### 7. 启动部署日志
 

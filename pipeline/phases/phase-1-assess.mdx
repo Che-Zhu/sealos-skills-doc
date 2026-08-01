@@ -40,13 +40,13 @@ Phase 0 须已写入 `runtime_profile`、`work_dir`、`repo_name`。`github_url`
 
 ```json
 {
-  "official_template": "https://raw.githubusercontent.com/labring-actions/templates/<commit>/template/<name>/index.yaml"
+  "official_template": "https://raw.githubusercontent.com/labring-actions/templates/{commit}/template/{name}/index.yaml"
 }
 ```
 
 唯一精确匹配 → URL 字符串。否则 → `null`。与是否走快速路径无关。
 
-项目事实由 [Phase 2](/pipeline/phases/phase-2-discover) 写入 `analysis.json`。
+清单与部署源由 [Phase 2](/pipeline/phases/phase-2-discover) 写入 `analysis.json`。
 
 ## 前置条件
 
