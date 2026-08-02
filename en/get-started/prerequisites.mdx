@@ -18,7 +18,8 @@ keywords: ["prerequisites", "sealos account", "ghcr", "docker", "kubectl"]
 
 | Scenario | Tools |
 | --- | --- |
-| Deploy (build path) | Docker, buildx, Node.js 18+, `gh` CLI |
+| Deploy (build path, `local`) | Docker, Buildx, Node.js 18+, `gh` CLI |
+| Deploy (build path, `sandbox`) | k8s-kaniko-job skill (Kaniko build in cluster; main agent pushes to GHCR) |
 | Deploy (reuse image) | Sealos auth, `kubectl` |
 | Database / S3 | `sealos-cli` |
 | Compose source | kompose |

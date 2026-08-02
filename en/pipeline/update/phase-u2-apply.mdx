@@ -26,7 +26,7 @@ Phase U2 applies the update without re-running assess, discovery, or template ge
 
 **Image update:** update each recorded workload type, name, and container. Do not guess targets from app name alone.
 
-**GHCR namespace rule:** all private or indeterminate GHCR images in the app must share one normalized namespace. Check the full service set, not only selected services. Stop before cloud changes on conflict.
+**GHCR namespace rule:** all private GHCR images in the app must share one normalized namespace. Check the full service set, not only selected services. Stop before cloud changes on conflict.
 
 **Restart only:** roll each selected Deployment, StatefulSet, or DaemonSet without image change. CronJob has no active rollout; verify image and schedule only.
 

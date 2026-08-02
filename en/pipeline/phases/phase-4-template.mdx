@@ -26,7 +26,7 @@ Read `deployment_plan` → `deployment_source`. Parse workloads that need local 
 | `analysis.json` | Phases 0–2 |
 | `deployment-plan.json` | Phase 2 (via `analysis.json` → `deployment_plan`) |
 | `deployment_source` | `deployment-plan.json` |
-| Build results | Phase 3 (if this phase entry branch entered Phase 3) |
+| Build results | `.sealos/phase-3/build-result.json` (Phase 3, when entered) | `analysis.json` → `build_result` |
 | Conversion intermediates | `.sealos/deployment-source/` (generated in Phase 4 when needed) |
 
 ## Outputs
@@ -43,7 +43,7 @@ Infer adapter from `deployment_source` path:
 
 | `deployment_source` | Method |
 | --- | --- |
-| `.sealos/phase-2/docker-compose.yml` | kompose deterministic conversion; per-service Phase 3 digest overrides |
+| `.sealos/phase-2/docker-compose.yml` | kompose deterministic conversion; per-service digest overrides from `build_result` → `build-result.json` |
 | Chart directory (contains `Chart.yaml`) | `helm template` on chart copy; adapter preserves rendered resources |
 | Single `.yaml` / `.yml` manifest | Source adapter preserves resources and converts unsupported fields |
 
@@ -58,7 +58,7 @@ Adapters are preferred tools, not eligibility gates. When an adapter cannot expr
 
 ## Images and pull secrets
 
-Final container images must be `repository@sha256:...`. Pull-secret refs apply only when Phase 3 reports `ghcr_secret_required` or `indeterminate` for that service key.
+Final container images must be `repository@sha256:...`. Pull-secret refs apply only when `pull_access` for that service key in the file at `analysis.json` → `build_result` is `ghcr_secret_required`.
 
 ## Databases
 

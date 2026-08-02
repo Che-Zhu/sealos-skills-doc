@@ -1,82 +1,156 @@
 ---
 title: "Phase 3 — Build and push"
 description: "linux/amd64 image build and GHCR push with digest capture."
-keywords: ["phase 3", "build", "ghcr", "digest"]
+keywords: ["phase 3", "build", "ghcr", "digest", "subagent", "kaniko"]
 ---
 
 ## Purpose
 
-Phase 3 **executes** build and push: parse `deployment_source` from `deployment-plan.json`, then build and push images for workloads that still lack a reusable digest and need a local build. One service needing build does not discard already verified images for other services.
+Phase 3 is orchestrated by the main agent: **subagents build images sequentially**; after all succeed, the **main agent pushes** to the user's GHCR and writes `.sealos/phase-3/build-result.json` (digest-first). Build backend depends on `runtime_profile` in `analysis.json`; **push is always done by the main agent**.
 
-This phase does not scout the repo, generate Dockerfiles, or modify `deployment_source` (recipe errors return to Phase 2).
+This phase does not scout the repo, run railpack, generate Dockerfiles, or modify `deployment_source` (recipe errors return to Phase 2).
 
-Docker, Buildx, Node.js 18+, and `gh` are required only when this phase actually runs.
+## Preconditions
+
+- Phase 4 entry branch determined build is required (this phase is not called directly from Phase 2)
 
 ## Inputs
 
 | Input | Source |
 | --- | --- |
-| Deployment source | Phase 2 `deployment_plan` → `deployment_source` |
-| Build targets | Parsed from deployment source (see table below) |
-| Caller | Phase 4 entry branch (when build is required) |
-| GitHub auth | Phase 0 (`local`) |
+| `runtime_profile` | `analysis.json` (Phase 0) |
+| Deployment plan | `analysis.json` → `deployment_plan` → `deployment-plan.json` |
+| Deployment source | `deployment-plan.json` → `deployment_source` |
+| Build targets | Parsed from deployment source (see tables below) |
+| GitHub auth | Phase 0; push by main agent (`local` uses `gh`; `sandbox` uses injected `GITHUB_TOKEN`, etc.) |
 
-### Parse build targets from `deployment_source`
+### Build method by `runtime_profile`
 
-| Source type | How to parse |
+| `runtime_profile` | Build method | Notes |
+| --- | --- | --- |
+| `local` | Docker Buildx | Subagent **builds only** locally; main agent pushes to GHCR |
+| `sandbox` | [`k8s-kaniko-job`](/en/skills/k8s-kaniko-job) skill | No Buildx in sandbox; subagent runs Kaniko Job in cluster **build only** |
+
+Both environments build `linux/amd64`. `sandbox` does not use Buildx or a local Docker daemon.
+
+### Infer deployment source type
+
+Infer from `deployment_source` path (same as [Phase 4](/en/pipeline/phases/phase-4-template)):
+
+| Path pattern | Type |
 | --- | --- |
-| Compose (`.sealos/phase-2/docker-compose.yml`) | Each service with `build:` |
-| Helm (chart directory) | After `helm template`, workloads whose images need local build |
-| Kubernetes (single yaml) | Containers in the manifest that need local build |
+| `.sealos/phase-2/docker-compose.yml` | Compose |
+| Directory containing `Chart.yaml` | Helm |
+| Single `.yaml` / `.yml` file | Kubernetes |
+
+### Parse build targets from deployment source
+
+| Type | How to parse |
+| --- | --- |
+| Compose | Each service with `build:`; use `build.context` as context and `build.dockerfile` as Dockerfile (relative to `work_dir`) |
+| Helm | After `helm template`, workloads whose images need local build and whose Dockerfiles Phase 2 prepared |
+| Kubernetes | Containers in the manifest that need local build and whose Dockerfiles Phase 2 prepared |
+
+Components with only an upstream `image:` (e.g. `postgres:16-alpine`) and no `build` are not built here. All paths are relative to `work_dir` in `analysis.json`.
 
 ## Outputs
 
 | Output | Path | Description |
 | --- | --- | --- |
-| Per-service build result | `.sealos/build/{service-key}/build-result.json` | Digest, pull access, push metadata; key aligns with service/workload name in deployment source |
+| Build results | `.sealos/phase-3/build-result.json` | Digests for all pushed images and pull metadata |
+| `analysis.json` | `.sealos/analysis.json` | Adds `build_result` pointer |
 
 ## Procedure
 
-Sealos Deploy must:
+### 1. Main agent — build queue
 
-- Push newly built images to the current GitHub user's GHCR. The user does not choose the registry.
-- Check `gh` login and `write:packages` only when builds are pending.
-- Build for `linux/amd64`.
-- For each build target, run Buildx with context and Dockerfile paths declared in the deployment source.
-- Tag with a unique version identifier per build.
-- Read digest from Buildx metadata for the same build.
-- Record whether anonymous pull works and whether deploy needs a pull secret.
-- Return recipe failures (missing Dockerfile, invalid context, Dockerfile syntax errors) to Phase 2 step 3. Keep auth, network, Docker, and push failures in Phase 3.
+Read `runtime_profile`. Parse build targets from `deployment_source` (service key, context, dockerfile). Skip this phase when the queue is empty.
 
-Pull failures on Dockerfile bases during build are recipe failures. Push failures to `ghcr.io/{user}/...` are Phase 3 execution failures.
+### 2. Subagent — sequential build
 
-All private or indeterminate GHCR images in one app must share one normalized GHCR namespace. Mixed namespaces stop before cloud resource creation.
+For each target, start one subagent **in order**:
 
-Components with upstream images and resolved digests are not rebuilt here. New builds from this flow go to GHCR only.
+- **Max concurrency 1** — at most one subagent at a time; no parallel builds.
+- Subagent inputs: current target, deployment source path, `work_dir`, `runtime_profile`, context and dockerfile paths.
+- **`local`**: subagent runs Buildx local build only; **does not** push to a registry.
+- **`sandbox`**: subagent invokes the **k8s-kaniko-job** skill; Kaniko Job **builds only** in cluster; **does not** push to a registry.
+- Recipe failure (missing Dockerfile, invalid context, syntax errors) → **RETURN → Phase 2** step 3.
+- Build failure after remediation → **STOP**.
 
-`build-result.json` passes `push.pull_access` to Phase 4. Only `ghcr_secret_required` or `indeterminate` successful builds attach pull-secret handling in the template.
+### 3. Main agent — push to GHCR
+
+After all subagent builds succeed, the **main agent** (`local` and `sandbox` alike):
+
+- **Pushes** all newly built images to the current GitHub user's GHCR (user does not choose registry).
+- Tags each push with a unique version identifier; records immutable digest.
+- `local`: push from local Buildx build output; check `gh` login and `write:packages`.
+- `sandbox`: push from Kaniko Job build output; use injected `GITHUB_TOKEN` and related credentials (no local `gh`).
+- After push, probe anonymous pull per image: success → `pull_access: public`; otherwise → `ghcr_secret_required`.
+- Push failures to `ghcr.io/{user}/...` are Phase 3 execution failures.
+
+All private GHCR images in one app must share one normalized GHCR namespace. Mixed namespaces stop before cloud resource creation.
+
+### 4. Main agent — write `build-result.json`
+
+Write results to `.sealos/phase-3/build-result.json`. Each `digests` entry is an immutable `repository@sha256:...`; keys align with service/workload names in the deployment source.
+
+Example:
+
+```json
+{
+  "generated_at": "2026-08-02T14:00:00Z",
+  "digests": {
+    "web": "ghcr.io/user/myapp-web@sha256:abc123...",
+    "worker": "ghcr.io/user/myapp-worker@sha256:def456..."
+  },
+  "pull_access": {
+    "web": "public",
+    "worker": "ghcr_secret_required"
+  }
+}
+```
+
+`pull_access` is passed to Phase 4. Only `ghcr_secret_required` attaches pull-secret handling in the template.
+
+### 5. Main agent — write `analysis.json`
+
+Merge with existing fields. Add only the `build_result` pointer:
+
+```json
+{
+  "build_result": ".sealos/phase-3/build-result.json"
+}
+```
+
+Do not modify fields written in Phases 0–2. After `build-result.json` passes schema, persist merged `analysis.json` only after [artifact schemas](/en/specs/artifact-schemas) validation.
+
+Do not write `build_result` when this phase is skipped (no builds needed).
 
 ## Stop conditions
 
 | Result | Condition |
 | --- | --- |
-| **CONTINUE → Phase 4** | All required builds succeed or no builds were needed |
+| **CONTINUE → Phase 4** | All builds and pushes succeed, or no builds were needed |
 | **RETURN → Phase 2** | Build recipe failure for a service |
-| **STOP** | Phase 3 execution failure after remediation, or namespace conflict |
+| **STOP** | Build or push failure after remediation, or namespace conflict |
 
 ## Acceptance
 
-- Each built service has `build-result.json` matching schema
-- Digests are immutable `repository@sha256:...`
-- Upstream image references that were not rebuilt are unchanged
+- `.sealos/phase-3/build-result.json` exists and passes schema
+- `analysis.json` includes `build_result` with correct path
+- `digests` covers every service pushed in this phase
+- Each digest is `repository@sha256:...`
+- Upstream images not rebuilt are not listed in `digests`
 
 ## Schema links
 
 - [Artifact schemas — build-result.json](/en/specs/artifact-schemas)
 - [deployment-plan.json](/en/specs/deployment-plan)
+- [Deployment sources](/en/pipeline/deployment-sources)
 
 ## Implementation map
 
 | Spec section | Implementation |
 | --- | --- |
-| Build and push | `skills/sealos-deploy/scripts/build-push.mjs` |
+| Build (`sandbox`) | `skills/k8s-kaniko-job/` |
+| Push (`local` and `sandbox`) | `skills/sealos-deploy/scripts/build-push.mjs` |

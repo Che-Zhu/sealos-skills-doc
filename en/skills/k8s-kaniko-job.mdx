@@ -1,0 +1,29 @@
+---
+title: "k8s-kaniko-job"
+description: "Build container images via Kaniko Job in a Kubernetes cluster (no push)."
+keywords: ["k8s-kaniko-job", "kaniko", "build", "sandbox"]
+sidebarTitle: "k8s-kaniko-job"
+---
+
+<Note>
+Specification source for `k8s-kaniko-job`. Implementation: [`skills/k8s-kaniko-job/`](https://github.com/labring/sealos-skills/tree/main/skills/k8s-kaniko-job).
+</Note>
+
+## Purpose
+
+Invoked by the [Phase 3](/en/pipeline/phases/phase-3-build-push) subagent when `runtime_profile` is `sandbox`. Sandbox has no Docker Buildx; images must be **built only** as `linux/amd64` Kaniko Jobs in cluster. Push to GHCR is done by the main agent after all subagent builds complete.
+
+## When to use
+
+- `analysis.json` → `runtime_profile` is `sandbox`
+- Phase 3 must build images and Dockerfiles are ready (prepared in Phase 2)
+
+## Output
+
+After the Kaniko Job completes, returns a reference to the build output for the main agent to push to GHCR and write `.sealos/phase-3/build-result.json`.
+
+## Implementation status
+
+| Section | Status |
+| --- | --- |
+| Kaniko Job build | See `sealos-skills` implementation |

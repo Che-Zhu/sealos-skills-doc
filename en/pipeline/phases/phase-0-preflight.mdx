@@ -111,7 +111,7 @@ Write `.sealos/analysis.json`:
 | `repo_name` | Directory name or URL parse result |
 | `github_url` | From the argument or `git remote`; `null` for non-GitHub projects |
 
-At the end of Phase 0, the file contains only these fields. Phase 1 writes `official_template`. Phase 2 writes `deployment_plan`.
+At the end of Phase 0, the file contains only these fields. Phase 1 writes `official_template`. Phase 2 writes `deployment_plan`. Phase 3 writes `build_result` (only after this phase actually runs).
 
 ### 7. Start the deploy log
 

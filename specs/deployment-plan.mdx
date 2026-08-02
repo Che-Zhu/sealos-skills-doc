@@ -104,7 +104,7 @@ Phase 2 按 [部署源选择](/pipeline/deployment-sources) 优先级（Helm →
 | 阶段 | 读取方式 |
 | --- | --- |
 | Phase 2（主 Agent） | 在 `analysis.json` 写入 `deployment_plan` 指针 |
-| Phase 3 | 解析 `deployment_source`，对须构建且 digest 未就绪的工作负载构建并推送 |
+| Phase 3 | 顺序构建并推送；写入 `build-result.json` 与 `analysis.json` 的 `build_result` 指针 |
 | Phase 4 | 读取 `deployment_source`，按路径类型选择适配器（compose / helm / kubernetes） |
 
 ## 验收

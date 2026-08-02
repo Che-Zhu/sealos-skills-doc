@@ -104,7 +104,7 @@ Skip Dockerfile generation for components with a known upstream image. Do not gu
 | Phase | How it reads the file |
 | --- | --- |
 | Phase 2 (main agent) | Writes `deployment_plan` pointer in `analysis.json` |
-| Phase 3 | Parses `deployment_source`; builds and pushes workloads that need build and lack a ready digest |
+| Phase 3 | Sequential build and push; writes `build-result.json` and `build_result` pointer in `analysis.json` |
 | Phase 4 | Reads `deployment_source`; selects adapter by path type (compose / helm / kubernetes) |
 
 ## Acceptance

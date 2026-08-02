@@ -26,7 +26,7 @@ Phase 4 仅属于标准构建路径。它读取 `deployment-plan.json` 的 `depl
 | `analysis.json` | Phase 0–2 |
 | `deployment-plan.json` | Phase 2（经 `analysis.json` → `deployment_plan`） |
 | `deployment_source` | `deployment-plan.json` |
-| 构建结果 | Phase 3（若本 Phase 入口分支曾进入 Phase 3） |
+| 构建结果 | `.sealos/phase-3/build-result.json`（Phase 3，若曾进入） | `analysis.json` → `build_result` |
 | 转换中间产物 | `.sealos/deployment-source/`（Phase 4 按需生成） |
 
 ## 输出
@@ -43,7 +43,7 @@ Phase 4 仅属于标准构建路径。它读取 `deployment-plan.json` 的 `depl
 
 | `deployment_source` | 方法 |
 | --- | --- |
-| `.sealos/phase-2/docker-compose.yml` | kompose 确定性转换；Phase 3 digest 逐服务覆盖 |
+| `.sealos/phase-2/docker-compose.yml` | kompose 确定性转换；`build_result` → `build-result.json` 的 digest 逐服务覆盖 |
 | chart 目录（含 `Chart.yaml`） | chart 副本上 `helm template`；适配器保留渲染资源 |
 | 单个 `.yaml` / `.yml` manifest | 源适配器保留资源并转换不支持字段 |
 
@@ -58,7 +58,7 @@ Phase 4 仅属于标准构建路径。它读取 `deployment-plan.json` 的 `depl
 
 ## 镜像与 pull secret
 
-最终容器镜像须为 `repository@sha256:...`。pull-secret 引用仅当 Phase 3 对该 service key 报告 `ghcr_secret_required` 或 `indeterminate`。
+最终容器镜像须为 `repository@sha256:...`。pull-secret 引用仅当 `analysis.json` → `build_result` 所指的 `build-result.json` 中，该服务 key 的 `pull_access` 为 `ghcr_secret_required`。
 
 ## 数据库
 

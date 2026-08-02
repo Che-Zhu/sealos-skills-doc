@@ -1,0 +1,29 @@
+---
+title: "k8s-kaniko-job"
+description: "在 Kubernetes 集群内以 Kaniko Job 构建容器镜像（不推送）。"
+keywords: ["k8s-kaniko-job", "kaniko", "build", "sandbox"]
+sidebarTitle: "k8s-kaniko-job"
+---
+
+<Note>
+规范源为 `k8s-kaniko-job`。实现见 [`skills/k8s-kaniko-job/`](https://github.com/labring/sealos-skills/tree/main/skills/k8s-kaniko-job)。
+</Note>
+
+## 用途
+
+在 `runtime_profile` 为 `sandbox` 时，由 [Phase 3](/pipeline/phases/phase-3-build-push) Subagent 调用。sandbox 环境无 Docker Buildx，须在集群内以 Kaniko Job **仅构建** `linux/amd64` 镜像。推送到 GHCR 由主 Agent 在 Subagent 全部完成后统一执行。
+
+## 何时使用
+
+- `analysis.json` → `runtime_profile` 为 `sandbox`
+- Phase 3 须构建镜像，且目标已有 Dockerfile（Phase 2 已准备）
+
+## 输出
+
+Kaniko Job 完成后返回构建产物引用，供主 Agent 推送 GHCR 并写入 `.sealos/phase-3/build-result.json`。
+
+## 实现状态
+
+| 章节 | 状态 |
+| --- | --- |
+| Kaniko Job 构建 | 见 `sealos-skills` 实现 |

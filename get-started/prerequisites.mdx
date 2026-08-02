@@ -16,11 +16,11 @@ Phase 0 按运行环境自动检查并安装必装工具，无需用户逐项确
 
 **`local` 与 `sandbox` 共用：** Git、Git LFS、Node.js 18+、Python 3.8+ 与 PyYAML、gitingest、kompose、Helm 3+、kubectl、curl、jq
 
-**仅 `local`：** `gh`（已登录且具备 `write:packages`）、Docker CLI、运行中的 Docker daemon、Docker Buildx、railpack（`sandbox` 已预装 railpack）
+**仅 `local`（Phase 3 构建路径）：** `gh`（已登录且具备 `write:packages`）、Docker CLI、运行中的 Docker daemon、Docker Buildx、railpack（`sandbox` 已预装 railpack，Phase 3 使用 **k8s-kaniko-job** skill，无需 Buildx）
 
 ## GitHub CLI 与 GHCR 访问
 
-`local` 环境下 `gh` 须已登录 `github.com` 且具备 `write:packages` scope，以便 Phase 3 推送镜像到 GHCR。复用已有 digest 的路径不需要 GHCR 推送权限。
+`local` 与 `sandbox` 均由主 Agent 在 Phase 3 将新构建镜像推送到 GHCR。`local` 须已登录 `gh` 且具备 `write:packages`；`sandbox` 使用环境注入的 `GITHUB_TOKEN` 等凭证。复用已有 digest 的路径不需要 GHCR 推送权限。
 
 ## 验证命令
 

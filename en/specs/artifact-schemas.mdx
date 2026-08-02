@@ -4,8 +4,6 @@ description: "JSON schema contracts for files written under .sealos/."
 keywords: ["schemas", "json", "artifacts", "state.json"]
 ---
 
-{/* TODO: Generate or maintain field tables from sealos-skills/schemas/*.json. */}
-
 ## Schema index
 
 | Schema | File | Writer phase |
@@ -13,14 +11,37 @@ keywords: ["schemas", "json", "artifacts", "state.json"]
 | `config.schema.json` | `.sealos/config.json` | User (manual) |
 | `deployment-plan.schema.json` | `.sealos/phase-2/deployment-plan.json` | Phase 2 |
 | `analysis.schema.json` | `.sealos/analysis.json` | Phase 1, enriched Phase 2 |
-| `template-references.schema.json` | `.sealos/template-references.json` | Phase 1 |
-| `build-result.schema.json` | `.sealos/build/<service>/build-result.json` | Phase 3 |
+| `build-result.schema.json` | `.sealos/phase-3/build-result.json` | Phase 3 |
 | `state.schema.json` | `.sealos/state.json` | Phase 5.5 |
+
+## `build-result.json`
+
+Written by the main agent at the end of [Phase 3](/en/pipeline/phases/phase-3-build-push). One file holds every digest from this phase. `analysis.json` points to this file via `build_result`.
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `generated_at` | string (date-time) | No | Write timestamp |
+| `digests` | object | Yes | Service/workload key → `repository@sha256:...` |
+| `pull_access` | object | No | Service/workload key → pull access mode for Phase 4 |
+
+### `pull_access` values
+
+| Value | Meaning |
+| --- | --- |
+| `public` | Anonymous pull from GHCR succeeded after push |
+| `ghcr_secret_required` | Anonymous pull failed or package is private; Phase 4 adds `imagePullSecrets` |
+
+Phase 3 must set one of these two values per service. When the anonymous pull probe is inconclusive, use `ghcr_secret_required`.
+
+## `analysis.json` phase pointers
+
+| Field | Written in | Points to |
+| --- | --- | --- |
+| `deployment_plan` | Phase 2 | `.sealos/phase-2/deployment-plan.json` |
+| `build_result` | Phase 3 | `.sealos/phase-3/build-result.json` |
 
 ## Validation
 
 ```bash
 node skills/sealos-deploy/scripts/validate-artifacts.mjs --dir "$WORK_DIR"
 ```
-
-{/* TODO: Document each schema's required fields and phase boundaries. */}

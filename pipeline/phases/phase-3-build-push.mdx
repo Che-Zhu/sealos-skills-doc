@@ -1,82 +1,156 @@
 ---
 title: "Phase 3 — 构建并推送"
 description: "linux/amd64 镜像构建与 GHCR 推送及 digest 捕获。"
-keywords: ["phase 3", "build", "ghcr", "digest"]
+keywords: ["phase 3", "build", "ghcr", "digest", "subagent", "kaniko"]
 ---
 
 ## 目的
 
-Phase 3 **执行**构建与推送：解析 `deployment-plan.json` 的 `deployment_source`，为仍缺少可复用 digest 且须本地构建的工作负载构建并推送镜像。一个服务需构建不丢弃其他服务已验证镜像。
+Phase 3 由主 Agent 编排：**Subagent 按顺序构建**须构建的镜像，全部成功后由**主 Agent 统一推送**到用户 GHCR，并写入 `.sealos/phase-3/build-result.json`（以 digest 为主）。构建后端取决于 `analysis.json` 中的 `runtime_profile`；**推送始终由主 Agent 完成**。
 
-本阶段不做仓库侦察、不生成 Dockerfile、不修改 `deployment_source`（配方错误返回 Phase 2）。
+本阶段不做仓库侦察、不运行 railpack、不生成 Dockerfile、不修改 `deployment_source`（配方错误返回 Phase 2）。
 
-仅在本阶段实际运行时要求 Docker、Buildx、Node.js 18+ 与 `gh`。
+## 前置条件
+
+- Phase 4 入口分支判定须构建（本 Phase 不由 Phase 2 直接调用）
 
 ## 输入
 
 | 输入 | 来源 |
 | --- | --- |
-| 部署源 | Phase 2 `deployment_plan` → `deployment_source` |
+| `runtime_profile` | `analysis.json`（Phase 0） |
+| 部署计划 | `analysis.json` → `deployment_plan` → `deployment-plan.json` |
+| 部署源 | `deployment-plan.json` → `deployment_source` |
 | 构建目标 | 从部署源解析（见下表） |
-| 调用方 | Phase 4 入口分支（须构建时） |
-| GitHub 认证 | Phase 0（`local`） |
+| GitHub 认证 | Phase 0；推送由主 Agent 完成（`local` 用 `gh`；`sandbox` 用注入的 `GITHUB_TOKEN` 等） |
 
-### 从 `deployment_source` 解析构建目标
+### 构建方式（按 `runtime_profile`）
 
-| 部署源类型 | 解析方式 |
+| `runtime_profile` | 构建方式 | 说明 |
+| --- | --- | --- |
+| `local` | Docker Buildx | Subagent 本地**仅构建**；主 Agent 统一推送 GHCR |
+| `sandbox` | [`k8s-kaniko-job`](/skills/k8s-kaniko-job) skill | sandbox 无 Buildx；Subagent 通过 Kaniko Job 在集群内**仅构建** |
+
+两种环境均构建 `linux/amd64`。`sandbox` 不调用 Buildx，不要求本地 Docker daemon。
+
+### 推断部署源类型
+
+按 `deployment_source` 路径推断（与 [Phase 4](/pipeline/phases/phase-4-template) 一致）：
+
+| 路径特征 | 类型 |
 | --- | --- |
-| Compose（`.sealos/phase-2/docker-compose.yml`） | 每个含 `build:` 的服务 |
-| Helm（chart 目录） | `helm template` 渲染后，须本地构建的镜像所对应的工作负载 |
-| Kubernetes（单个 yaml） | 清单中须本地构建的容器镜像 |
+| `.sealos/phase-2/docker-compose.yml` | Compose |
+| 含 `Chart.yaml` 的目录 | Helm |
+| 单个 `.yaml` / `.yml` 文件 | Kubernetes |
+
+### 从部署源解析构建目标
+
+| 类型 | 解析方式 |
+| --- | --- |
+| Compose | 每个含 `build:` 的服务；以 `build.context` 为上下文、`build.dockerfile` 为 Dockerfile（相对 `work_dir`） |
+| Helm | `helm template` 渲染后，镜像须本地构建且 Phase 2 已准备 Dockerfile 的工作负载 |
+| Kubernetes | 清单中镜像须本地构建且 Phase 2 已准备 Dockerfile 的容器 |
+
+仅含上游 `image:`（如 `postgres:16-alpine`）且无 `build` 的组件不在本阶段构建。路径均相对 `analysis.json` 中的 `work_dir`。
 
 ## 输出
 
 | 输出 | 路径 | 说明 |
 | --- | --- | --- |
-| 逐服务构建结果 | `.sealos/build/{service-key}/build-result.json` | digest、拉取访问、推送元数据；key 与部署源中的服务/工作负载名对齐 |
+| 构建结果 | `.sealos/phase-3/build-result.json` | 所有已推送镜像的 digest 与拉取元数据 |
+| `analysis.json` | `.sealos/analysis.json` | 新增 `build_result` 指针 |
 
 ## 流程
 
-Sealos Deploy 必须：
+### 1. 主 Agent — 解析构建队列
 
-- 将新构建镜像推送到当前 GitHub 用户的 GHCR。用户不选择 registry。
-- 仅在有待构建时检查 `gh` 登录与 `write:packages`。
-- 构建 `linux/amd64`。
-- 对每个须构建的目标，以部署源声明的 context 与 Dockerfile 路径执行 Buildx 构建。
-- 每次构建使用唯一版本标识打标签。
-- 从同次 Buildx 元数据读取 digest。
-- 记录匿名拉取是否可用及部署是否需要 pull secret。
-- 构建配方无效（Dockerfile 缺失、上下文无效、Dockerfile 语法错误）返回 Phase 2 步骤 3。认证、网络、Docker 与推送失败留在 Phase 3。
+读取 `runtime_profile`。从 `deployment_source` 列出须构建的目标（服务 key、context、dockerfile）。无目标则跳过本 Phase。
 
-构建中 Dockerfile 基础镜像拉取失败属构建配方失败。推送到 `ghcr.io/{user}/...` 失败属 Phase 3 执行失败。
+### 2. Subagent — 按顺序构建
+
+对每个目标**依次**启动一个 Subagent：
+
+- **并发上限 1**：同时最多运行一个 Subagent，禁止并行构建。
+- Subagent 输入：当前目标、部署源路径、`work_dir`、`runtime_profile`、context 与 dockerfile 路径。
+- **`local`**：Subagent 仅用 Buildx 执行本地构建，**不**推送到 registry。
+- **`sandbox`**：Subagent 调用 **k8s-kaniko-job** skill，在集群内以 Kaniko Job **仅构建**，**不**推送到 registry。
+- 构建配方无效（Dockerfile 缺失、上下文无效、语法错误）→ **RETURN → Phase 2** 步骤 3。
+- 单次构建失败经补救仍失败 → **STOP**。
+
+### 3. 主 Agent — 统一推送 GHCR
+
+全部 Subagent 构建成功后，**主 Agent**（`local` 与 `sandbox` 相同）：
+
+- 将本阶段新构建的镜像**统一**推送到当前 GitHub 用户的 GHCR（用户不选择 registry）。
+- 每次推送使用唯一版本标识打标签；读取不可变 digest。
+- `local`：从本地 Buildx 构建产物推送；检查 `gh` 登录与 `write:packages`。
+- `sandbox`：从 Kaniko Job 构建产物推送；使用环境注入的 `GITHUB_TOKEN` 等凭证（不依赖本地 `gh`）。
+- 推送后对每个镜像做匿名拉取探测：成功记 `pull_access: public`，否则记 `ghcr_secret_required`。
+- 推送到 `ghcr.io/{user}/...` 失败属 Phase 3 执行失败。
 
 应用中所有私有或不确定的 GHCR 镜像须共享一个规范化 GHCR namespace。混合 namespace 在创建云端资源前停止。
 
-已有上游镜像且 digest 已解析的组件不在本阶段重建。本流程新构建仅推送到 GHCR。
+### 4. 主 Agent — 写入 `build-result.json`
 
-`build-result.json` 将 `push.pull_access` 传给 Phase 4。仅 `ghcr_secret_required` 或 `indeterminate` 的成功构建在模板中附加 pull-secret 处理。
+将结果写入 `.sealos/phase-3/build-result.json`。`digests` 中每项为不可变 `repository@sha256:...`，key 与部署源中的服务/工作负载名对齐。
+
+示例：
+
+```json
+{
+  "generated_at": "2026-08-02T14:00:00Z",
+  "digests": {
+    "web": "ghcr.io/user/myapp-web@sha256:abc123...",
+    "worker": "ghcr.io/user/myapp-worker@sha256:def456..."
+  },
+  "pull_access": {
+    "web": "public",
+    "worker": "ghcr_secret_required"
+  }
+}
+```
+
+`pull_access` 传给 Phase 4。仅 `ghcr_secret_required` 在模板中附加 pull-secret 处理。
+
+### 5. 主 Agent — 写入 `analysis.json`
+
+与既有字段合并，仅新增 `build_result` 指针：
+
+```json
+{
+  "build_result": ".sealos/phase-3/build-result.json"
+}
+```
+
+不得修改 Phase 0–2 已写字段。`build-result.json` 须通过 schema 后，合并后的 `analysis.json` 须通过 [产物 Schema](/specs/artifact-schemas) 再落盘。
+
+本 Phase 被跳过时（无需构建）不写入 `build_result`。
 
 ## 停止条件
 
 | 结果 | 条件 |
 | --- | --- |
-| **CONTINUE → Phase 4** | 所有必需构建成功或无需构建 |
+| **CONTINUE → Phase 4** | 全部构建与推送成功，或无需构建 |
 | **RETURN → Phase 2** | 某服务构建配方失败 |
-| **STOP** | 补救后 Phase 3 执行失败，或 namespace 冲突 |
+| **STOP** | 补救后构建或推送失败，或 namespace 冲突 |
 
 ## 验收标准
 
-- 每个已构建服务有符合 schema 的 `build-result.json`
-- digest 为不可变 `repository@sha256:...`
-- 未重建的上游镜像引用未被修改
+- `.sealos/phase-3/build-result.json` 存在且通过 schema
+- `analysis.json` 含 `build_result` 且路径正确
+- `digests` 覆盖本阶段所有已推送服务
+- 每项 digest 为 `repository@sha256:...`
+- 未重建的上游镜像未被写入 `digests`
 
 ## Schema 链接
 
-- [产物 Schema — build-result.json](/specs/artifact-schemas)
+- [产物 Schema — build-result.json](/en/specs/artifact-schemas)
 - [deployment-plan.json](/specs/deployment-plan)
+- [部署源](/pipeline/deployment-sources)
 
 ## 实现映射
 
 | 规范章节 | 实现 |
 | --- | --- |
-| 构建与推送 | `skills/sealos-deploy/scripts/build-push.mjs` |
+| 构建（`sandbox`） | `skills/k8s-kaniko-job/` |
+| 推送（`local` 与 `sandbox`） | `skills/sealos-deploy/scripts/build-push.mjs` |

@@ -57,7 +57,8 @@
                 "icon": "puzzle-piece",
                 "pages": [
                   "skills/overview",
-                  "skills/sealos-deploy"
+                  "skills/sealos-deploy",
+                  "skills/k8s-kaniko-job"
                 ]
               },
               {
@@ -186,6 +187,7 @@
                     "pages": [
                       "en/skills/cloud-native-readiness",
                       "en/skills/dockerfile-skill",
+                      "en/skills/k8s-kaniko-job",
                       "en/skills/docker-to-sealos"
                     ]
                   }

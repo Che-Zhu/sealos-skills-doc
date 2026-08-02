@@ -26,7 +26,7 @@ Phase U2 应用更新，不重新运行评估、发现或模板生成。
 
 **镜像更新：** 更新每个记录的工作负载类型、名称与容器。不得仅凭应用名猜测目标。
 
-**GHCR namespace 规则：** 应用中所有私有或不确定 GHCR 镜像须共享一个规范化 namespace。检查全服务集，不仅选定服务。冲突时在云端变更前停止。
+**GHCR namespace 规则：** 应用中所有私有 GHCR 镜像须共享一个规范化 namespace。检查全服务集，不仅选定服务。冲突时在云端变更前停止。
 
 **仅重启：** 滚动每个选定的 Deployment、StatefulSet 或 DaemonSet，不改变镜像。CronJob 无活跃 rollout；仅验证镜像与调度。
 
