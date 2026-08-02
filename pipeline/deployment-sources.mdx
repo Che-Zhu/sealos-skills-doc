@@ -1,6 +1,6 @@
 ---
 title: "部署源"
-description: "Compose、Helm、Kubernetes、隐式与官方模板来源类型。"
+description: "Compose、Helm、Kubernetes 与官方模板来源类型。"
 keywords: ["deployment source", "compose", "helm", "kubernetes"]
 ---
 
@@ -9,14 +9,23 @@ keywords: ["deployment source", "compose", "helm", "kubernetes"]
 | 来源 | 检测 | 所需工具 |
 | --- | --- | --- |
 | 官方模板 | Phase 1 与 [`kb-0.9/template`](https://github.com/labring-actions/templates/tree/kb-0.9/template) 精确匹配 | 无（快速路径） |
-| Docker Compose | `docker-compose.yml` / `compose.yaml` | kompose |
+| Docker Compose | `.sealos/phase-2/docker-compose.yml`（Phase 2 canonical） | kompose |
 | Helm | `Chart.yaml` 或 chart 目录 | Helm 3+ |
-| Kubernetes | 原生清单 | Python/PyYAML |
-| 隐式 | 无显式拓扑文件 | 项目结构分析 |
+| Kubernetes | 单个原生 manifest 文件 | Python/PyYAML |
+
+标准构建路径中，部署源由 Phase 2 写入 `deployment-plan.json` 的 `deployment_source` 字段。Phase 4 直接读取该指针，不再重新侦察。
 
 ## 来源选择优先级
 
-Phase 4 结合 `deployment-plan.json`、`gitingest-digest` 与下表规则选定部署源。Compose、Helm 与 Kubernetes 显式文件优先于隐式路径。多个显式来源冲突时，须从 README、CI、文档确定主拓扑，不得猜测。一次 Sealos 部署须覆盖 `deployment-plan.json` 中的全部组件。
+Phase 2 在侦察后按以下优先级选定**唯一** `deployment_source`：
+
+1. **Helm** — chart 根目录
+2. **Kubernetes** — 单个 manifest 文件
+3. **Compose** — 生成或归一化到 `.sealos/phase-2/docker-compose.yml`
+
+Helm 与 Kubernetes 同时存在时，Helm 优先。多个同类来源冲突时，须从 README、CI、文档确定主拓扑，不得猜测。
+
+一次 Sealos 部署须覆盖全部相关组件（数据库、队列、缓存、worker）。Phase 4 不得因非主应用组件而丢弃依赖。
 
 ## 条件性源码物化
 
@@ -24,4 +33,4 @@ Git LFS、子模块等机制仅在仓库声明时安装与获取。见 [Phase 0]
 
 ## 拓扑保留
 
-`deployment-plan.json` 的 `items` 须覆盖数据库、队列、缓存与 worker。仅构建的组件与最终运行时拓扑分开处理。Phase 4 不得因非主应用组件而丢弃依赖。
+`deployment_source` 所指文件（或 chart 渲染结果）须包含完整运行时拓扑。仅构建的组件与最终运行时拓扑分开处理；Phase 3 的 digest 在 Phase 4 写回部署源对应的工作负载。

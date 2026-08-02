@@ -6,7 +6,9 @@ keywords: ["phase 3", "build", "ghcr", "digest"]
 
 ## 目的
 
-Phase 3 仅为仍缺少可复用 digest 且将以容器运行的服务构建并推送镜像。一个服务需构建不丢弃其他服务已验证镜像。
+Phase 3 **执行**构建与推送：解析 `deployment-plan.json` 的 `deployment_source`，为仍缺少可复用 digest 且须本地构建的工作负载构建并推送镜像。一个服务需构建不丢弃其他服务已验证镜像。
+
+本阶段不做仓库侦察、不生成 Dockerfile、不修改 `deployment_source`（配方错误返回 Phase 2）。
 
 仅在本阶段实际运行时要求 Docker、Buildx、Node.js 18+ 与 `gh`。
 
@@ -14,15 +16,24 @@ Phase 3 仅为仍缺少可复用 digest 且将以容器运行的服务构建并�
 
 | 输入 | 来源 |
 | --- | --- |
-| 构建组件 | Phase 2 `deployment_plan` → `deployment-plan.json` 中无 `image` 的 `items` |
+| 部署源 | Phase 2 `deployment_plan` → `deployment_source` |
+| 构建目标 | 从部署源解析（见下表） |
 | 调用方 | Phase 4 入口分支（须构建时） |
 | GitHub 认证 | Phase 0（`local`） |
+
+### 从 `deployment_source` 解析构建目标
+
+| 部署源类型 | 解析方式 |
+| --- | --- |
+| Compose（`.sealos/phase-2/docker-compose.yml`） | 每个含 `build:` 的服务 |
+| Helm（chart 目录） | `helm template` 渲染后，须本地构建的镜像所对应的工作负载 |
+| Kubernetes（单个 yaml） | 清单中须本地构建的容器镜像 |
 
 ## 输出
 
 | 输出 | 路径 | 说明 |
 | --- | --- | --- |
-| 逐服务构建结果 | `.sealos/build/{service-key}/build-result.json` | digest、拉取访问、推送元数据 |
+| 逐服务构建结果 | `.sealos/build/{service-key}/build-result.json` | digest、拉取访问、推送元数据；key 与部署源中的服务/工作负载名对齐 |
 
 ## 流程
 
@@ -31,17 +42,17 @@ Sealos Deploy 必须：
 - 将新构建镜像推送到当前 GitHub 用户的 GHCR。用户不选择 registry。
 - 仅在有待构建时检查 `gh` 登录与 `write:packages`。
 - 构建 `linux/amd64`。
-- 对每个须构建的 `items` 条目，在其 `path` 下解析 Dockerfile 或 railpack 并构建 `linux/amd64` 镜像。
+- 对每个须构建的目标，以部署源声明的 context 与 Dockerfile 路径执行 Buildx 构建。
 - 每次构建使用唯一版本标识打标签。
 - 从同次 Buildx 元数据读取 digest。
 - 记录匿名拉取是否可用及部署是否需要 pull secret。
-- 构建定义失败（Dockerfile、上下文或 `path` 无效）返回 Phase 2 步骤 3，修订 `deployment-plan.json`。认证、网络、Docker 与推送失败留在 Phase 3。
+- 构建配方无效（Dockerfile 缺失、上下文无效、Dockerfile 语法错误）返回 Phase 2 步骤 3。认证、网络、Docker 与推送失败留在 Phase 3。
 
-构建中 Dockerfile 基础镜像拉取失败属构建定义失败。推送到 `ghcr.io/{user}/...` 失败属 Phase 3 执行失败。
+构建中 Dockerfile 基础镜像拉取失败属构建配方失败。推送到 `ghcr.io/{user}/...` 失败属 Phase 3 执行失败。
 
 应用中所有私有或不确定的 GHCR 镜像须共享一个规范化 GHCR namespace。混合 namespace 在创建云端资源前停止。
 
-Phase 2 仍可复用维护者发布的 Docker Hub digest。本流程新构建仅推送到 GHCR。
+已有上游镜像且 digest 已解析的组件不在本阶段重建。本流程新构建仅推送到 GHCR。
 
 `build-result.json` 将 `push.pull_access` 传给 Phase 4。仅 `ghcr_secret_required` 或 `indeterminate` 的成功构建在模板中附加 pull-secret 处理。
 
@@ -50,18 +61,19 @@ Phase 2 仍可复用维护者发布的 Docker Hub digest。本流程新构建仅
 | 结果 | 条件 |
 | --- | --- |
 | **CONTINUE → Phase 4** | 所有必需构建成功或无需构建 |
-| **RETURN → Phase 2** | 某服务构建定义失败 |
+| **RETURN → Phase 2** | 某服务构建配方失败 |
 | **STOP** | 补救后 Phase 3 执行失败，或 namespace 冲突 |
 
 ## 验收标准
 
 - 每个已构建服务有符合 schema 的 `build-result.json`
 - digest 为不可变 `repository@sha256:...`
-- Phase 2 复用 digest 未改变
+- 未重建的上游镜像引用未被修改
 
 ## Schema 链接
 
 - [产物 Schema — build-result.json](/specs/artifact-schemas)
+- [deployment-plan.json](/specs/deployment-plan)
 
 ## 实现映射
 

@@ -7,28 +7,37 @@ keywords: ["artifacts", "state.json", "analysis.json", "template"]
 All pipeline outputs are written under `.sealos/` in the target project directory.
 
 ```
-<WORK_DIR>/.sealos/
+{WORK_DIR}/.sealos/
 ├── config.json
-├── template-references.json
-├── template-references/
 ├── state.json
 ├── analysis.json
+├── phase-2/
+│   ├── gitingest-digest.txt
+│   ├── deployment-plan.json
+│   └── docker-compose.yml
 ├── deployment-source/
 │   ├── rendered.yaml
 │   └── resource-map.json
 ├── topology-evidence/
-│   └── <app-name>.yaml
+│   └── {app-name}.yaml
 ├── build/
-│   └── <service-key>/
+│   └── {name}/
 │       └── build-result.json
 └── template/
     └── index.yaml
 ```
 
-{/* TODO: Document each file's writer phase, reader phase, and schema link. */}
+## Main artifacts
 
-## Schema validation
+| File | Written in | Read in | Description |
+| --- | --- | --- | --- |
+| `analysis.json` | Phase 0, Phase 1–2 | Phase 3–4 | Phase 2 adds only the `deployment_plan` pointer |
+| `phase-2/deployment-plan.json` | Phase 2 | Phase 3, 4 | Contains `deployment_source` pointer |
+| `phase-2/gitingest-digest.txt` | Phase 2 | Phase 2 | gitingest scout input |
+| `phase-2/docker-compose.yml` | Phase 2 | Phase 3, 4 | Canonical compose (when not Helm/K8s) |
+| `template/index.yaml` | Phase 4 or official template path | Phase 4.5, 5 | Canonical deploy template |
+| `build/*/build-result.json` | Phase 3 | Phase 4 | Build digest and pull metadata |
+| `state.json` | After Phase 5.5 | Deploy mode detection, UPDATE | Deploy state and service mapping |
+| `config.json` | User or Phase 4.5 | Phase 4.5 | User config overrides |
 
-{/* TODO: validate-artifacts.mjs usage and schema paths. */}
-
-See [Artifact schemas](/en/specs/artifact-schemas) for field-level contracts.
+Field contracts: [deployment-plan.json](/en/specs/deployment-plan). Other JSON artifacts: [Artifact schemas](/en/specs/artifact-schemas).

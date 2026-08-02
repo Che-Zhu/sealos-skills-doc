@@ -6,18 +6,18 @@ keywords: ["phase 4", "template", "conversion"]
 
 ## 目的
 
-Phase 4 仅属于标准构建路径。它读取 `deployment-plan.json` 判断是否需要先构建镜像，再按 [部署源](/pipeline/deployment-sources) 规则生成完整 Sealos 模板。
+Phase 4 仅属于标准构建路径。它读取 `deployment-plan.json` 的 `deployment_source`，判断是否需要先构建镜像，再按路径类型生成完整 Sealos 模板。
 
 当前实现不读取相似模板或目录 YAML。模板须遵循当前项目事实与转换规则。
 
 ## 入口分支
 
-读取 `deployment_plan` 与 `deployment-plan.json` 的 `items`：
+读取 `deployment_plan` → `deployment_source`，解析部署源中须本地构建且 digest 未就绪的工作负载：
 
 | 情况 | 行为 |
 | --- | --- |
-| 每个 `items` 条目均有 `image` 且 digest 已解析 | 跳过 Phase 3，继续本 Phase 模板生成 |
-| 一个或多个条目无 `image`，或 digest 未就绪 | **CONTINUE → Phase 3**；Phase 3 完成后返回本 Phase |
+| 无待构建，或所有镜像 digest 已解析 | 跳过 Phase 3，继续本 Phase 模板生成 |
+| 一个或多个工作负载须构建，或 digest 未就绪 | **CONTINUE → Phase 3**；Phase 3 完成后返回本 Phase |
 
 ## 输入
 
@@ -25,8 +25,9 @@ Phase 4 仅属于标准构建路径。它读取 `deployment-plan.json` 判断是
 | --- | --- |
 | `analysis.json` | Phase 0–2 |
 | `deployment-plan.json` | Phase 2（经 `analysis.json` → `deployment_plan`） |
+| `deployment_source` | `deployment-plan.json` |
 | 构建结果 | Phase 3（若本 Phase 入口分支曾进入 Phase 3） |
-| 部署源文件 | `.sealos/deployment-source/`（Phase 4 按需生成） |
+| 转换中间产物 | `.sealos/deployment-source/`（Phase 4 按需生成） |
 
 ## 输出
 
@@ -38,14 +39,15 @@ Phase 4 仅属于标准构建路径。它读取 `deployment-plan.json` 判断是
 
 ## 转换路径
 
-| 源类型 | 方法 |
-| --- | --- |
-| Compose | 确定性转换器 `--dry-run`；Phase 3 digest 的逐服务镜像覆盖 |
-| Helm | chart 副本上 `helm template`；适配器保留渲染资源 |
-| Kubernetes | 源适配器保留资源并转换不支持字段 |
-| 隐式 | AI 从已确认服务与 digest 构造临时 Compose 输入 |
+按 `deployment_source` 路径推断适配器：
 
-适配器是优选工具，不是资格门槛。适配器无法表达项目时，Agent 可修复临时输入或生成等价 canonical 模板。须通过相同质量门，不得丢弃服务或绕过校验。
+| `deployment_source` | 方法 |
+| --- | --- |
+| `.sealos/phase-2/docker-compose.yml` | kompose 确定性转换；Phase 3 digest 逐服务覆盖 |
+| chart 目录（含 `Chart.yaml`） | chart 副本上 `helm template`；适配器保留渲染资源 |
+| 单个 `.yaml` / `.yml` manifest | 源适配器保留资源并转换不支持字段 |
+
+适配器是优选工具，不是资格门槛。适配器无法表达项目时，Agent 可修复部署源或生成等价 canonical 模板。须通过相同质量门，不得丢弃服务或绕过校验。
 
 ## 网络与端口
 
@@ -93,6 +95,7 @@ Phase 4 仅属于标准构建路径。它读取 `deployment-plan.json` 判断是
 - [转换规则](/specs/conversion-rules)
 - [资源下限](/specs/resource-floors)
 - [产物 Schema](/specs/artifact-schemas)
+- [deployment-plan.json](/specs/deployment-plan)
 
 ## 实现映射
 

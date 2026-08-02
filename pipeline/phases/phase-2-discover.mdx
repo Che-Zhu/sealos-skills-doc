@@ -1,16 +1,16 @@
 ---
 title: "Phase 2 — 发现与镜像准备"
-description: "Scout the repository and produce the deployable component list."
+description: "侦察仓库、补齐镜像准备，并写入 deployment_source。"
 keywords: ["phase 2", "discover", "railpack", "gitingest", "deployment-plan"]
 ---
 
 ## 目的
 
-Phase 2 通过 Subagent 产出 `deployment-plan.json`，**列出本仓库一次 Sealos 部署所需的全部可部署组件**（目录 + 已知镜像）。
+Phase 2 通过 Subagent 产出 `deployment-plan.json`，在 **`deployment_source` 单一指针** 中声明下游转换所用的部署源，并完成须构建组件的**镜像准备**（复用仓库 Dockerfile，或通过 railpack 产出并审核构建配方）。
 
-一次 Sealos 部署对应**整仓一张模板**。清单须覆盖全部相关组件（含数据库、队列、worker），不得只写主应用。
+一次 Sealos 部署对应**整仓一张模板**。拓扑须覆盖全部相关组件（含数据库、队列、worker），不得只写主应用。
 
-不得在本阶段实际构建或推送镜像。不得生成 Sealos 模板。不得创建云端资源。不得根据 `official_template` 选定部署源或修改 `official_template` 字段。
+不得在本阶段实际构建或推送镜像。不得生成 Sealos 模板。不得创建云端资源。不得修改 `official_template` 字段。
 
 UPDATE 模式跳过本 Phase。
 
@@ -28,7 +28,8 @@ UPDATE 模式跳过本 Phase。
 | 输出 | 路径 | 说明 |
 | --- | --- | --- |
 | 部署相关摘要 | `.sealos/phase-2/gitingest-digest.txt` | gitingest 输出（范围见步骤 2） |
-| 部署计划 | `.sealos/phase-2/deployment-plan.json` | Subagent 产出的可部署组件清单 |
+| 部署计划 | `.sealos/phase-2/deployment-plan.json` | 含 `deployment_source` 指针 |
+| Canonical Compose | `.sealos/phase-2/docker-compose.yml` | 仅非 Helm/K8s 路径时写入 |
 | `analysis.json` | `.sealos/analysis.json` | 新增 `deployment_plan` 指针 |
 
 字段契约见 [deployment-plan.json](/specs/deployment-plan)。
@@ -59,7 +60,7 @@ UPDATE 模式跳过本 Phase。
 
 将 README 理解与侦察要点写入部署日志（自然语言，数句即可）。
 
-### 3. Subagent — 可部署组件清单
+### 3. Subagent — 选定部署源与镜像准备
 
 主 Agent 启动一个 Subagent。传入：
 
@@ -67,9 +68,18 @@ UPDATE 模式跳过本 Phase。
 - `.sealos/phase-2/gitingest-digest.txt` 路径
 - 主 Agent 口头交接（发现与判断，自然语言）
 
-告知 Subagent：**列出本仓库一次 Sealos 部署所需的全部组件**；每项给出目录 `path`，已知镜像时附上 `image`；须自行探索仓库；`railpack` 可用（`info`、`plan`）；产出写入 `.sealos/phase-2/deployment-plan.json`。
+告知 Subagent 按 [deployment-plan.json](/specs/deployment-plan) 写入 `.sealos/phase-2/deployment-plan.json`：
 
-Subagent 自行决定探索方式与是否运行 railpack。不得从组织或仓库名猜测已发布镜像。
+1. **选定 `deployment_source`**（优先级 Helm → Kubernetes → Compose）：
+   - **Helm**：指向 chart 根目录；检查 chart 与 values；须构建的镜像补齐 Dockerfile。
+   - **Kubernetes**：指向**单个** manifest 文件；检查清单；须构建的镜像补齐 Dockerfile。
+   - **其它**：生成或归一化 compose 到 `.sealos/phase-2/docker-compose.yml`（仓库已有 compose 时复制并修补，不改原文件）；`deployment_source` **固定**为 `.sealos/phase-2/docker-compose.yml`。
+2. **镜像准备**：凡须从本仓库构建的容器，确保部署源中有可构建的 `build` 配置（context、dockerfile）。仓库内无可用 Dockerfile 时，按 **railpack 输出 → 审核 → 按需补全** 流程（见下）。
+3. 须落盘的 Dockerfile 写在部署源所引用的路径；优先落在 `.sealos/phase-2/` 下，不得修改用户仓库源码。
+
+主 Agent 须明确告知 Subagent：**须补齐 Dockerfile 时，运行 `railpack`（`info`、`plan`）并直接阅读输出，审核后按需补全（端口、启动命令、构建阶段等），再写入部署源所引用的 dockerfile 路径。**
+
+Subagent 自行决定探索方式。不得从组织或仓库名猜测已发布镜像。
 
 ### 4. 写入 `analysis.json`
 
@@ -89,15 +99,18 @@ Subagent 自行决定探索方式与是否运行 railpack。不得从组织或�
 
 | 结果 | 条件 |
 | --- | --- |
-| **STOP** | Subagent 无法产出覆盖全部可部署组件的 `deployment-plan.json` |
+| **STOP** | 无法确定 `deployment_source` 或部署源不完整 |
+| **STOP** | 某须构建组件无法准备 Dockerfile |
 | **STOP** | `deployment-plan.json` 未通过 schema，或 `analysis.json` 无法写入或通过 schema |
-| **CONTINUE → Phase 4** | 计划与 `analysis.json` 已落盘 |
+| **CONTINUE → Phase 4** | 计划、`deployment_source` 所指文件与 `analysis.json` 已落盘 |
 
-Phase 3 构建失败时，可返回 Phase 2 步骤 3 修订 `deployment-plan.json`。
+Phase 3 构建失败时，可返回 Phase 2 步骤 3 修订部署源或 Dockerfile。
 
 ## 验收标准
 
-- `deployment-plan.json` 的 `items` 覆盖全部可部署组件
+- `deployment-plan.json` 含有效 `deployment_source`
+- 非 Helm/K8s 时 `.sealos/phase-2/docker-compose.yml` 存在且拓扑完整
+- 须构建的组件均有可构建的 Dockerfile
 - `analysis.json` 含 `deployment_plan` 且路径正确
 - `analysis.json` 通过 schema
 

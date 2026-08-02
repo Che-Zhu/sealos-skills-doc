@@ -6,18 +6,18 @@ keywords: ["phase 4", "template", "conversion"]
 
 ## Purpose
 
-Phase 4 belongs to the standard build path only. It reads `deployment-plan.json` to decide whether images must be built first, then generates the full Sealos template per [Deployment sources](/en/pipeline/deployment-sources) rules.
+Phase 4 belongs to the standard build path only. It reads `deployment_source` from `deployment-plan.json`, decides whether images must be built first, then generates the full Sealos template by source type.
 
 The current implementation does not read similar templates or catalog YAML. The template must follow current project facts and conversion rules.
 
 ## Entry branch
 
-Read `deployment_plan` and `items` in `deployment-plan.json`:
+Read `deployment_plan` → `deployment_source`. Parse workloads that need local build and lack a ready digest:
 
 | Case | Action |
 | --- | --- |
-| Every `item` has `image` and digest is resolved | Skip Phase 3; continue template generation in this phase |
-| One or more items lack `image`, or digest is not ready | **CONTINUE → Phase 3**; return to this phase after Phase 3 completes |
+| No builds pending, or all image digests resolved | Skip Phase 3; continue template generation in this phase |
+| One or more workloads need build, or digest not ready | **CONTINUE → Phase 3**; return to this phase after Phase 3 completes |
 
 ## Inputs
 
@@ -25,8 +25,9 @@ Read `deployment_plan` and `items` in `deployment-plan.json`:
 | --- | --- |
 | `analysis.json` | Phases 0–2 |
 | `deployment-plan.json` | Phase 2 (via `analysis.json` → `deployment_plan`) |
+| `deployment_source` | `deployment-plan.json` |
 | Build results | Phase 3 (if this phase entry branch entered Phase 3) |
-| Deployment source files | `.sealos/deployment-source/` (generated in Phase 4 when needed) |
+| Conversion intermediates | `.sealos/deployment-source/` (generated in Phase 4 when needed) |
 
 ## Outputs
 
@@ -38,14 +39,15 @@ Read `deployment_plan` and `items` in `deployment-plan.json`:
 
 ## Conversion paths
 
-| Source kind | Method |
-| --- | --- |
-| Compose | Deterministic converter with `--dry-run`; per-service image overrides for Phase 3 digests |
-| Helm | `helm template` on chart copy; adapter preserves rendered resources |
-| Kubernetes | Source adapter preserves resources and converts unsupported fields |
-| Implicit | AI constructs temporary Compose input from confirmed services and digests |
+Infer adapter from `deployment_source` path:
 
-Adapters are preferred tools, not eligibility gates. When an adapter cannot express the project, the agent may fix temporary input or generate an equivalent canonical template. The agent must pass the same quality gate without dropping services or bypassing validation.
+| `deployment_source` | Method |
+| --- | --- |
+| `.sealos/phase-2/docker-compose.yml` | kompose deterministic conversion; per-service Phase 3 digest overrides |
+| Chart directory (contains `Chart.yaml`) | `helm template` on chart copy; adapter preserves rendered resources |
+| Single `.yaml` / `.yml` manifest | Source adapter preserves resources and converts unsupported fields |
+
+Adapters are preferred tools, not eligibility gates. When an adapter cannot express the project, the agent may fix the deployment source or generate an equivalent canonical template. The agent must pass the same quality gate without dropping services or bypassing validation.
 
 ## Network and ports
 
@@ -93,6 +95,7 @@ Regenerate and re-run the full gate before continuing. Partial fixes are not all
 - [Conversion rules](/en/specs/conversion-rules)
 - [Resource floors](/en/specs/resource-floors)
 - [Artifact schemas](/en/specs/artifact-schemas)
+- [deployment-plan.json](/en/specs/deployment-plan)
 
 ## Implementation map
 

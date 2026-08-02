@@ -1,16 +1,16 @@
 ---
-title: "Phase 2 — Discover"
-description: "Scout the repository and produce deployment-plan.json."
+title: "Phase 2 — Discover and image prep"
+description: "Scout the repository, complete image prep, and write deployment_source."
 keywords: ["phase 2", "discover", "railpack", "gitingest", "deployment-plan"]
 ---
 
 ## Purpose
 
-Phase 2 uses a subagent to produce `deployment-plan.json`, **listing every deployable component required for one Sealos deploy of this repository** (directory + known image when applicable).
+Phase 2 uses a subagent to produce `deployment-plan.json` with a single **`deployment_source` pointer** for downstream conversion, and to **prepare images** for components that need build (reuse repo Dockerfiles, or produce and review a build recipe via railpack).
 
-One Sealos deploy maps to **one full-repo template**. The list must cover all relevant components (including databases, queues, and workers), not only the main app.
+One Sealos deploy maps to **one full-repo template**. Topology must cover all relevant components (including databases, queues, and workers), not only the main app.
 
-Do not build or push images in this phase. Do not generate a Sealos template. Do not create cloud resources. Do not select a deployment source from `official_template` or modify the `official_template` field.
+Do not build or push images in this phase. Do not generate a Sealos template. Do not create cloud resources. Do not modify `official_template`.
 
 UPDATE mode skips this phase.
 
@@ -28,7 +28,8 @@ UPDATE mode skips this phase.
 | Output | Path | Description |
 | --- | --- | --- |
 | Deployment digest | `.sealos/phase-2/gitingest-digest.txt` | gitingest output (scope in step 2) |
-| Deployment plan | `.sealos/phase-2/deployment-plan.json` | Subagent output; deployable component list |
+| Deployment plan | `.sealos/phase-2/deployment-plan.json` | Contains `deployment_source` |
+| Canonical Compose | `.sealos/phase-2/docker-compose.yml` | Only on non-Helm/K8s path |
 | `analysis.json` | `.sealos/analysis.json` | Adds `deployment_plan` pointer |
 
 See [deployment-plan.json](/en/specs/deployment-plan) for the field contract.
@@ -59,7 +60,7 @@ Include file types such as:
 
 Record README understanding and scout notes in the deploy log (natural language, a few sentences).
 
-### 3. Subagent — deployable component list
+### 3. Subagent — pick deployment source and image prep
 
 The main agent starts one subagent with:
 
@@ -67,9 +68,18 @@ The main agent starts one subagent with:
 - Path to `.sealos/phase-2/gitingest-digest.txt`
 - Verbal handoff from the main agent (findings and judgment, natural language)
 
-Tell the subagent: **list every component required for one Sealos deploy of this repository**; give each item a directory `path` and an `image` when known; explore the repository; `railpack` is available (`info`, `plan`); write output to `.sealos/phase-2/deployment-plan.json`.
+Tell the subagent to write `.sealos/phase-2/deployment-plan.json` per [deployment-plan.json](/en/specs/deployment-plan):
 
-The subagent decides how to explore and whether to run railpack. Do not guess published images from org or repo name.
+1. **Set `deployment_source`** (priority Helm → Kubernetes → Compose):
+   - **Helm**: point to chart root; check chart and values; prepare Dockerfiles for images that need build.
+   - **Kubernetes**: point to a **single** manifest file; check manifests; prepare Dockerfiles for images that need build.
+   - **Other**: generate or normalize compose to `.sealos/phase-2/docker-compose.yml` (copy and patch when repo has compose — do not edit the original); `deployment_source` is **fixed** to `.sealos/phase-2/docker-compose.yml`.
+2. **Image prep**: every container built from this repo must have a buildable `build` config (context, dockerfile) in the deployment source. When no usable Dockerfile exists in the repo, follow **read railpack output → review → refine** (below).
+3. Write Dockerfiles to disk only at paths referenced by the deployment source; prefer `.sealos/phase-2/`; do not modify user source.
+
+The main agent must tell the subagent: **when a Dockerfile is needed, run `railpack` (`info`, `plan`) and read the output directly, review and refine (ports, start command, build stages, etc.), then write to the dockerfile path referenced in the deployment source.**
+
+The subagent decides how to explore. Do not guess published images from org or repo name.
 
 ### 4. Write `analysis.json`
 
@@ -89,15 +99,18 @@ Do not modify fields written in Phase 0 or Phase 1 (including `official_template
 
 | Result | Condition |
 | --- | --- |
-| **STOP** | Subagent cannot produce `deployment-plan.json` covering all deployable components |
+| **STOP** | Cannot determine `deployment_source` or deployment source is incomplete |
+| **STOP** | A build-required component cannot get a Dockerfile |
 | **STOP** | `deployment-plan.json` fails schema, or `analysis.json` cannot be written or pass schema |
-| **CONTINUE → Phase 4** | Plan and `analysis.json` are persisted |
+| **CONTINUE → Phase 4** | Plan, file at `deployment_source`, and `analysis.json` are persisted |
 
-On Phase 3 build failure, return to Phase 2 step 3 and revise `deployment-plan.json`.
+On Phase 3 build failure, return to Phase 2 step 3 to revise the deployment source or Dockerfiles.
 
 ## Acceptance
 
-- `items` in `deployment-plan.json` covers all deployable components
+- `deployment-plan.json` has a valid `deployment_source`
+- When not Helm/K8s, `.sealos/phase-2/docker-compose.yml` exists with full topology
+- Every build-required component has a buildable Dockerfile
 - `analysis.json` includes `deployment_plan` with correct path
 - `analysis.json` passes schema
 

@@ -6,7 +6,9 @@ keywords: ["phase 3", "build", "ghcr", "digest"]
 
 ## Purpose
 
-Phase 3 builds and pushes images only for services that still lack a reusable digest and will run as containers. One service needing build does not discard already verified images for other services.
+Phase 3 **executes** build and push: parse `deployment_source` from `deployment-plan.json`, then build and push images for workloads that still lack a reusable digest and need a local build. One service needing build does not discard already verified images for other services.
+
+This phase does not scout the repo, generate Dockerfiles, or modify `deployment_source` (recipe errors return to Phase 2).
 
 Docker, Buildx, Node.js 18+, and `gh` are required only when this phase actually runs.
 
@@ -14,15 +16,24 @@ Docker, Buildx, Node.js 18+, and `gh` are required only when this phase actually
 
 | Input | Source |
 | --- | --- |
-| Build components | Phase 2 `deployment_plan` → `items` without `image` |
+| Deployment source | Phase 2 `deployment_plan` → `deployment_source` |
+| Build targets | Parsed from deployment source (see table below) |
 | Caller | Phase 4 entry branch (when build is required) |
 | GitHub auth | Phase 0 (`local`) |
+
+### Parse build targets from `deployment_source`
+
+| Source type | How to parse |
+| --- | --- |
+| Compose (`.sealos/phase-2/docker-compose.yml`) | Each service with `build:` |
+| Helm (chart directory) | After `helm template`, workloads whose images need local build |
+| Kubernetes (single yaml) | Containers in the manifest that need local build |
 
 ## Outputs
 
 | Output | Path | Description |
 | --- | --- | --- |
-| Per-service build result | `.sealos/build/{service-key}/build-result.json` | Digest, pull access, push metadata |
+| Per-service build result | `.sealos/build/{service-key}/build-result.json` | Digest, pull access, push metadata; key aligns with service/workload name in deployment source |
 
 ## Procedure
 
@@ -31,17 +42,17 @@ Sealos Deploy must:
 - Push newly built images to the current GitHub user's GHCR. The user does not choose the registry.
 - Check `gh` login and `write:packages` only when builds are pending.
 - Build for `linux/amd64`.
-- For each item that needs build, resolve Dockerfile or railpack under its `path` and build for `linux/amd64`.
+- For each build target, run Buildx with context and Dockerfile paths declared in the deployment source.
 - Tag with a unique version identifier per build.
 - Read digest from Buildx metadata for the same build.
 - Record whether anonymous pull works and whether deploy needs a pull secret.
-- Return build-definition failures to Phase 2 step 3 to revise `deployment-plan.json`. Keep auth, network, Docker, and push failures in Phase 3.
+- Return recipe failures (missing Dockerfile, invalid context, Dockerfile syntax errors) to Phase 2 step 3. Keep auth, network, Docker, and push failures in Phase 3.
 
-Pull failures on Dockerfile bases during build are build-definition failures. Push failures to `ghcr.io/{user}/...` are Phase 3 execution failures.
+Pull failures on Dockerfile bases during build are recipe failures. Push failures to `ghcr.io/{user}/...` are Phase 3 execution failures.
 
 All private or indeterminate GHCR images in one app must share one normalized GHCR namespace. Mixed namespaces stop before cloud resource creation.
 
-Phase 2 may still reuse Docker Hub digests published by maintainers. New builds from this flow go to GHCR only.
+Components with upstream images and resolved digests are not rebuilt here. New builds from this flow go to GHCR only.
 
 `build-result.json` passes `push.pull_access` to Phase 4. Only `ghcr_secret_required` or `indeterminate` successful builds attach pull-secret handling in the template.
 
@@ -50,18 +61,19 @@ Phase 2 may still reuse Docker Hub digests published by maintainers. New builds 
 | Result | Condition |
 | --- | --- |
 | **CONTINUE → Phase 4** | All required builds succeed or no builds were needed |
-| **RETURN → Phase 2** | Build definition failure for a service |
+| **RETURN → Phase 2** | Build recipe failure for a service |
 | **STOP** | Phase 3 execution failure after remediation, or namespace conflict |
 
 ## Acceptance
 
 - Each built service has `build-result.json` matching schema
 - Digests are immutable `repository@sha256:...`
-- Reused Phase 2 digests unchanged
+- Upstream image references that were not rebuilt are unchanged
 
 ## Schema links
 
 - [Artifact schemas — build-result.json](/en/specs/artifact-schemas)
+- [deployment-plan.json](/en/specs/deployment-plan)
 
 ## Implementation map
 

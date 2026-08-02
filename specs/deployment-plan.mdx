@@ -1,6 +1,6 @@
 ---
 title: "deployment-plan.json"
-description: "Phase 2 Subagent 产出的可部署组件清单契约。"
+description: "Phase 2 Subagent 产出的部署计划契约。"
 keywords: ["deployment-plan", "schema", "phase 2", "artifacts"]
 ---
 
@@ -8,80 +8,77 @@ keywords: ["deployment-plan", "schema", "phase 2", "artifacts"]
 
 ## 目的
 
-Subagent **必须列出本仓库一次 Sealos 部署所需的全部组件**——凡须构建镜像或直接以容器部署的项，均须出现在 `items` 中。
+Phase 2 完成侦察与**镜像准备**后，在计划中声明**唯一部署源路径** `deployment_source`。下游 Phase 3、4 只读该指针，不再维护平行组件清单。
 
-一次 Sealos 部署对应整仓一张模板。不得只列主应用，遗漏数据库、队列、缓存、worker 等依赖组件。
+一次 Sealos 部署对应整仓一张模板。拓扑须覆盖全部相关组件（含数据库、队列、worker），不得只写主应用。
 
-Subagent 不产出构建定义、拓扑图或 Sealos 模板。它只回答：**有哪些组件、各自在哪个目录、是否已有已知镜像引用**。
+Subagent 不构建、不推送镜像，不生成 Sealos 模板。`analysis.json` 仅通过 `deployment_plan` 指向本文件，不在 `analysis.json` 重复写入 `deployment_source`。
 
 ## 文件位置
 
 ```
 .sealos/phase-2/deployment-plan.json
+.sealos/phase-2/docker-compose.yml          # 非 Helm/K8s 时由 Phase 2 写入（canonical）
 ```
 
-`analysis.json` 通过 `deployment_plan` 字段指向该路径。
+须落盘的 Dockerfile 路径由部署源中的 `build.dockerfile`（或等价字段）声明，不单独规定目录结构。
 
 ## 顶层字段
 
 | 字段 | 类型 | 必填 | 说明 |
 | --- | --- | --- | --- |
 | `generated_at` | string (date-time) | 否 | 写入时间 |
-| `items` | array | 是 | 可部署组件列表，至少一项 |
+| `deployment_source` | string | 是 | 部署源路径，相对 `work_dir`（见下表） |
 
-## `items[]` 每项
+## `deployment_source` 取值
 
-| 字段 | 类型 | 必填 | 说明 |
-| --- | --- | --- | --- |
-| `path` | string | 是 | 组件目录，相对 `work_dir`（如 `.`、`apps/api`） |
-| `name` | string | 否 | 组件名；Compose 等多服务场景建议填写服务名 |
-| `image` | string | 否 | 已知镜像引用（Compose `image:`、README、CI 等）；须本地构建时不写 |
+Phase 2 按 [部署源选择](/pipeline/deployment-sources) 优先级（Helm → Kubernetes → Compose）选定**一条**路径：
 
-### `path` 规则
+| 情况 | `deployment_source` 指向 | Phase 2 额外动作 |
+| --- | --- | --- |
+| **Helm** | chart 根目录（含 `Chart.yaml`），如 `./charts/myapp` | 检查 chart；须构建的镜像补齐 Dockerfile；**不**生成 compose |
+| **Kubernetes** | **单个** manifest 文件，如 `k8s/deployment.yaml` | 检查清单；须构建的镜像补齐 Dockerfile；**不**生成 compose |
+| **其它**（含已有 compose、单应用、隐式拓扑） | **固定** `.sealos/phase-2/docker-compose.yml` | 从仓库 compose 复制/修补，或生成 compose；补齐 `build` 与 Dockerfile |
 
-- 有独立源码目录的组件：写该目录路径。
-- Compose 中仅引用上游镜像、无独立构建目录的组件：`path` 写 `"."`（或 compose 文件所在目录）。
-- `path` 须指向仓库内真实路径。
+规则：
 
-### `image` 规则
+- Compose 路径**始终**指向 `.sealos/phase-2/docker-compose.yml`，不得直接指向仓库内 `docker-compose.yml`。
+- Helm 与 Kubernetes 同时存在时，按 Helm → Kubernetes 优先级；仍冲突则从 README、CI、文档定案。
+- 须落盘的 Dockerfile 优先写在 `.sealos/phase-2/` 下，路径与部署源中的 `build.dockerfile` 一致；不得修改用户仓库源码（Helm values、K8s manifest、compose 的 canonical 副本除外）。
 
-- 来源已明确镜像引用时填写（含 tag 或 digest）。
-- 须从 `path` 下 Dockerfile 或 railpack 构建时**省略** `image`。
-- 不得从组织名或仓库名猜测镜像。
+## 镜像准备
+
+无论 `deployment_source` 类型，Phase 2 均须确保：凡须从本仓库构建的容器，在 Phase 2 结束时已有可构建的 Dockerfile，并在部署源中引用正确路径。
+
+1. 仓库内已有可用 Dockerfile（含 Compose `build.dockerfile`）→ 直接复用。
+2. 无可用 Dockerfile → 运行 `railpack`（`info`、`plan`），**直接阅读输出**，审核后按需补全（端口、启动命令、多阶段构建、环境变量等），再写入部署源所引用的 dockerfile 路径。
+
+有明确上游镜像引用的组件不生成 Dockerfile。不得从组织名或仓库名猜测镜像。
 
 ## 示例
 
-**单应用：**
+**Helm：**
 
 ```json
 {
-  "generated_at": "2026-08-02T03:50:00Z",
-  "items": [
-    { "path": "." }
-  ]
+  "generated_at": "2026-08-02T12:00:00Z",
+  "deployment_source": "./charts/myapp"
 }
 ```
 
-**Compose 多服务：**
+**Kubernetes：**
 
 ```json
 {
-  "items": [
-    { "name": "web", "path": "./backend" },
-    { "name": "worker", "path": "./worker" },
-    { "name": "postgres", "path": ".", "image": "postgres:16-alpine" },
-    { "name": "redis", "path": ".", "image": "redis:7-alpine" }
-  ]
+  "deployment_source": "deploy/app.yaml"
 }
 ```
 
-**已有发布镜像：**
+**Compose（含仓库已有 compose 或隐式拓扑）：**
 
 ```json
 {
-  "items": [
-    { "name": "app", "path": ".", "image": "ghcr.io/org/myapp:v1.2.3" }
-  ]
+  "deployment_source": ".sealos/phase-2/docker-compose.yml"
 }
 ```
 
@@ -94,23 +91,10 @@ Subagent 不产出构建定义、拓扑图或 Sealos 模板。它只回答：**�
   "title": "Sealos Deploy Deployment Plan",
   "type": "object",
   "additionalProperties": false,
-  "required": ["items"],
+  "required": ["deployment_source"],
   "properties": {
     "generated_at": { "type": "string", "format": "date-time" },
-    "items": {
-      "type": "array",
-      "minItems": 1,
-      "items": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": ["path"],
-        "properties": {
-          "path": { "type": "string", "minLength": 1 },
-          "name": { "type": "string", "minLength": 1 },
-          "image": { "type": "string", "minLength": 1 }
-        }
-      }
-    }
+    "deployment_source": { "type": "string", "minLength": 1 }
   }
 }
 ```
@@ -120,17 +104,19 @@ Subagent 不产出构建定义、拓扑图或 Sealos 模板。它只回答：**�
 | 阶段 | 读取方式 |
 | --- | --- |
 | Phase 2（主 Agent） | 在 `analysis.json` 写入 `deployment_plan` 指针 |
-| Phase 4 | 若所有 `items` 均有 `image` 且 digest 已解析，可跳过 Phase 3 |
-| Phase 3 | 对无 `image`（或 digest 未就绪）的 `items`，在 `path` 下构建并推送 |
+| Phase 3 | 解析 `deployment_source`，对须构建且 digest 未就绪的工作负载构建并推送 |
+| Phase 4 | 读取 `deployment_source`，按路径类型选择适配器（compose / helm / kubernetes） |
 
 ## 验收
 
-- `items` 覆盖一次部署所需的全部组件
-- 每项 `path` 为仓库内有效相对路径
-- 已知镜像的项带 `image`；须构建的项不带 `image`
+- `deployment_source` 存在且为 `work_dir` 内有效相对路径
+- Helm/K8s 路径指向真实 chart 或 manifest 文件
+- 非 Helm/K8s 时 `deployment_source` 为 `.sealos/phase-2/docker-compose.yml`，且该文件存在并覆盖完整拓扑
+- 须构建的组件在 Phase 2 结束时已有 Dockerfile
 - 文件通过上述 JSON Schema
 
 ## 相关
 
 - [Phase 2 — 发现与镜像准备](/pipeline/phases/phase-2-discover)
+- [部署源](/pipeline/deployment-sources)
 - [产物](/pipeline/artifacts)

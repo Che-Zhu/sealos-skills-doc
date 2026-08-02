@@ -1,6 +1,6 @@
 ---
 title: "Deployment sources"
-description: "Compose, Helm, Kubernetes, implicit, and official template source types."
+description: "Compose, Helm, Kubernetes, and official template source types."
 keywords: ["deployment source", "compose", "helm", "kubernetes"]
 ---
 
@@ -9,19 +9,28 @@ keywords: ["deployment source", "compose", "helm", "kubernetes"]
 | Source | Detection | Required tools |
 | --- | --- | --- |
 | Official template | Phase 1 exact catalog match (fast path) | None (fast path) |
-| Docker Compose | `docker-compose.yml` / `compose.yaml` | kompose |
+| Docker Compose | `.sealos/phase-2/docker-compose.yml` (Phase 2 canonical) | kompose |
 | Helm | `Chart.yaml` or chart directory | Helm 3+ |
-| Kubernetes | Native manifests | Python/PyYAML |
-| Implicit | No explicit topology file | Project structure analysis |
+| Kubernetes | Single native manifest file | Python/PyYAML |
 
-## Source selection precedence
+On the standard build path, Phase 2 writes `deployment_source` in `deployment-plan.json`. Phase 4 reads that pointer directly — no second scout.
 
-Phase 4 selects the deployment source from `deployment-plan.json`, `gitingest-digest`, and the rules below. Explicit Compose, Helm, and Kubernetes files take precedence over implicit paths. When multiple explicit sources conflict, resolve the primary topology from README, CI, or docs — do not guess. One Sealos deploy must cover every component in `deployment-plan.json`.
+## Source selection priority
+
+Phase 2 picks **one** `deployment_source` after scout:
+
+1. **Helm** — chart root directory
+2. **Kubernetes** — single manifest file
+3. **Compose** — generate or normalize to `.sealos/phase-2/docker-compose.yml`
+
+When Helm and Kubernetes both exist, Helm wins. When multiple sources of the same kind conflict, resolve the primary topology from README, CI, or docs — do not guess.
+
+One Sealos deploy must cover every relevant component (databases, queues, caches, workers). Phase 4 must not drop dependencies because they are not the main app.
 
 ## Conditional source materialization
 
-{/* TODO: Git LFS, submodules — install only when repository declares them. */}
+Git LFS, submodules, and similar mechanisms are installed and fetched only when the repository declares them. See [Phase 0](/en/pipeline/phases/phase-0-preflight).
 
 ## Topology preservation
 
-`deployment-plan.json` `items` must include databases, queues, caches, and workers. Build-only components are handled separately from final runtime topology. Phase 4 must not drop dependencies because they are not the main app.
+The file (or chart render) at `deployment_source` must include the full runtime topology. Build-only handling is separate from final runtime topology; Phase 3 digests are written back to the matching workloads in Phase 4.
