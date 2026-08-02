@@ -12,12 +12,12 @@ The current implementation does not read similar templates or catalog YAML. The 
 
 ## Entry branch
 
-Read `deployment_plan` and `deployment-plan.json`. For container workloads:
+Read `deployment_plan` and `items` in `deployment-plan.json`:
 
 | Case | Action |
 | --- | --- |
-| Every container workload has a reusable digest | Skip Phase 3; continue template generation in this phase |
-| One or more services need build | **CONTINUE → Phase 3**; return to this phase after Phase 3 completes |
+| Every `item` has `image` and digest is resolved | Skip Phase 3; continue template generation in this phase |
+| One or more items lack `image`, or digest is not ready | **CONTINUE → Phase 3**; return to this phase after Phase 3 completes |
 
 ## Inputs
 

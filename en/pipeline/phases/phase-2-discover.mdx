@@ -6,9 +6,9 @@ keywords: ["phase 2", "discover", "railpack", "gitingest", "deployment-plan"]
 
 ## Purpose
 
-Determine the full runtime topology and build approach for one Sealos deploy of this repository. Produce `deployment-plan.json`.
+Phase 2 uses a subagent to produce `deployment-plan.json`, **listing every deployable component required for one Sealos deploy of this repository** (directory + known image when applicable).
 
-One Sealos deploy maps to **one full-repo template**. The plan must cover all relevant services (including databases, queues, and workers), not only the main app.
+One Sealos deploy maps to **one full-repo template**. The list must cover all relevant components (including databases, queues, and workers), not only the main app.
 
 Do not build or push images in this phase. Do not generate a Sealos template. Do not create cloud resources. Do not select a deployment source from `official_template` or modify the `official_template` field.
 
@@ -28,12 +28,12 @@ UPDATE mode skips this phase.
 | Output | Path | Description |
 | --- | --- | --- |
 | Deployment digest | `.sealos/phase-2/gitingest-digest.txt` | gitingest output (scope in step 2) |
-| Deployment plan | `.sealos/phase-2/deployment-plan.json` | Subagent output; JSON build and deploy guide |
-| `analysis.json` | `.sealos/analysis.json` | Includes `deployment_plan` path; fields for Phases 3–4 |
+| Deployment plan | `.sealos/phase-2/deployment-plan.json` | Subagent output; deployable component list |
+| `analysis.json` | `.sealos/analysis.json` | Includes `deployment_plan` path; derived fields for Phases 3–4 |
 
-Field-level contract for `deployment-plan.json` is TBD. The plan must at least describe full service topology, image or build approach per service, and evidence paths.
+See [deployment-plan.json](/en/specs/deployment-plan) for the field contract.
 
-See [Deployment sources](/en/pipeline/deployment-sources) for source kinds.
+Deployment source kinds: [Deployment sources](/en/pipeline/deployment-sources).
 
 ## Preconditions
 
@@ -61,7 +61,7 @@ Include file types such as:
 
 Record README understanding and scout notes in the deploy log (natural language, a few sentences).
 
-### 3. Subagent — deployment plan
+### 3. Subagent — deployable component list
 
 The main agent starts one subagent with:
 
@@ -69,7 +69,7 @@ The main agent starts one subagent with:
 - Path to `.sealos/phase-2/gitingest-digest.txt`
 - Verbal handoff from the main agent (findings and judgment, natural language)
 
-Tell the subagent: **produce a JSON plan that can build and deploy this project**; explore the repository; `railpack` is available (`info`, `plan`); write output to `.sealos/phase-2/deployment-plan.json`.
+Tell the subagent: **list every component required for one Sealos deploy of this repository**; give each item a directory `path` and an `image` when known; explore the repository; `railpack` is available (`info`, `plan`); write output to `.sealos/phase-2/deployment-plan.json`.
 
 The subagent decides how to explore and whether to run railpack. Do not guess published images from org or repo name.
 
@@ -81,29 +81,30 @@ The subagent decides how to explore and whether to run railpack. Do not guess pu
 }
 ```
 
-Merge with existing Phase 0 and Phase 1 fields. Supplement Phases 3–4 fields from `deployment-plan.json` (such as `deployment_source`, `service_inventory`, `image_inventory`). Use `null`, `[]`, or `{}` for unknowns. Do not fabricate.
+Merge with existing Phase 0 and Phase 1 fields. Supplement Phases 3–4 fields from `items` in `deployment-plan.json` (such as `deployment_source`, `service_inventory`, `image_inventory`). Use `null`, `[]`, or `{}` for unknowns. Do not fabricate.
 
-Persist after [schema](/en/specs/artifact-schemas) validation.
+`deployment-plan.json` must pass the [deployment-plan.json contract](/en/specs/deployment-plan). Persist `analysis.json` after [artifact schemas](/en/specs/artifact-schemas) validation.
 
 ## Stop conditions
 
 | Result | Condition |
 | --- | --- |
-| **STOP** | Subagent cannot produce a credible `deployment-plan.json` covering all relevant services |
-| **STOP** | `deployment-plan.json` or `analysis.json` cannot be written or pass schema |
+| **STOP** | Subagent cannot produce `deployment-plan.json` covering all deployable components |
+| **STOP** | `deployment-plan.json` fails schema, or `analysis.json` cannot be written or pass schema |
 | **CONTINUE → Phase 4** | Plan and `analysis.json` are persisted |
 
 On Phase 3 build-definition failure, return to Phase 2 step 3 to revise `deployment-plan.json`.
 
 ## Acceptance
 
-- `deployment-plan.json` exists and covers all relevant services
+- `items` in `deployment-plan.json` covers all deployable components
 - `analysis.json` includes `deployment_plan` with correct path
 - `analysis.json` passes schema
 
 ## Schema links
 
 - [Artifacts](/en/pipeline/artifacts)
+- [deployment-plan.json](/en/specs/deployment-plan)
 - [Artifact schemas](/en/specs/artifact-schemas)
 - [Deployment sources](/en/pipeline/deployment-sources)
 

@@ -14,7 +14,7 @@ Phase 3 仅为仍缺少可复用 digest 且将以容器运行的服务构建并�
 
 | 输入 | 来源 |
 | --- | --- |
-| 构建定义 | Phase 2 `deployment_plan` → `deployment-plan.json` |
+| 构建组件 | Phase 2 `deployment_plan` → `deployment-plan.json` 中无 `image` 的 `items` |
 | 调用方 | Phase 4 入口分支（须构建时） |
 | GitHub 认证 | Phase 0（`local`） |
 
@@ -31,11 +31,11 @@ Sealos Deploy 必须：
 - 将新构建镜像推送到当前 GitHub 用户的 GHCR。用户不选择 registry。
 - 仅在有待构建时检查 `gh` 登录与 `write:packages`。
 - 构建 `linux/amd64`。
-- 按 `deployment-plan.json` 中各服务的构建定义执行（context、Dockerfile、railpack plan 等）。
+- 对每个须构建的 `items` 条目，在其 `path` 下解析 Dockerfile 或 railpack 并构建 `linux/amd64` 镜像。
 - 每次构建使用唯一版本标识打标签。
 - 从同次 Buildx 元数据读取 digest。
 - 记录匿名拉取是否可用及部署是否需要 pull secret。
-- 构建定义失败返回 Phase 2 步骤 3，修订 `deployment-plan.json`。认证、网络、Docker 与推送失败留在 Phase 3。
+- 构建定义失败（Dockerfile、上下文或 `path` 无效）返回 Phase 2 步骤 3，修订 `deployment-plan.json`。认证、网络、Docker 与推送失败留在 Phase 3。
 
 构建中 Dockerfile 基础镜像拉取失败属构建定义失败。推送到 `ghcr.io/{user}/...` 失败属 Phase 3 执行失败。
 

@@ -14,7 +14,7 @@ Docker, Buildx, Node.js 18+, and `gh` are required only when this phase actually
 
 | Input | Source |
 | --- | --- |
-| Build definitions | Phase 2 `deployment_plan` → `deployment-plan.json` |
+| Build components | Phase 2 `deployment_plan` → `items` without `image` |
 | Caller | Phase 4 entry branch (when build is required) |
 | GitHub auth | Phase 0 (`local`) |
 
@@ -31,7 +31,7 @@ Sealos Deploy must:
 - Push newly built images to the current GitHub user's GHCR. The user does not choose the registry.
 - Check `gh` login and `write:packages` only when builds are pending.
 - Build for `linux/amd64`.
-- Execute per-service build definitions from `deployment-plan.json` (context, Dockerfile, railpack plan, etc.).
+- For each item that needs build, resolve Dockerfile or railpack under its `path` and build for `linux/amd64`.
 - Tag with a unique version identifier per build.
 - Read digest from Buildx metadata for the same build.
 - Record whether anonymous pull works and whether deploy needs a pull secret.

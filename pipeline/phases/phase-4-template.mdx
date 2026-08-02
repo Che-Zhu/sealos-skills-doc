@@ -12,12 +12,12 @@ Phase 4 仅属于标准构建路径。它根据 `deployment-plan.json` 判断是
 
 ## 入口分支
 
-读取 `deployment_plan` 与 `deployment-plan.json`。按容器工作负载判断：
+读取 `deployment_plan` 与 `deployment-plan.json` 的 `items`：
 
 | 情况 | 行为 |
 | --- | --- |
-| 每个容器工作负载均有可复用 digest | 跳过 Phase 3，继续本 Phase 模板生成 |
-| 一个或多个服务须构建 | **CONTINUE → Phase 3**；Phase 3 完成后返回本 Phase |
+| 每个 `items` 条目均有 `image` 且 digest 已解析 | 跳过 Phase 3，继续本 Phase 模板生成 |
+| 一个或多个条目无 `image`，或 digest 未就绪 | **CONTINUE → Phase 3**；Phase 3 完成后返回本 Phase |
 
 ## 输入
 

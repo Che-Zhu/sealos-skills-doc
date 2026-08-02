@@ -1,0 +1,136 @@
+---
+title: "deployment-plan.json"
+description: "Phase 2 Subagent 产出的可部署组件清单契约。"
+keywords: ["deployment-plan", "schema", "phase 2", "artifacts"]
+---
+
+`deployment-plan.json` 由 [Phase 2](/pipeline/phases/phase-2-discover) Subagent 写入 `.sealos/phase-2/deployment-plan.json`。
+
+## 目的
+
+Subagent **必须列出本仓库一次 Sealos 部署所需的全部组件**——凡须构建镜像或直接以容器部署的项，均须出现在 `items` 中。
+
+一次 Sealos 部署对应整仓一张模板。不得只列主应用，遗漏数据库、队列、缓存、worker 等依赖组件。
+
+Subagent 不产出构建定义、拓扑图或 Sealos 模板。它只回答：**有哪些组件、各自在哪个目录、是否已有已知镜像引用**。
+
+## 文件位置
+
+```
+.sealos/phase-2/deployment-plan.json
+```
+
+`analysis.json` 通过 `deployment_plan` 字段指向该路径。
+
+## 顶层字段
+
+| 字段 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| `generated_at` | string (date-time) | 否 | 写入时间 |
+| `items` | array | 是 | 可部署组件列表，至少一项 |
+
+## `items[]` 每项
+
+| 字段 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| `path` | string | 是 | 组件目录，相对 `work_dir`（如 `.`、`apps/api`） |
+| `name` | string | 否 | 组件名；Compose 等多服务场景建议填写服务名 |
+| `image` | string | 否 | 已知镜像引用（Compose `image:`、README、CI 等）；须本地构建时不写 |
+
+### `path` 规则
+
+- 有独立源码目录的组件：写该目录路径。
+- Compose 中仅引用上游镜像、无独立构建目录的组件：`path` 写 `"."`（或 compose 文件所在目录）。
+- `path` 须指向仓库内真实路径。
+
+### `image` 规则
+
+- 来源已明确镜像引用时填写（含 tag 或 digest）。
+- 须从 `path` 下 Dockerfile 或 railpack 构建时**省略** `image`。
+- 不得从组织名或仓库名猜测镜像。
+
+## 示例
+
+**单应用：**
+
+```json
+{
+  "generated_at": "2026-08-02T03:50:00Z",
+  "items": [
+    { "path": "." }
+  ]
+}
+```
+
+**Compose 多服务：**
+
+```json
+{
+  "items": [
+    { "name": "web", "path": "./backend" },
+    { "name": "worker", "path": "./worker" },
+    { "name": "postgres", "path": ".", "image": "postgres:16-alpine" },
+    { "name": "redis", "path": ".", "image": "redis:7-alpine" }
+  ]
+}
+```
+
+**已有发布镜像：**
+
+```json
+{
+  "items": [
+    { "name": "app", "path": ".", "image": "ghcr.io/org/myapp:v1.2.3" }
+  ]
+}
+```
+
+## JSON Schema
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://skills.sh/sealos-deploy/schemas/deployment-plan.schema.json",
+  "title": "Sealos Deploy Deployment Plan",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["items"],
+  "properties": {
+    "generated_at": { "type": "string", "format": "date-time" },
+    "items": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path"],
+        "properties": {
+          "path": { "type": "string", "minLength": 1 },
+          "name": { "type": "string", "minLength": 1 },
+          "image": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}
+```
+
+## 下游用法
+
+| 阶段 | 读取方式 |
+| --- | --- |
+| Phase 2（主 Agent） | 从 `items` 派生 `analysis.json` 中的 `service_inventory`、`image_inventory` 等 |
+| Phase 4 | 若所有 `items` 均有 `image` 且 digest 已解析，可跳过 Phase 3 |
+| Phase 3 | 对无 `image`（或 digest 未就绪）的 `items`，在 `path` 下构建并推送 |
+
+## 验收
+
+- `items` 覆盖一次部署所需的全部组件
+- 每项 `path` 为仓库内有效相对路径
+- 已知镜像的项带 `image`；须构建的项不带 `image`
+- 文件通过上述 JSON Schema
+
+## 相关
+
+- [Phase 2 — 发现与镜像准备](/pipeline/phases/phase-2-discover)
+- [产物](/pipeline/artifacts)

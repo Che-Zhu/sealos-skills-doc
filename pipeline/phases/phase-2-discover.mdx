@@ -6,9 +6,9 @@ keywords: ["phase 2", "discover", "railpack", "gitingest", "deployment-plan"]
 
 ## 目的
 
-确定本仓库一次 Sealos 部署的完整运行时拓扑与构建方式，产出 `deployment-plan.json`。
+Phase 2 通过 Subagent 产出 `deployment-plan.json`，**列出本仓库一次 Sealos 部署所需的全部可部署组件**（目录 + 已知镜像）。
 
-一次 Sealos 部署对应**整仓一张模板**。计划须覆盖全部相关服务（含数据库、队列、worker），不得只写主应用。
+一次 Sealos 部署对应**整仓一张模板**。清单须覆盖全部相关组件（含数据库、队列、worker），不得只写主应用。
 
 不得在本阶段实际构建或推送镜像。不得生成 Sealos 模板。不得创建云端资源。不得根据 `official_template` 选定部署源或修改 `official_template` 字段。
 
@@ -28,10 +28,10 @@ UPDATE 模式跳过本 Phase。
 | 输出 | 路径 | 说明 |
 | --- | --- | --- |
 | 部署相关摘要 | `.sealos/phase-2/gitingest-digest.txt` | gitingest 输出（范围见步骤 2） |
-| 部署计划 | `.sealos/phase-2/deployment-plan.json` | Subagent 产出；JSON 构建与部署指南 |
-| `analysis.json` | `.sealos/analysis.json` | 含 `deployment_plan` 指向上述文件；Phase 3、4 所需字段 |
+| 部署计划 | `.sealos/phase-2/deployment-plan.json` | Subagent 产出的可部署组件清单 |
+| `analysis.json` | `.sealos/analysis.json` | 含 `deployment_plan` 路径；Phase 3、4 所需派生字段 |
 
-`deployment-plan.json` 字段级契约待定。计划至少须描述完整服务拓扑、各服务镜像或构建方式，并附证据路径。
+字段契约见 [deployment-plan.json](/specs/deployment-plan)。
 
 部署源类型见 [部署源](/pipeline/deployment-sources)。
 
@@ -61,7 +61,7 @@ UPDATE 模式跳过本 Phase。
 
 将 README 理解与侦察要点写入部署日志（自然语言，数句即可）。
 
-### 3. Subagent — 部署计划
+### 3. Subagent — 可部署组件清单
 
 主 Agent 启动一个 Subagent。传入：
 
@@ -69,7 +69,7 @@ UPDATE 模式跳过本 Phase。
 - `.sealos/phase-2/gitingest-digest.txt` 路径
 - 主 Agent 口头交接（发现与判断，自然语言）
 
-告知 Subagent：**需要一份能用于构建并部署本项目的 JSON 计划**；须自行探索仓库；`railpack` 可用（`info`、`plan`）；产出写入 `.sealos/phase-2/deployment-plan.json`。
+告知 Subagent：**列出本仓库一次 Sealos 部署所需的全部组件**；每项给出目录 `path`，已知镜像时附上 `image`；须自行探索仓库；`railpack` 可用（`info`、`plan`）；产出写入 `.sealos/phase-2/deployment-plan.json`。
 
 Subagent 自行决定探索方式与是否运行 railpack。不得从组织或仓库名猜测已发布镜像。
 
@@ -81,29 +81,30 @@ Subagent 自行决定探索方式与是否运行 railpack。不得从组织或�
 }
 ```
 
-与 Phase 0、Phase 1 已有字段合并写入。根据 `deployment-plan.json` 补充 Phase 3、4 所需字段（如 `deployment_source`、`service_inventory`、`image_inventory`）。未知写 `null`、`[]` 或 `{}`。不得编造。
+与 Phase 0、Phase 1 已有字段合并写入。根据 `deployment-plan.json` 的 `items` 补充 Phase 3、4 所需字段（如 `deployment_source`、`service_inventory`、`image_inventory`）。未知写 `null`、`[]` 或 `{}`。不得编造。
 
-通过 [schema](/specs/artifact-schemas) 后落盘。
+`deployment-plan.json` 须通过 [deployment-plan.json 契约](/specs/deployment-plan)。`analysis.json` 通过 [产物 Schema](/specs/artifact-schemas) 后落盘。
 
 ## 停止条件
 
 | 结果 | 条件 |
 | --- | --- |
-| **STOP** | Subagent 无法产出覆盖全部相关服务的可信 `deployment-plan.json` |
-| **STOP** | `deployment-plan.json` 或 `analysis.json` 无法写入或通过 schema |
+| **STOP** | Subagent 无法产出覆盖全部可部署组件的 `deployment-plan.json` |
+| **STOP** | `deployment-plan.json` 未通过 schema，或 `analysis.json` 无法写入或通过 schema |
 | **CONTINUE → Phase 4** | 计划与 `analysis.json` 已落盘 |
 
 Phase 3 构建定义失败时，可返回 Phase 2 步骤 3 修订 `deployment-plan.json`。
 
 ## 验收标准
 
-- `deployment-plan.json` 存在且覆盖全部相关服务
+- `deployment-plan.json` 的 `items` 覆盖全部可部署组件
 - `analysis.json` 含 `deployment_plan` 且路径正确
 - `analysis.json` 通过 schema
 
 ## Schema 链接
 
 - [产物](/pipeline/artifacts)
+- [deployment-plan.json](/specs/deployment-plan)
 - [产物 Schema](/specs/artifact-schemas)
 - [部署源](/pipeline/deployment-sources)
 

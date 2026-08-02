@@ -1,0 +1,136 @@
+---
+title: "deployment-plan.json"
+description: "Contract for the Phase 2 subagent deployable component list."
+keywords: ["deployment-plan", "schema", "phase 2", "artifacts"]
+---
+
+The Phase 2 [subagent](/en/pipeline/phases/phase-2-discover) writes `deployment-plan.json` to `.sealos/phase-2/deployment-plan.json`.
+
+## Purpose
+
+The subagent **must list every component required for one Sealos deploy of this repository** — anything that needs an image build or runs as a container must appear in `items`.
+
+One Sealos deploy maps to one full-repo template. Do not list only the main app and omit databases, queues, caches, workers, or other dependencies.
+
+The subagent does not produce build definitions, topology diagrams, or Sealos templates. It only answers: **which components exist, which directory each uses, and whether a known image reference already exists**.
+
+## File location
+
+```
+.sealos/phase-2/deployment-plan.json
+```
+
+`analysis.json` points to this file via the `deployment_plan` field.
+
+## Top-level fields
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `generated_at` | string (date-time) | No | Write timestamp |
+| `items` | array | Yes | Deployable components, at least one |
+
+## Each `items[]` entry
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `path` | string | Yes | Component directory, relative to `work_dir` (e.g. `.`, `apps/api`) |
+| `name` | string | No | Component name; recommended for multi-service Compose |
+| `image` | string | No | Known image ref (Compose `image:`, README, CI, etc.); omit when build from source is required |
+
+### `path` rules
+
+- Components with their own source tree: use that directory path.
+- Compose services that only reference an upstream image with no build context: use `"."` (or the compose file directory).
+- `path` must point to a real path inside the repository.
+
+### `image` rules
+
+- Set when the source already declares an image reference (tag or digest).
+- **Omit** `image` when the component must be built from a Dockerfile or railpack under `path`.
+- Do not guess images from org or repo name.
+
+## Examples
+
+**Single app:**
+
+```json
+{
+  "generated_at": "2026-08-02T03:50:00Z",
+  "items": [
+    { "path": "." }
+  ]
+}
+```
+
+**Multi-service Compose:**
+
+```json
+{
+  "items": [
+    { "name": "web", "path": "./backend" },
+    { "name": "worker", "path": "./worker" },
+    { "name": "postgres", "path": ".", "image": "postgres:16-alpine" },
+    { "name": "redis", "path": ".", "image": "redis:7-alpine" }
+  ]
+}
+```
+
+**Pre-published image:**
+
+```json
+{
+  "items": [
+    { "name": "app", "path": ".", "image": "ghcr.io/org/myapp:v1.2.3" }
+  ]
+}
+```
+
+## JSON Schema
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://skills.sh/sealos-deploy/schemas/deployment-plan.schema.json",
+  "title": "Sealos Deploy Deployment Plan",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["items"],
+  "properties": {
+    "generated_at": { "type": "string", "format": "date-time" },
+    "items": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path"],
+        "properties": {
+          "path": { "type": "string", "minLength": 1 },
+          "name": { "type": "string", "minLength": 1 },
+          "image": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}
+```
+
+## Downstream usage
+
+| Phase | How it reads the file |
+| --- | --- |
+| Phase 2 (main agent) | Derives `service_inventory`, `image_inventory`, etc. in `analysis.json` from `items` |
+| Phase 4 | Skips Phase 3 when every `item` has `image` and digest is resolved |
+| Phase 3 | Builds and pushes items without `image` (or without a ready digest) under each `path` |
+
+## Acceptance
+
+- `items` covers every component required for one deploy
+- Each `path` is a valid relative path in the repo
+- Items with known images include `image`; items that need build omit `image`
+- File passes the JSON Schema above
+
+## Related
+
+- [Phase 2 — Discover](/en/pipeline/phases/phase-2-discover)
+- [Artifacts](/en/pipeline/artifacts)

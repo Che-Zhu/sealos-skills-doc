@@ -105,6 +105,7 @@
                 "group": "契约",
                 "pages": [
                   "specs/overview",
+                  "specs/deployment-plan",
                   "specs/safety-rules"
                 ]
               },
@@ -238,6 +239,7 @@
                   "en/specs/template-format",
                   "en/specs/resource-floors",
                   "en/specs/conversion-rules",
+                  "en/specs/deployment-plan",
                   "en/specs/artifact-schemas",
                   "en/specs/safety-rules"
                 ]
