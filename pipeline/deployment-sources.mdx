@@ -16,7 +16,7 @@ keywords: ["deployment source", "compose", "helm", "kubernetes"]
 
 ## 来源选择优先级
 
-Phase 2 根据 `deployment-plan.json` 与 [部署源](/pipeline/deployment-sources) 规则选定 `deployment_source`。Compose、Helm 与 Kubernetes 显式文件优先于隐式路径。多个显式来源冲突时，须从 README、CI、文档确定主拓扑，不得猜测。一次 Sealos 部署须覆盖全部相关服务。
+Phase 4 结合 `deployment-plan.json`、`gitingest-digest` 与下表规则选定部署源。Compose、Helm 与 Kubernetes 显式文件优先于隐式路径。多个显式来源冲突时，须从 README、CI、文档确定主拓扑，不得猜测。一次 Sealos 部署须覆盖 `deployment-plan.json` 中的全部组件。
 
 ## 条件性源码物化
 
@@ -24,4 +24,4 @@ Git LFS、子模块等机制仅在仓库声明时安装与获取。见 [Phase 0]
 
 ## 拓扑保留
 
-完整 `service_inventory` 须保留数据库、队列、缓存与 worker。仅构建的服务与最终运行时拓扑分开处理。Phase 4 不得因非主应用服务而丢弃依赖。
+`deployment-plan.json` 的 `items` 须覆盖数据库、队列、缓存与 worker。仅构建的组件与最终运行时拓扑分开处理。Phase 4 不得因非主应用组件而丢弃依赖。

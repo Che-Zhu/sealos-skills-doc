@@ -1,97 +1,115 @@
 ---
 title: "Phase 1 — Assess"
-description: "Project shape, cloud-native readiness, and analysis snapshot."
-keywords: ["phase 1", "assess", "analysis.json"]
+description: "Judge deployability, choose the path, and write official_template."
+keywords: ["phase 1", "assess", "analysis.json", "official template"]
 ---
 
 ## Purpose
 
-Phase 1 understands the deployment shape the repository can reasonably take. It scores cloud-native readiness and records confirmed project facts for later phases.
+Phase 1 judges whether the project can run as a cloud service. It chooses the fast path or the standard path. It writes `official_template`.
 
-The repository is the source boundary, not the only deployable unit. The agent must not assume only the repo root is deployable. The agent must not stop because the root is a library, component package, or monorepo. Apps, doc sites, static sites, Storybook, and examples supported by source, README, workspace scripts, or CI are valid deployment shapes.
+UPDATE mode skips this phase.
 
-### Entry judgment
+Do not score the project. Do not select images. Do not run [Phase 4](/en/pipeline/phases/phase-4-template) template generation. Do not create cloud resources. Do not fetch YAML. Do not write `.sealos/template/index.yaml`.
 
-At the start, the agent makes an internal judgment: is the project certainly unable to run on Sealos in any reasonable way?
+## Blocklist
 
-| Result | Action |
+**STOP** only when both rows are **100% confirmed**. Otherwise **CONTINUE**. Do not **STOP** on uncertainty or weak evidence.
+
+| # | Condition |
 | --- | --- |
-| Certain impossibility | State one short specific reason, then **STOP** |
-| Any uncertainty | Continue assess with no separate output |
+| 1 | The project cannot run as a cloud service |
+| 2 | No part of the repository can deploy as a cloud service |
 
-Example stop: a native desktop app with no online runtime and no reasonable container path. CLI, library, low score, missing entry, or weak evidence alone must not stop Phase 1.
-
-This judgment produces no artifact, score, report, candidate list, or user confirmation. UPDATE mode skips Phase 1 because mode detection already confirmed a running app.
-
-Phase 1 is not a language, framework, or app-type support list. It records facts and risks. It must not stop because of unknown language, static files, unknown framework, missing package manager, missing runtime version, missing root start command, or unidentified port.
+The repository is the source boundary. This check writes no artifact. Do not prompt the user.
 
 ## Inputs
 
-| Input | Source |
-| --- | --- |
-| `WORK_DIR` | Phase 0 |
-| Repository and commit metadata | Phase 0 |
-| Project source files | Dependencies, start config, containers, CI, env examples, docs |
+| Input | Source | Required |
+| --- | --- | --- |
+| `analysis.json` | [Phase 0](/en/pipeline/phases/phase-0-preflight) | Yes |
+| Official template catalog | [`kb-0.9/template`](https://github.com/labring-actions/templates/tree/kb-0.9/template) | Yes |
+
+Phase 0 must have written `runtime_profile`, `work_dir`, and `repo_name`. `github_url` may be `null`.
 
 ## Outputs
 
-| Output | Path | Description |
-| --- | --- | --- |
-| Analysis snapshot | `.sealos/analysis.json` | Facts, score, inventories for later phases |
+| Output | Path |
+| --- | --- |
+| `official_template` | `.sealos/analysis.json` |
 
-`analysis.json` includes:
+```json
+{
+  "official_template": "https://raw.githubusercontent.com/labring-actions/templates/{commit}/template/{name}/index.yaml"
+}
+```
 
-- Project source, work directory, repository, and branch
-- Readiness score 0–12 with breakdown and risks
-- Language, framework, package manager, runtime, ports, databases, env vars, container facts
-- Image inventory and service inventory placeholders for Phase 2
+One exact match → URL string. Otherwise → `null`. This is independent of the fast path.
 
-`analysis.json` is a fact snapshot, not deploy permission. Low score, empty descriptive fields, missing root entry, or unfamiliar app types record risk and continue.
+[Phase 2](/en/pipeline/phases/phase-2-discover) writes the `deployment_plan` pointer.
 
 ## Preconditions
 
-- Phase 0 passed
-- First-deploy path (not UPDATE)
+- [Phase 0](/en/pipeline/phases/phase-0-preflight) passed
+- [Mode detection](/en/pipeline/mode-detection) is **DEPLOY**
 
 ## Procedure
 
-The agent reads project evidence. It must not guess or invent default values for unknown facts.
+### 1. Blocklist check
 
-The readiness detector supplies repository signals only. It does not decide deployment target, runtime shape, or whether to continue. The agent combines source, docs, workspace, and CI. Missing detector output does not mean the capability is absent.
+See the blocklist above. Continue when it passes.
 
-The agent records:
+### 2. Read `analysis.json`
 
-- Language, framework, package manager, runtime version
-- Start method, service ports, database dependencies
-- Existing container configuration
-- Environment variable classification
-- Stateless design, externalized config, scaling, lifecycle, observability, service boundaries
-- Cloud-native readiness score 0–12
+Keep `runtime_profile`, `work_dir`, `repo_name`, and `github_url`. Do not modify them.
 
-Language and package manager use open strings. Static projects may record `html`, `css`, `javascript`, `nginx`. Unknown values use `null`, `[]`, or `{}`.
+### 3. Official template exact match
 
-Hard requirements belong to later phases. Phase 3 needs a build path only for services it builds. Phase 5 needs a container port only when it creates network ingress.
+Match against [labring-actions/templates `kb-0.9/template`](https://github.com/labring-actions/templates/tree/kb-0.9/template).
+
+An exact match means the template declares the same source project. Do not fuzzy-match by name, language, or framework. Do not similarity-match.
+
+| Match result | `official_template` |
+| --- | --- |
+| No match or multiple matches | `null` |
+| Catalog unreachable | `null` (do not **STOP**) |
+| One exact match | Raw URL of that template `index.yaml` |
+
+When there is one exact match, write the URL whether or not the run later takes the fast path.
+
+**Fast path** (skip Phases 2–4.5) requires all of:
+
+| Condition | Requirement |
+| --- | --- |
+| `official_template` | Non-null |
+| `runtime_profile` | `sandbox`, or `local` with no uncommitted changes (exclude `.sealos/`) |
+
+`sandbox` does not check uncommitted changes.
+
+On `local` with uncommitted changes, `official_template` may still be non-null. The run takes the standard path.
+
+### 4. Write `analysis.json`
+
+Write `official_template`. Keep the four Phase 0 fields. Full [schema](/en/specs/artifact-schemas) validation is not required in this phase.
 
 ## Stop conditions
 
 | Result | Condition |
 | --- | --- |
-| **STOP** | Agent is certain the project cannot run on Sealos |
-| **CONTINUE → Phase 4.9** | `official_template` is non-null and fast-path conditions met |
+| **STOP** | Both blocklist rows are 100% confirmed |
+| **CONTINUE → Phase 4.9** | `official_template` is non-null and fast-path conditions are met |
 | **CONTINUE → Phase 2** | All other cases |
 
 ## Acceptance
 
-- `.sealos/analysis.json` exists and matches [analysis schema](/en/specs/artifact-schemas)
-- Entry judgment rules followed
-- No fabricated defaults for unknown facts
+- `official_template` matches the match result
+- Phase 0 four fields are unchanged
+- `.sealos/template/index.yaml` is not written
 
 ## Schema links
 
-- [Artifact schemas — analysis.json](/en/specs/artifact-schemas)
+[Artifact schemas](/en/specs/artifact-schemas)
 
 ## Implementation map
 
-| Spec section | Implementation |
-| --- | --- |
-| Assess and scoring | `skills/sealos-deploy/modules/pipeline.md` (Phase 1) |
+`skills/sealos-deploy/modules/pipeline.md` (Phase 1)

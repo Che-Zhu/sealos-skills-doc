@@ -29,11 +29,9 @@ UPDATE mode skips this phase.
 | --- | --- | --- |
 | Deployment digest | `.sealos/phase-2/gitingest-digest.txt` | gitingest output (scope in step 2) |
 | Deployment plan | `.sealos/phase-2/deployment-plan.json` | Subagent output; deployable component list |
-| `analysis.json` | `.sealos/analysis.json` | Includes `deployment_plan` path; derived fields for Phases 3–4 |
+| `analysis.json` | `.sealos/analysis.json` | Adds `deployment_plan` pointer |
 
 See [deployment-plan.json](/en/specs/deployment-plan) for the field contract.
-
-Deployment source kinds: [Deployment sources](/en/pipeline/deployment-sources).
 
 ## Preconditions
 
@@ -75,15 +73,17 @@ The subagent decides how to explore and whether to run railpack. Do not guess pu
 
 ### 4. Write `analysis.json`
 
+Merge with existing Phase 0 and Phase 1 fields. Add only the `deployment_plan` pointer:
+
 ```json
 {
   "deployment_plan": ".sealos/phase-2/deployment-plan.json"
 }
 ```
 
-Merge with existing Phase 0 and Phase 1 fields. Supplement Phases 3–4 fields from `items` in `deployment-plan.json` (such as `deployment_source`, `service_inventory`, `image_inventory`). Use `null`, `[]`, or `{}` for unknowns. Do not fabricate.
+Do not modify fields written in Phase 0 or Phase 1 (including `official_template`).
 
-`deployment-plan.json` must pass the [deployment-plan.json contract](/en/specs/deployment-plan). Persist `analysis.json` after [artifact schemas](/en/specs/artifact-schemas) validation.
+`deployment-plan.json` must pass the [deployment-plan.json contract](/en/specs/deployment-plan). Persist merged `analysis.json` after [artifact schemas](/en/specs/artifact-schemas) validation.
 
 ## Stop conditions
 
@@ -93,7 +93,7 @@ Merge with existing Phase 0 and Phase 1 fields. Supplement Phases 3–4 fields f
 | **STOP** | `deployment-plan.json` fails schema, or `analysis.json` cannot be written or pass schema |
 | **CONTINUE → Phase 4** | Plan and `analysis.json` are persisted |
 
-On Phase 3 build-definition failure, return to Phase 2 step 3 to revise `deployment-plan.json`.
+On Phase 3 build failure, return to Phase 2 step 3 and revise `deployment-plan.json`.
 
 ## Acceptance
 
@@ -106,7 +106,6 @@ On Phase 3 build-definition failure, return to Phase 2 step 3 to revise `deploym
 - [Artifacts](/en/pipeline/artifacts)
 - [deployment-plan.json](/en/specs/deployment-plan)
 - [Artifact schemas](/en/specs/artifact-schemas)
-- [Deployment sources](/en/pipeline/deployment-sources)
 
 ## Implementation map
 

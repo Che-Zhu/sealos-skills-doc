@@ -119,7 +119,7 @@ The subagent does not produce build definitions, topology diagrams, or Sealos te
 
 | Phase | How it reads the file |
 | --- | --- |
-| Phase 2 (main agent) | Derives `service_inventory`, `image_inventory`, etc. in `analysis.json` from `items` |
+| Phase 2 (main agent) | Writes `deployment_plan` pointer in `analysis.json` |
 | Phase 4 | Skips Phase 3 when every `item` has `image` and digest is resolved |
 | Phase 3 | Builds and pushes items without `image` (or without a ready digest) under each `path` |
 

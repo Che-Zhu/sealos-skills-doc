@@ -111,7 +111,7 @@ mkdir -p "{work_dir}/.sealos"
 | `repo_name` | 目录名或 URL 解析结果 |
 | `github_url` | 来自参数或 `git remote`；非 GitHub 项目时为 `null` |
 
-Phase 0 结束时文件仅含上述字段。Phase 1 写入 `official_template`。部署发现与镜像准备由 Phase 2 写入。
+Phase 0 结束时文件仅含上述字段。Phase 1 写入 `official_template`。Phase 2 写入 `deployment_plan` 指针。
 
 ### 7. 启动部署日志
 

@@ -14,7 +14,9 @@ keywords: ["deployment source", "compose", "helm", "kubernetes"]
 | Kubernetes | Native manifests | Python/PyYAML |
 | Implicit | No explicit topology file | Project structure analysis |
 
-{/* TODO: Source selection precedence and conflict resolution. */}
+## Source selection precedence
+
+Phase 4 selects the deployment source from `deployment-plan.json`, `gitingest-digest`, and the rules below. Explicit Compose, Helm, and Kubernetes files take precedence over implicit paths. When multiple explicit sources conflict, resolve the primary topology from README, CI, or docs — do not guess. One Sealos deploy must cover every component in `deployment-plan.json`.
 
 ## Conditional source materialization
 
@@ -22,4 +24,4 @@ keywords: ["deployment source", "compose", "helm", "kubernetes"]
 
 ## Topology preservation
 
-{/* TODO: Full service inventory retained; build-only services handled separately. */}
+`deployment-plan.json` `items` must include databases, queues, caches, and workers. Build-only components are handled separately from final runtime topology. Phase 4 must not drop dependencies because they are not the main app.

@@ -6,7 +6,7 @@ keywords: ["phase 4", "template", "conversion"]
 
 ## 目的
 
-Phase 4 仅属于标准构建路径。它根据 `deployment-plan.json` 判断是否需要先构建镜像，再读取 `analysis.json` 中的清单与部署源事实，产出含不可变镜像 digest 的完整 Sealos 模板。
+Phase 4 仅属于标准构建路径。它读取 `deployment-plan.json` 判断是否需要先构建镜像，再按 [部署源](/pipeline/deployment-sources) 规则生成完整 Sealos 模板。
 
 当前实现不读取相似模板或目录 YAML。模板须遵循当前项目事实与转换规则。
 

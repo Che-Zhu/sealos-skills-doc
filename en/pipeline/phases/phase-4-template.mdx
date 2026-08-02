@@ -6,7 +6,7 @@ keywords: ["phase 4", "template", "conversion"]
 
 ## Purpose
 
-Phase 4 belongs to the standard build path only. It reads `deployment-plan.json` to decide whether images must be built first, then reads inventories and deployment-source facts from `analysis.json`. It produces a complete Sealos template with immutable image digests.
+Phase 4 belongs to the standard build path only. It reads `deployment-plan.json` to decide whether images must be built first, then generates the full Sealos template per [Deployment sources](/en/pipeline/deployment-sources) rules.
 
 The current implementation does not read similar templates or catalog YAML. The template must follow current project facts and conversion rules.
 

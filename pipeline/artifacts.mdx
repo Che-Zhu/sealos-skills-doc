@@ -30,7 +30,7 @@ keywords: ["artifacts", "state.json", "analysis.json", "template"]
 
 | 文件 | 写入阶段 | 读取阶段 | 说明 |
 | --- | --- | --- | --- |
-| `analysis.json` | Phase 0、Phase 1–2 | Phase 3–4 | 含 `deployment_plan` 路径及清单字段 |
+| `analysis.json` | Phase 0、Phase 1–2 | Phase 3–4 | Phase 2 仅新增 `deployment_plan` 指针 |
 | `phase-2/deployment-plan.json` | Phase 2 | Phase 2、3、4 | Subagent 产出的可部署组件清单 |
 | `phase-2/gitingest-digest.txt` | Phase 2 | Phase 2 | gitingest 侦察输入 |
 | `template/index.yaml` | Phase 4 或后续官方模板路径 | Phase 4.5、5 | Canonical 部署模板 |

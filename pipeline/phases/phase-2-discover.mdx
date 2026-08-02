@@ -1,6 +1,6 @@
 ---
 title: "Phase 2 — 发现与镜像准备"
-description: "侦察仓库、产出 deployment-plan.json 部署与构建计划。"
+description: "Scout the repository and produce the deployable component list."
 keywords: ["phase 2", "discover", "railpack", "gitingest", "deployment-plan"]
 ---
 
@@ -29,11 +29,9 @@ UPDATE 模式跳过本 Phase。
 | --- | --- | --- |
 | 部署相关摘要 | `.sealos/phase-2/gitingest-digest.txt` | gitingest 输出（范围见步骤 2） |
 | 部署计划 | `.sealos/phase-2/deployment-plan.json` | Subagent 产出的可部署组件清单 |
-| `analysis.json` | `.sealos/analysis.json` | 含 `deployment_plan` 路径；Phase 3、4 所需派生字段 |
+| `analysis.json` | `.sealos/analysis.json` | 新增 `deployment_plan` 指针 |
 
 字段契约见 [deployment-plan.json](/specs/deployment-plan)。
-
-部署源类型见 [部署源](/pipeline/deployment-sources)。
 
 ## 前置条件
 
@@ -75,15 +73,17 @@ Subagent 自行决定探索方式与是否运行 railpack。不得从组织或�
 
 ### 4. 写入 `analysis.json`
 
+与 Phase 0、Phase 1 已有字段合并，仅新增 `deployment_plan` 指针：
+
 ```json
 {
   "deployment_plan": ".sealos/phase-2/deployment-plan.json"
 }
 ```
 
-与 Phase 0、Phase 1 已有字段合并写入。根据 `deployment-plan.json` 的 `items` 补充 Phase 3、4 所需字段（如 `deployment_source`、`service_inventory`、`image_inventory`）。未知写 `null`、`[]` 或 `{}`。不得编造。
+不得修改 Phase 0、Phase 1 已写字段（含 `official_template`）。
 
-`deployment-plan.json` 须通过 [deployment-plan.json 契约](/specs/deployment-plan)。`analysis.json` 通过 [产物 Schema](/specs/artifact-schemas) 后落盘。
+`deployment-plan.json` 须通过 [deployment-plan.json 契约](/specs/deployment-plan)。合并后的 `analysis.json` 须通过 [产物 Schema](/specs/artifact-schemas) 后落盘。
 
 ## 停止条件
 
@@ -93,7 +93,7 @@ Subagent 自行决定探索方式与是否运行 railpack。不得从组织或�
 | **STOP** | `deployment-plan.json` 未通过 schema，或 `analysis.json` 无法写入或通过 schema |
 | **CONTINUE → Phase 4** | 计划与 `analysis.json` 已落盘 |
 
-Phase 3 构建定义失败时，可返回 Phase 2 步骤 3 修订 `deployment-plan.json`。
+Phase 3 构建失败时，可返回 Phase 2 步骤 3 修订 `deployment-plan.json`。
 
 ## 验收标准
 
@@ -106,7 +106,6 @@ Phase 3 构建定义失败时，可返回 Phase 2 步骤 3 修订 `deployment-pl
 - [产物](/pipeline/artifacts)
 - [deployment-plan.json](/specs/deployment-plan)
 - [产物 Schema](/specs/artifact-schemas)
-- [部署源](/pipeline/deployment-sources)
 
 ## 实现映射
 
