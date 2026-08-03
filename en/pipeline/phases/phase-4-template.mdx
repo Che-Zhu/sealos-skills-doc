@@ -6,99 +6,122 @@ keywords: ["phase 4", "template", "conversion"]
 
 ## Purpose
 
-Phase 4 belongs to the standard build path only. It reads `deployment_source` from `deployment-plan.json`, decides whether images must be built first, then generates the full Sealos template by source type.
+Phase 4 belongs to the standard build path. It reads `deployment_source` from `deployment-plan.json` and writes `.sealos/template/index.yaml`.
 
-The current implementation does not read similar templates or catalog YAML. The template must follow current project facts and conversion rules.
+The [Phase 1](/en/pipeline/phases/phase-1-assess) official-template fast path skips this phase.
 
-## Entry branch
+Do not create cloud resources. Do not push images. Do not modify `deployment_source` (invalid source → **RETURN → Phase 2**).
 
-Read `deployment_plan` → `deployment_source`. Parse workloads that need local build and lack a ready digest:
+## Prerequisites
 
-| Case | Action |
-| --- | --- |
-| No builds pending, or all image digests resolved | Skip Phase 3; continue template generation in this phase |
-| One or more workloads need build, or digest not ready | **CONTINUE → Phase 3**; return to this phase after Phase 3 completes |
+- Phase 2 wrote `deployment_plan` and `deployment-plan.json`
+- `deployment_source` is readable (see [Deployment sources](/en/pipeline/deployment-sources))
 
 ## Inputs
 
-| Input | Source |
+| File | Notes |
 | --- | --- |
-| `analysis.json` | Phases 0–2 |
-| `deployment-plan.json` | Phase 2 (via `analysis.json` → `deployment_plan`) |
-| `deployment_source` | `deployment-plan.json` |
-| Build results | `.sealos/phase-3/build-result.json` (Phase 3, when entered) | `analysis.json` → `build_result` |
-| Conversion intermediates | `.sealos/deployment-source/` (generated in Phase 4 when needed) |
+| `.sealos/analysis.json` | Pointer entry |
+| `.sealos/phase-2/deployment-plan.json` | Contains `deployment_source` |
+| `.sealos/phase-3/build-result.json` | When builds ran |
 
 ## Outputs
 
-| Output | Path | Description |
-| --- | --- | --- |
-| Canonical template | `.sealos/template/index.yaml` | Single template for 4.5, 5, and recovery |
-| Resource map | `.sealos/deployment-source/resource-map.json` | Source to output accounting |
-| Topology evidence | `.sealos/topology-evidence/{app-name}.yaml` | Validator-only |
-
-## Conversion paths
-
-Infer adapter from `deployment_source` path:
-
-| `deployment_source` | Method |
+| Output | Path |
 | --- | --- |
-| `.sealos/phase-2/docker-compose.yml` | kompose deterministic conversion; per-service digest overrides from `build_result` → `build-result.json` |
-| Chart directory (contains `Chart.yaml`) | `helm template` on chart copy; adapter preserves rendered resources |
-| Single `.yaml` / `.yml` manifest | Source adapter preserves resources and converts unsupported fields |
+| Sealos template | `.sealos/template/index.yaml` |
 
-Adapters are preferred tools, not eligibility gates. When an adapter cannot express the project, the agent may fix the deployment source or generate an equivalent canonical template. The agent must pass the same quality gate without dropping services or bypassing validation.
+Phase 5 reads only the row above. The rest live under `.sealos/phase-4/` and are **not** Sealos templates:
 
-## Network and ports
+| Intermediate | Path | Role |
+| --- | --- | --- |
+| Source snapshot | `.sealos/phase-4/source/` | Convertible copy of the deployment source |
+| Helm render | `.sealos/phase-4/rendered.yaml` | Helm path: `helm template` output |
+| Resource map | `.sealos/phase-4/resource-map.json` | Source workload to template resource accounting |
 
-- `ports` → public ingress candidate
-- `expose` → internal Service only
-- One public candidate auto-selected; multiple candidates resolved from Ingress, README, roles, or `.sealos/config.json` `public_service`
-- Internal service refs rewrite to Kubernetes Service FQDN
+## Flow
 
-## Images and pull secrets
+### 1. Entry and resume
 
-Final container images must be `repository@sha256:...`. Pull-secret refs apply only when `pull_access` for that service key in the file at `analysis.json` → `build_result` is `ghcr_secret_required`.
+- If `.sealos/template/index.yaml` exists → follow [resume rules](/en/pipeline/mode-detection#interrupt-recovery).
+- Otherwise continue at step 2.
 
-## Databases
+### 2. Prepare intermediates
 
-Priority:
+Leave a convertible snapshot under `.sealos/phase-4/source/`. Do not re-scout the repo.
 
-1. External database declared → keep external connection
-2. Supported service DB without external intent → KubeBlocks default
-3. Embedded SQLite → keep inside app
-4. Unsupported or non-lossless KubeBlocks conversion → preserve source workload with `docker-to-sealos.kubeblocks-fallback-reason`
+| Source type | Action |
+| --- | --- |
+| Compose | Copy `deployment_source` to `source/` |
+| Helm | Copy chart to `source/`; `helm template` → `.sealos/phase-4/rendered.yaml` |
+| Kubernetes | Copy manifest to `source/` |
 
-## Resource floors
+After this step, if builds are required and `build_result` is not ready → **CONTINUE → Phase 3** (on return, continue at step 3).
 
-Hard minimums per component role (business main, sidecar/init/job, KubeBlocks component). AI may raise limits from project evidence. Quality gate enforces floors and valid Sealos resource steps.
+### 3. Pin digests and convert
+
+Each container image must be `repository@sha256:...` (`linux/amd64`). Workload keys match the deployment source.
+
+| Image source | Action |
+| --- | --- |
+| Built in-repo | `build-result.json` → `digests` |
+| Upstream `image:` | Agent resolves tag; do not write `build-result.json` |
+
+Convert by `deployment_source` type. Apply digest overrides before or via conversion parameters:
+
+| Type | Conversion |
+| --- | --- |
+| Compose | `compose_to_template.py` (default `--kompose-mode always`; runs `kompose convert` for workload shapes); per-service `--image-override` |
+| Helm | Read `rendered.yaml` → adapter; replace `image` by key |
+| Kubernetes | Adapter; replace `image` by workload name |
+
+Do not drop services. Write `.sealos/phase-4/resource-map.json` and `.sealos/template/index.yaml`.
+
+### 4. Deploy gate
+
+Run the [deploy gate](/en/specs/template-format#deploy-gate) on `.sealos/template/index.yaml` (`check_consistency.py` rule subset). Do **not** run the full `quality_gate.py` CI bundle. On failure → **STOP**. Regenerate and rerun the full gate after fixes.
+
+### 5. Downstream
+
+On pass → **CONTINUE → [Phase 4.5](/en/pipeline/phases/phase-4-5-configure)** → [Phase 4.9](/en/pipeline/overview#first-deploy-routes) → Phase 5.
+
+## Conversion constraints
+
+**Network:** `ports` is a public candidate; `expose` is internal Service only. With multiple candidates, resolve from Ingress, README, role, or `public_service` in `.sealos/config.json`. Rewrite internal refs to Service FQDN.
+
+**Pull secret:** Add pull-secret refs only when `pull_access` for that key in `build-result.json` is `ghcr_secret_required`.
+
+**Databases:** External declaration → keep external; supported service DB → KubeBlocks; SQLite → keep in app; otherwise keep source workload with `docker-to-sealos.kubeblocks-fallback-reason`.
+
+**Resource floors:** See [Resource floors](/en/specs/resource-floors) and the [deploy gate](/en/specs/template-format#deploy-gate).
 
 ## Stop conditions
 
 | Result | Condition |
 | --- | --- |
-| **STOP** | Quality gate fails on `index.yaml` |
-| **CONTINUE → Phase 4.5** | Template passes full quality gate |
-
-Regenerate and re-run the full gate before continuing. Partial fixes are not allowed.
+| **CONTINUE → Phase 3** | Build required and digests not ready |
+| **CONTINUE → Phase 4.5** | Deploy gate passed |
+| **RETURN → Phase 2** | Invalid deployment source (missing Dockerfile, bad context, incomplete topology) |
+| **STOP** | Conversion failed, digest resolution failed, or deploy gate failed |
 
 ## Acceptance
 
-- `.sealos/template/index.yaml` exists
-- All final images are digest-pinned
-- Full topology preserved in resource map
-- Quality gate pass recorded
+- `.sealos/template/index.yaml` exists and passed the deploy gate
+- All images are digest-pinned (`linux/amd64`)
+- `.sealos/phase-4/resource-map.json` has full topology
 
 ## Schema links
 
+- [Deployment sources](/en/pipeline/deployment-sources)
+- [deployment-plan.json](/en/specs/deployment-plan)
 - [Template format](/en/specs/template-format)
 - [Conversion rules](/en/specs/conversion-rules)
-- [Resource floors](/en/specs/resource-floors)
 - [Artifact schemas](/en/specs/artifact-schemas)
-- [deployment-plan.json](/en/specs/deployment-plan)
 
 ## Implementation map
 
-| Spec section | Implementation |
+| Section | Implementation |
 | --- | --- |
-| Conversion | `skills/docker-to-sealos/` |
+| Compose | `skills/docker-to-sealos/scripts/compose_to_template.py` (uses kompose) |
+| Deploy gate | `skills/docker-to-sealos/scripts/check_consistency.py` (subset in [Template format](/en/specs/template-format#deploy-gate)) |
+| Helm/K8s | `skills/docker-to-sealos/` (migrating; this site is normative) |

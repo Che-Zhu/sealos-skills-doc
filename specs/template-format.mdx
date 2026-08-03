@@ -1,0 +1,96 @@
+---
+title: "模板格式"
+description: "Sealos 模板 YAML 结构与部署前硬约束。"
+keywords: ["template", "yaml", "sealos template", "validation"]
+---
+
+`.sealos/template/index.yaml` 是多文档 YAML 流：Template CRD、工作负载、Service、Ingress、KubeBlocks Cluster 等。Phase 5 部署 API 只接受此形态。
+
+详细字段说明见实现仓库 `docker-to-sealos/references/sealos-specs.md`（本站只写**部署必须满足**的硬约束）。
+
+## 部署门禁
+
+Phase 4 在生成模板后**只**校验下列平台硬约束。不运行 `quality_gate.py` 全量 CI（单测、must 覆盖、官方目录细则等均不属于部署路径）。
+
+校验对象：`.sealos/template/index.yaml`。
+
+实现入口：`skills/docker-to-sealos/scripts/check_consistency.py --artifacts <path>`，规则子集见下表 `规则 ID` 列。完整规则注册表见实现 `references/rules-registry.yaml`（**不得**全文复制到本站）。
+
+### 镜像
+
+| 要求 | 规则 ID |
+| --- | --- |
+| 容器 `image` / `originImageName` 为 `repository@sha256:...` | R001 |
+| `imagePullPolicy: IfNotPresent` | R006 |
+| 私有 GHCR 仅在有证据时加 `imagePullSecrets` | R035 |
+| 业务 workload 的 `originImageName` 与容器 `image` 一致 | R015 |
+
+### Template CRD
+
+| 要求 | 规则 ID |
+| --- | --- |
+| `metadata.name` 硬编码小写 | R004 |
+| `spec` 含必需 metadata 字段 | R012 |
+| `spec.defaults.*.value` 与 `spec.inputs.*.default` 解析为 YAML **字符串** | R052 |
+| 模板引用的每个 `inputs.<name>` 在 `spec.inputs` 中声明 | R045 |
+
+### App CRD
+
+| 要求 | 规则 ID |
+| --- | --- |
+| 不得使用 `spec.template` | R002 |
+| 须定义 `spec.data.url` | R003 |
+| `spec.displayType` 为 `normal`；`spec.type` 为 `link` | R032, R033 |
+
+### 工作负载
+
+| 要求 | 规则 ID |
+| --- | --- |
+| `revisionHistoryLimit: 1` | R009 |
+| `automountServiceAccountToken: false`（有 K8s API 证据时可例外） | R010 |
+| 主容器名与 workload `metadata.name` 一致 | R028 |
+| `labels.app`、`cloud.sealos.io/app-deploy-manager` 与 workload 名一致 | R008, R034 |
+| 资源 limits 使用平台允许阶梯；requests 由 limits 推导 | R038 |
+| 禁止 `emptyDir` | R005 |
+| PVC `requests.storage` ≤ 1Gi | R011 |
+
+### 数据库
+
+| 要求 | 规则 ID |
+| --- | --- |
+| 服务数据库使用 KubeBlocks `Cluster`，不得用普通 Deployment 冒充 | R039 |
+| 业务 workload 数据库连接 env 使用批准的 `secretKeyRef` | R017 |
+| 数据库组件资源下限 | R019 |
+| Cluster 须含 dbprovider 可见性 labels | R040 |
+
+### 网络
+
+| 要求 | 规则 ID |
+| --- | --- |
+| HTTP Ingress 含必需 nginx 注解 | R026 |
+| WebSocket Ingress 含 WS 后端协议与超时注解 | R048 |
+| 根路径 Ingress 后端端口与 Service 声明端口一致 | R051 |
+| Service `ports[].name` 非空 | R020 |
+
+### 不属于部署门禁
+
+以下仅用于 skill 开发 CI 或官方模板目录，**Phase 4 不得因它们失败**：
+
+- `quality_gate.py` 中的单测与 `check_must_coverage.py`
+- 官方 readme/icon 固定 URL（R014, R025）
+- 分类 allowlist、i18n 标题去重（R021–R023）
+- TopologyEvidence 对账（R050）及 `topology-evidence/` 产物
+- 企业版功能屏蔽（R049）、RuntimeBundleEvidence（R046）
+- 对象存储商业策略细则（R044, R047）— 转换阶段按 [Phase 4 转换约束](/pipeline/phases/phase-4-template#转换约束) 处理，不入门禁子集
+
+## 实现对照
+
+部署路径调用示例（规则 ID 以本站上表为准，实现须保持同步）：
+
+```bash
+python skills/docker-to-sealos/scripts/check_consistency.py \
+  --artifacts .sealos/template/index.yaml \
+  --only R001,R002,R003,R004,R005,R006,R008,R009,R010,R011,R012,R015,R017,R019,R020,R026,R028,R032,R033,R034,R035,R038,R039,R040,R045,R048,R051,R052
+```
+
+`quality_gate.py` 保留给 `docker-to-sealos` skill 仓库开发与 PR，不作为 `sealos-deploy` Phase 4 规范。

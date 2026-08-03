@@ -17,11 +17,10 @@ keywords: ["artifacts", "state.json", "analysis.json", "template"]
 │   └── docker-compose.yml
 ├── phase-3/
 │   └── build-result.json
-├── deployment-source/
+├── phase-4/
+│   ├── source/
 │   ├── rendered.yaml
 │   └── resource-map.json
-├── topology-evidence/
-│   └── {app-name}.yaml
 └── template/
     └── index.yaml
 ```
@@ -36,6 +35,7 @@ keywords: ["artifacts", "state.json", "analysis.json", "template"]
 | `phase-2/docker-compose.yml` | Phase 2 | Phase 3、4 | Canonical compose（非 Helm/K8s 时） |
 | `template/index.yaml` | Phase 4 或后续官方模板路径 | Phase 4.5、5 | Canonical 部署模板 |
 | `phase-3/build-result.json` | Phase 3 | Phase 4 | 所有已推送镜像的 digest 与拉取元数据 |
+| `phase-4/` | Phase 4 | — | 转换中间产物（`source/`、`rendered.yaml`、`resource-map.json`） |
 | `state.json` | Phase 5.5 后 | 部署模式识别、UPDATE | 部署状态与服务映射 |
 | `config.json` | 用户或 4.5 | Phase 4.5 | 用户配置覆盖 |
 

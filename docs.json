@@ -107,6 +107,7 @@
                 "pages": [
                   "specs/overview",
                   "specs/deployment-plan",
+                  "specs/template-format",
                   "specs/safety-rules"
                 ]
               },

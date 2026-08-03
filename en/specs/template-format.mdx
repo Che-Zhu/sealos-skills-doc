@@ -1,27 +1,96 @@
 ---
 title: "Template format"
-description: "Sealos template YAML structure, required fields, and validation rules."
-keywords: ["template", "yaml", "sealos template"]
+description: "Sealos template YAML structure and pre-deploy hard constraints."
+keywords: ["template", "yaml", "sealos template", "validation"]
 ---
 
-{/* TODO: Distill from docker-to-sealos/references/sealos-specs.md. */}
+`.sealos/template/index.yaml` is a multi-document YAML stream: Template CRD, workloads, Services, Ingresses, KubeBlocks Clusters, and more. Phase 5 deploy APIs accept only this form.
 
-## Template structure
+Field-level detail lives in `docker-to-sealos/references/sealos-specs.md` in the implementation repo. This page defines **deploy-required** hard constraints only.
 
-{/* TODO: Top-level fields, inputs, resources, conditions. */}
+## Deploy gate
 
-## App CRD requirements
+After template generation, Phase 4 validates **only** the platform hard constraints below. Do not run the full `quality_gate.py` CI bundle (unit tests, must coverage, official-catalog rules, and similar checks are not part of the deploy path).
 
-{/* TODO: spec.data.url, browser entry URL rules. */}
+Target: `.sealos/template/index.yaml`.
 
-## Database resources
+Entry point: `skills/docker-to-sealos/scripts/check_consistency.py --artifacts <path>` with the rule subset below. The full registry is `references/rules-registry.yaml` in the implementation repo (do not copy it here).
 
-{/* TODO: KubeBlocks preference for supported types. */}
+### Images
 
-## Object storage resources
+| Requirement | Rule ID |
+| --- | --- |
+| Container `image` / `originImageName` use `repository@sha256:...` | R001 |
+| `imagePullPolicy: IfNotPresent` | R006 |
+| `imagePullSecrets` only when pull auth is required | R035 |
+| Business workload `originImageName` matches container `image` | R015 |
 
-{/* TODO: ObjectStorageBucket conditions and external provider rules. */}
+### Template CRD
 
-## Validation
+| Requirement | Rule ID |
+| --- | --- |
+| `metadata.name` is hardcoded lowercase | R004 |
+| `spec` includes required metadata fields | R012 |
+| `spec.defaults.*.value` and `spec.inputs.*.default` deserialize as YAML **strings** | R052 |
+| Every referenced `inputs.<name>` is declared in `spec.inputs` | R045 |
 
-{/* TODO: quality_gate.py and check_consistency.py roles. */}
+### App CRD
+
+| Requirement | Rule ID |
+| --- | --- |
+| No `spec.template` | R002 |
+| `spec.data.url` is defined | R003 |
+| `spec.displayType` is `normal`; `spec.type` is `link` | R032, R033 |
+
+### Workloads
+
+| Requirement | Rule ID |
+| --- | --- |
+| `revisionHistoryLimit: 1` | R009 |
+| `automountServiceAccountToken: false` (exceptions only with K8s API evidence) | R010 |
+| Primary container name matches workload `metadata.name` | R028 |
+| `labels.app` and `cloud.sealos.io/app-deploy-manager` match workload name | R008, R034 |
+| Resource limits use allowed platform steps; requests derived from limits | R038 |
+| No `emptyDir` | R005 |
+| PVC `requests.storage` ≤ 1Gi | R011 |
+
+### Databases
+
+| Requirement | Rule ID |
+| --- | --- |
+| Service databases use KubeBlocks `Cluster`, not generic Deployments | R039 |
+| Business workload DB env uses approved `secretKeyRef` entries | R017 |
+| Database component resource floors | R019 |
+| Cluster includes dbprovider visibility labels | R040 |
+
+### Networking
+
+| Requirement | Rule ID |
+| --- | --- |
+| HTTP Ingress includes required nginx annotations | R026 |
+| WebSocket Ingress includes WS backend protocol and timeout annotations | R048 |
+| Root-path Ingress backend port matches a declared Service port | R051 |
+| Service `ports[].name` is non-empty | R020 |
+
+### Not part of the deploy gate
+
+The following belong to skill development CI or the official template catalog. **Phase 4 must not fail on them:**
+
+- Unit tests and `check_must_coverage.py` inside `quality_gate.py`
+- Fixed official readme/icon URLs (R014, R025)
+- Category allowlist, i18n title dedup (R021–R023)
+- TopologyEvidence reconciliation (R050) and `topology-evidence/` artifacts
+- Enterprise-feature blocking (R049), RuntimeBundleEvidence (R046)
+- Object-storage commercial policy rules (R044, R047) — handled at conversion per [Phase 4 conversion constraints](/en/pipeline/phases/phase-4-template#conversion-constraints), not in the gate subset
+
+## Implementation reference
+
+Deploy-path example (rule IDs must match this page):
+
+```bash
+python skills/docker-to-sealos/scripts/check_consistency.py \
+  --artifacts .sealos/template/index.yaml \
+  --only R001,R002,R003,R004,R005,R006,R008,R009,R010,R011,R012,R015,R017,R019,R020,R026,R028,R032,R033,R034,R035,R038,R039,R040,R045,R048,R051,R052
+```
+
+Keep `quality_gate.py` for `docker-to-sealos` skill development and PRs. It is not normative for `sealos-deploy` Phase 4.

@@ -6,99 +6,122 @@ keywords: ["phase 4", "template", "conversion"]
 
 ## 目的
 
-Phase 4 仅属于标准构建路径。它读取 `deployment-plan.json` 的 `deployment_source`，判断是否需要先构建镜像，再按路径类型生成完整 Sealos 模板。
+Phase 4 属于标准构建路径。它读取 `deployment-plan.json` 的 `deployment_source`，生成 `.sealos/template/index.yaml`。
 
-当前实现不读取相似模板或目录 YAML。模板须遵循当前项目事实与转换规则。
+[Phase 1](/pipeline/phases/phase-1-assess) 官方模板快速路径跳过本 Phase。
 
-## 入口分支
+不得创建云端资源。不得推送镜像。不得修改 `deployment_source`（无效时 **RETURN → Phase 2**）。
 
-读取 `deployment_plan` → `deployment_source`，解析部署源中须本地构建且 digest 未就绪的工作负载：
+## 前置条件
 
-| 情况 | 行为 |
-| --- | --- |
-| 无待构建，或所有镜像 digest 已解析 | 跳过 Phase 3，继续本 Phase 模板生成 |
-| 一个或多个工作负载须构建，或 digest 未就绪 | **CONTINUE → Phase 3**；Phase 3 完成后返回本 Phase |
+- Phase 2 已写入 `deployment_plan` 与 `deployment-plan.json`
+- `deployment_source` 可读（见 [部署源](/pipeline/deployment-sources)）
 
 ## 输入
 
-| 输入 | 来源 |
+| 文件 | 说明 |
 | --- | --- |
-| `analysis.json` | Phase 0–2 |
-| `deployment-plan.json` | Phase 2（经 `analysis.json` → `deployment_plan`） |
-| `deployment_source` | `deployment-plan.json` |
-| 构建结果 | `.sealos/phase-3/build-result.json`（Phase 3，若曾进入） | `analysis.json` → `build_result` |
-| 转换中间产物 | `.sealos/deployment-source/`（Phase 4 按需生成） |
+| `.sealos/analysis.json` | 指针入口 |
+| `.sealos/phase-2/deployment-plan.json` | 含 `deployment_source` |
+| `.sealos/phase-3/build-result.json` | 有构建时 |
 
 ## 输出
 
-| 输出 | 路径 | 说明 |
-| --- | --- | --- |
-| Canonical 模板 | `.sealos/template/index.yaml` | 供 4.5、5 与恢复使用的单一模板 |
-| 资源映射 | `.sealos/deployment-source/resource-map.json` | 源到输出的对账 |
-| 拓扑证据 | `.sealos/topology-evidence/{app-name}.yaml` | 仅校验器使用 |
-
-## 转换路径
-
-按 `deployment_source` 路径推断适配器：
-
-| `deployment_source` | 方法 |
+| 输出 | 路径 |
 | --- | --- |
-| `.sealos/phase-2/docker-compose.yml` | kompose 确定性转换；`build_result` → `build-result.json` 的 digest 逐服务覆盖 |
-| chart 目录（含 `Chart.yaml`） | chart 副本上 `helm template`；适配器保留渲染资源 |
-| 单个 `.yaml` / `.yml` manifest | 源适配器保留资源并转换不支持字段 |
+| Sealos 模板 | `.sealos/template/index.yaml` |
 
-适配器是优选工具，不是资格门槛。适配器无法表达项目时，Agent 可修复部署源或生成等价 canonical 模板。须通过相同质量门，不得丢弃服务或绕过校验。
+Phase 5 只读取上表文件。其余写入 `.sealos/phase-4/`，**不是** Sealos 模板：
 
-## 网络与端口
+| 中间产物 | 路径 | 用途 |
+| --- | --- | --- |
+| 源快照 | `.sealos/phase-4/source/` | 可转换的部署源副本 |
+| Helm 渲染 | `.sealos/phase-4/rendered.yaml` | Helm 路径：`helm template` 输出 |
+| 资源映射 | `.sealos/phase-4/resource-map.json` | 源工作负载与模板资源的对账 |
 
-- `ports` → 公网入口候选
-- `expose` → 仅内部 Service
-- 一个公网候选自动选定；多个候选从 Ingress、README、角色或 `.sealos/config.json` 的 `public_service` 解析
-- 内部服务引用重写为 Kubernetes Service FQDN
+## 流程
 
-## 镜像与 pull secret
+### 1. 进入与恢复
 
-最终容器镜像须为 `repository@sha256:...`。pull-secret 引用仅当 `analysis.json` → `build_result` 所指的 `build-result.json` 中，该服务 key 的 `pull_access` 为 `ghcr_secret_required`。
+- 若 `.sealos/template/index.yaml` 已存在 → 按 [中断恢复](/pipeline/mode-detection#中断恢复) 处理。
+- 否则从步骤 2 继续。
 
-## 数据库
+### 2. 准备中间产物
 
-优先级：
+在 `.sealos/phase-4/source/` 留下可转换快照。不重新侦察仓库。
 
-1. 声明外部数据库 → 保留外部连接
-2. 支持的服务 DB 且无外部意图 → KubeBlocks 默认
-3. 嵌入式 SQLite → 保留在应用内
-4. 不支持或 KubeBlocks 非无损转换 → 保留源工作负载并附 `docker-to-sealos.kubeblocks-fallback-reason`
+| 源类型 | 动作 |
+| --- | --- |
+| Compose | 复制 `deployment_source` 至 `source/` |
+| Helm | 复制 chart 至 `source/`；`helm template` → `.sealos/phase-4/rendered.yaml` |
+| Kubernetes | 复制 manifest 至 `source/` |
 
-## 资源下限
+完成后，若须构建且 `build_result` 未就绪 → **CONTINUE → Phase 3**（返回后从步骤 3 继续）。
 
-按组件角色（业务主服务、sidecar/init/job、KubeBlocks 组件）的硬性最低值。AI 可根据项目证据提高限制。质量门强制执行下限与有效 Sealos 资源步长。
+### 3. 固定 digest 并转换
+
+每个容器镜像须为 `repository@sha256:...`（`linux/amd64`）。工作负载 key 与部署源一致。
+
+| 镜像来源 | 处理 |
+| --- | --- |
+| 本仓库构建 | `build-result.json` → `digests` |
+| 上游 `image:` | Agent 解析 tag；不写入 `build-result.json` |
+
+按 `deployment_source` 类型转换；digest 在转换前或转换参数中覆盖：
+
+| 类型 | 转换 |
+| --- | --- |
+| Compose | `compose_to_template.py`（默认 `--kompose-mode always`，内部调 `kompose convert` 取 workload 形态）；`--image-override` 逐服务 |
+| Helm | 读 `rendered.yaml` → 适配器；按 key 替换 `image` |
+| Kubernetes | 适配器；按工作负载名替换 `image` |
+
+不得丢弃服务。写入 `.sealos/phase-4/resource-map.json` 与 `.sealos/template/index.yaml`。
+
+### 4. 部署门禁
+
+对 `.sealos/template/index.yaml` 运行 [部署门禁](/specs/template-format#部署门禁)（`check_consistency.py` 规则子集）。**不得**运行 `quality_gate.py` 全量 CI。失败 → **STOP**。修复后重新生成并全量重跑。
+
+### 5. 下游
+
+通过 → **CONTINUE → [Phase 4.5](/pipeline/phases/phase-4-5-configure)** → [Phase 4.9](/pipeline/overview#首次部署路径) → Phase 5。
+
+## 转换约束
+
+**网络：** `ports` 为公网候选；`expose` 为内部 Service。多候选时从 Ingress、README、角色或 `.sealos/config.json` 的 `public_service` 解析。内部引用重写为 Service FQDN。
+
+**Pull secret：** 仅当 `build-result.json` 中该 key 的 `pull_access` 为 `ghcr_secret_required`。
+
+**数据库：** 外部声明 → 保留外部；支持的服务 DB → KubeBlocks；SQLite → 保留在应用内；否则保留源工作负载并附 `docker-to-sealos.kubeblocks-fallback-reason`。
+
+**资源下限：** 见 [资源下限](/specs/resource-floors) 与 [部署门禁](/specs/template-format#部署门禁)。
 
 ## 停止条件
 
 | 结果 | 条件 |
 | --- | --- |
-| **STOP** | `index.yaml` 质量门失败 |
-| **CONTINUE → Phase 4.5** | 模板通过完整质量门 |
-
-继续前须重新生成并重新运行完整质量门。不允许部分修复。
+| **CONTINUE → Phase 3** | 须构建且 digest 未就绪 |
+| **CONTINUE → Phase 4.5** | 部署门禁通过 |
+| **RETURN → Phase 2** | 部署源无效（缺 Dockerfile、坏 context、拓扑残缺） |
+| **STOP** | 转换失败、digest 无法解析、或部署门禁失败 |
 
 ## 验收标准
 
-- `.sealos/template/index.yaml` 存在
-- 所有最终镜像为 digest 固定
-- 完整拓扑保留于资源映射
-- 质量门通过已记录
+- `.sealos/template/index.yaml` 存在且部署门禁通过
+- 全部镜像 digest 固定（`linux/amd64`）
+- `.sealos/phase-4/resource-map.json` 拓扑完整
 
 ## Schema 链接
 
+- [部署源](/pipeline/deployment-sources)
+- [deployment-plan.json](/specs/deployment-plan)
 - [模板格式](/specs/template-format)
 - [转换规则](/specs/conversion-rules)
-- [资源下限](/specs/resource-floors)
 - [产物 Schema](/specs/artifact-schemas)
-- [deployment-plan.json](/specs/deployment-plan)
 
 ## 实现映射
 
-| 规范章节 | 实现 |
+| 章节 | 实现 |
 | --- | --- |
-| 转换 | `skills/docker-to-sealos/` |
+| Compose | `skills/docker-to-sealos/scripts/compose_to_template.py`（含 kompose） |
+| 部署门禁 | `skills/docker-to-sealos/scripts/check_consistency.py`（规则子集见 [模板格式](/specs/template-format#部署门禁)） |
+| Helm/K8s | `skills/docker-to-sealos/`（迁移中；本站契约为准） |

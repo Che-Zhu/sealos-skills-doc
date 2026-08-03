@@ -12,7 +12,7 @@ Phase 3 由主 Agent 编排：**Subagent 按顺序构建**须构建的镜像，�
 
 ## 前置条件
 
-- Phase 4 入口分支判定须构建（本 Phase 不由 Phase 2 直接调用）
+- Phase 4 判定须构建且 digest 未就绪时调用（不由 Phase 2 直接调用）
 
 ## 输入
 
