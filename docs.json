@@ -108,6 +108,7 @@
                   "specs/overview",
                   "specs/deployment-plan",
                   "specs/template-format",
+                  "specs/artifact-schemas",
                   "specs/safety-rules"
                 ]
               },

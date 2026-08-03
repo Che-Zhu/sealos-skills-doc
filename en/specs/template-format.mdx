@@ -50,7 +50,6 @@ Entry point: `skills/docker-to-sealos/scripts/check_consistency.py --artifacts <
 | `automountServiceAccountToken: false` (exceptions only with K8s API evidence) | R010 |
 | Primary container name matches workload `metadata.name` | R028 |
 | `labels.app` and `cloud.sealos.io/app-deploy-manager` match workload name | R008, R034 |
-| Resource limits use allowed platform steps; requests derived from limits | R038 |
 | No `emptyDir` | R005 |
 | PVC `requests.storage` ≤ 1Gi | R011 |
 
@@ -61,7 +60,6 @@ Entry point: `skills/docker-to-sealos/scripts/check_consistency.py --artifacts <
 | Service databases use KubeBlocks `Cluster`, not generic Deployments | R039 |
 | Business workload DB env uses approved `secretKeyRef` entries | R017 |
 | Database component resource floors | R019 |
-| Cluster includes dbprovider visibility labels | R040 |
 
 ### Networking
 
@@ -81,6 +79,7 @@ The following belong to skill development CI or the official template catalog. *
 - Category allowlist, i18n title dedup (R021–R023)
 - TopologyEvidence reconciliation (R050) and `topology-evidence/` artifacts
 - Enterprise-feature blocking (R049), RuntimeBundleEvidence (R046)
+- Managed workload resource ladder and request derivation (R038), KubeBlocks Cluster dbprovider visibility labels (R040) — align when converting; official templates may omit; see [Phase 4 conversion constraints](/en/pipeline/phases/phase-4-template#conversion-constraints)
 - Object-storage commercial policy rules (R044, R047) — handled at conversion per [Phase 4 conversion constraints](/en/pipeline/phases/phase-4-template#conversion-constraints), not in the gate subset
 
 ## Implementation reference
@@ -90,7 +89,7 @@ Deploy-path example (rule IDs must match this page):
 ```bash
 python skills/docker-to-sealos/scripts/check_consistency.py \
   --artifacts .sealos/template/index.yaml \
-  --only R001,R002,R003,R004,R005,R006,R008,R009,R010,R011,R012,R015,R017,R019,R020,R026,R028,R032,R033,R034,R035,R038,R039,R040,R045,R048,R051,R052
+  --only R001,R002,R003,R004,R005,R006,R008,R009,R010,R011,R012,R015,R017,R019,R020,R026,R028,R032,R033,R034,R035,R039,R045,R048,R051,R052
 ```
 
 Keep `quality_gate.py` for `docker-to-sealos` skill development and PRs. It is not normative for `sealos-deploy` Phase 4.

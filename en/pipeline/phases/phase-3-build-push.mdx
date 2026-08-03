@@ -1,18 +1,20 @@
 ---
 title: "Phase 3 — Build and push"
-description: "linux/amd64 image build and GHCR push with digest capture."
-keywords: ["phase 3", "build", "ghcr", "digest", "subagent", "kaniko"]
+description: "linux/amd64 image build and GHCR push."
+keywords: ["phase 3", "build", "ghcr", "subagent", "kaniko"]
 ---
 
 ## Purpose
 
-Phase 3 is orchestrated by the main agent: **subagents build images sequentially**; after all succeed, the **main agent pushes** to the user's GHCR and writes `.sealos/phase-3/build-result.json` (digest-first). Build backend depends on `runtime_profile` in `analysis.json`; **push is always done by the main agent**.
+Phase 3 is orchestrated by the main agent: **subagents build images sequentially**; after all succeed, the **main agent pushes** to the user's GHCR and writes `.sealos/phase-3/build-result.json` (**push refs** and `pull_access`, not the template digest table). Build backend depends on `runtime_profile` in `analysis.json`; **push is always done by the main agent**.
+
+All tag → digest pinning happens in [Phase 4](/en/pipeline/phases/phase-4-template).
 
 This phase does not scout the repo, run railpack, generate Dockerfiles, or modify `deployment_source` (recipe errors return to Phase 2).
 
 ## Preconditions
 
-- Called when Phase 4 requires builds and digests are not ready (not called directly from Phase 2)
+- Called when Phase 4 requires builds and push has not completed (not called directly from Phase 2)
 
 ## Inputs
 
@@ -57,7 +59,7 @@ Components with only an upstream `image:` (e.g. `postgres:16-alpine`) and no `bu
 
 | Output | Path | Description |
 | --- | --- | --- |
-| Build results | `.sealos/phase-3/build-result.json` | Digests for all pushed images and pull metadata |
+| Build results | `.sealos/phase-3/build-result.json` | Tag refs for pushed images and `pull_access` |
 | `analysis.json` | `.sealos/analysis.json` | Adds `build_result` pointer |
 
 ## Procedure
@@ -82,7 +84,7 @@ For each target, start one subagent **in order**:
 After all subagent builds succeed, the **main agent** (`local` and `sandbox` alike):
 
 - **Pushes** all newly built images to the current GitHub user's GHCR (user does not choose registry).
-- Tags each push with a unique version identifier; records immutable digest.
+- Tags each push with a **unique version identifier**; records pullable tag refs in `pushed` (step 4).
 - `local`: push from local Buildx build output; check `gh` login and `write:packages`.
 - `sandbox`: push from Kaniko Job build output; use injected `GITHUB_TOKEN` and related credentials (no local `gh`).
 - After push, probe anonymous pull per image: success → `pull_access: public`; otherwise → `ghcr_secret_required`.
@@ -92,16 +94,16 @@ All private GHCR images in one app must share one normalized GHCR namespace. Mix
 
 ### 4. Main agent — write `build-result.json`
 
-Write results to `.sealos/phase-3/build-result.json`. Each `digests` entry is an immutable `repository@sha256:...`; keys align with service/workload names in the deployment source.
+Write results to `.sealos/phase-3/build-result.json`. Each `pushed` entry is a tag ref after push (`repository:tag` or full registry ref). Keys align with deployment-source workload names. **Do not** write template-final `repository@sha256:...` digests here.
 
 Example:
 
 ```json
 {
   "generated_at": "2026-08-02T14:00:00Z",
-  "digests": {
-    "web": "ghcr.io/user/myapp-web@sha256:abc123...",
-    "worker": "ghcr.io/user/myapp-worker@sha256:def456..."
+  "pushed": {
+    "web": "ghcr.io/user/myapp-web:20260802-web-abc123",
+    "worker": "ghcr.io/user/myapp-worker:20260802-worker-def456"
   },
   "pull_access": {
     "web": "public",
@@ -110,7 +112,7 @@ Example:
 }
 ```
 
-`pull_access` is passed to Phase 4. Only `ghcr_secret_required` attaches pull-secret handling in the template.
+`pull_access` is used in Phase 4 for pull-secret handling.
 
 ### 5. Main agent — write `analysis.json`
 
@@ -138,9 +140,8 @@ Do not write `build_result` when this phase is skipped (no builds needed).
 
 - `.sealos/phase-3/build-result.json` exists and passes schema
 - `analysis.json` includes `build_result` with correct path
-- `digests` covers every service pushed in this phase
-- Each digest is `repository@sha256:...`
-- Upstream images not rebuilt are not listed in `digests`
+- `pushed` covers every service pushed in this phase
+- Upstream images not rebuilt are not listed in `pushed`
 
 ## Schema links
 

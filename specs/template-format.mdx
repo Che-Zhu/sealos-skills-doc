@@ -50,7 +50,6 @@ Phase 4 在生成模板后**只**校验下列平台硬约束。不运行 `qualit
 | `automountServiceAccountToken: false`（有 K8s API 证据时可例外） | R010 |
 | 主容器名与 workload `metadata.name` 一致 | R028 |
 | `labels.app`、`cloud.sealos.io/app-deploy-manager` 与 workload 名一致 | R008, R034 |
-| 资源 limits 使用平台允许阶梯；requests 由 limits 推导 | R038 |
 | 禁止 `emptyDir` | R005 |
 | PVC `requests.storage` ≤ 1Gi | R011 |
 
@@ -61,7 +60,6 @@ Phase 4 在生成模板后**只**校验下列平台硬约束。不运行 `qualit
 | 服务数据库使用 KubeBlocks `Cluster`，不得用普通 Deployment 冒充 | R039 |
 | 业务 workload 数据库连接 env 使用批准的 `secretKeyRef` | R017 |
 | 数据库组件资源下限 | R019 |
-| Cluster 须含 dbprovider 可见性 labels | R040 |
 
 ### 网络
 
@@ -81,6 +79,7 @@ Phase 4 在生成模板后**只**校验下列平台硬约束。不运行 `qualit
 - 分类 allowlist、i18n 标题去重（R021–R023）
 - TopologyEvidence 对账（R050）及 `topology-evidence/` 产物
 - 企业版功能屏蔽（R049）、RuntimeBundleEvidence（R046）
+- 业务 workload 资源阶梯与 requests 推导（R038）、KubeBlocks Cluster dbprovider 可见性 labels（R040）— 转换阶段尽量对齐，官方模板可不满足；见 [Phase 4 转换约束](/pipeline/phases/phase-4-template#转换约束)
 - 对象存储商业策略细则（R044, R047）— 转换阶段按 [Phase 4 转换约束](/pipeline/phases/phase-4-template#转换约束) 处理，不入门禁子集
 
 ## 实现对照
@@ -90,7 +89,7 @@ Phase 4 在生成模板后**只**校验下列平台硬约束。不运行 `qualit
 ```bash
 python skills/docker-to-sealos/scripts/check_consistency.py \
   --artifacts .sealos/template/index.yaml \
-  --only R001,R002,R003,R004,R005,R006,R008,R009,R010,R011,R012,R015,R017,R019,R020,R026,R028,R032,R033,R034,R035,R038,R039,R040,R045,R048,R051,R052
+  --only R001,R002,R003,R004,R005,R006,R008,R009,R010,R011,R012,R015,R017,R019,R020,R026,R028,R032,R033,R034,R035,R039,R045,R048,R051,R052
 ```
 
 `quality_gate.py` 保留给 `docker-to-sealos` skill 仓库开发与 PR，不作为 `sealos-deploy` Phase 4 规范。

@@ -1,0 +1,87 @@
+---
+title: "产物 Schema"
+description: "写入 `.sealos/` 下文件的 JSON schema 契约。"
+keywords: ["schemas", "json", "artifacts", "state.json"]
+---
+
+## Schema 索引
+
+| Schema | 文件 | 写入阶段 |
+| --- | --- | --- |
+| `config.schema.json` | `.sealos/config.json` | 用户 |
+| `deployment-plan.schema.json` | `.sealos/phase-2/deployment-plan.json` | Phase 2 |
+| `analysis.schema.json` | `.sealos/analysis.json` | Phase 1；Phase 2 增补 |
+| `build-result.schema.json` | `.sealos/phase-3/build-result.json` | Phase 3 |
+| `image-digests.schema.json` | `.sealos/phase-4/image-digests.json` | Phase 4 |
+| `state.schema.json` | `.sealos/state.json` | Phase 5.5 |
+
+## `build-result.json`
+
+[Phase 3](/pipeline/phases/phase-3-build-push) 主 Agent 在推送完成后写入。记录**推送结果**，不是模板用 digest 表。`analysis.json` 通过 `build_result` 指向本文件。
+
+| 字段 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| `generated_at` | string (date-time) | 否 | 写入时间 |
+| `pushed` | object | 是 | 工作负载 key → 推送后的 tag 引用 |
+| `pull_access` | object | 否 | 工作负载 key → GHCR 拉取方式（供 Phase 4） |
+
+**不得**在本文件包含 `digests` 字段（模板 digest 由 Phase 4 写入 `image-digests.json`）。
+
+### `pull_access` 取值
+
+| 值 | 含义 |
+| --- | --- |
+| `public` | 推送后匿名拉取 GHCR 成功 |
+| `ghcr_secret_required` | 匿名拉取失败或包为私有；Phase 4 模板附加 `imagePullSecrets` |
+
+Phase 3 对每个已推送服务须设为二者之一。探测不确定时记 `ghcr_secret_required`。
+
+示例：
+
+```json
+{
+  "generated_at": "2026-08-02T14:00:00Z",
+  "pushed": {
+    "web": "ghcr.io/user/myapp-web:20260802-web-abc123"
+  },
+  "pull_access": {
+    "web": "public"
+  }
+}
+```
+
+## `image-digests.json`
+
+[Phase 4](/pipeline/phases/phase-4-template) 在转换前写入。包含部署源**全部**容器镜像的不可变 digest。
+
+| 字段 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| `generated_at` | string (date-time) | 否 | 写入时间 |
+| `digests` | object | 是 | 工作负载 key → `repository@sha256:...`（`linux/amd64`） |
+
+构建镜像：从 `build-result.json` → `pushed` 的 tag 解析。上游镜像：从部署源 `image:` tag 解析。
+
+示例：
+
+```json
+{
+  "generated_at": "2026-08-02T15:00:00Z",
+  "digests": {
+    "web": "ghcr.io/user/myapp-web@sha256:abc123...",
+    "postgres": "docker.io/library/postgres@sha256:def456..."
+  }
+}
+```
+
+## `analysis.json` 阶段指针
+
+| 字段 | 写入阶段 | 指向 |
+| --- | --- | --- |
+| `deployment_plan` | Phase 2 | `.sealos/phase-2/deployment-plan.json` |
+| `build_result` | Phase 3 | `.sealos/phase-3/build-result.json` |
+
+## 校验
+
+```bash
+node skills/sealos-deploy/scripts/validate-artifacts.mjs --dir "$WORK_DIR"
+```

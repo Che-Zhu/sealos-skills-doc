@@ -18,6 +18,7 @@ All pipeline outputs are written under `.sealos/` in the target project director
 ├── phase-3/
 │   └── build-result.json
 ├── phase-4/
+│   ├── image-digests.json
 │   ├── source/
 │   ├── rendered.yaml
 │   └── resource-map.json
@@ -34,7 +35,8 @@ All pipeline outputs are written under `.sealos/` in the target project director
 | `phase-2/gitingest-digest.txt` | Phase 2 | Phase 2 | gitingest scout input |
 | `phase-2/docker-compose.yml` | Phase 2 | Phase 3, 4 | Canonical compose (when not Helm/K8s) |
 | `template/index.yaml` | Phase 4 or official template path | Phase 4.5, 5 | Canonical deploy template |
-| `phase-3/build-result.json` | Phase 3 | Phase 4 | Digests for all pushed images and pull metadata |
+| `phase-3/build-result.json` | Phase 3 | Phase 4 | Tag refs (`pushed`) and `pull_access` for pushed images |
+| `phase-4/image-digests.json` | Phase 4 | Phase 4 | All container images as `repository@sha256:...` (`linux/amd64`) |
 | `phase-4/` | Phase 4 | — | Conversion intermediates (`source/`, `rendered.yaml`, `resource-map.json`) |
 | `state.json` | After Phase 5.5 | Deploy mode detection, UPDATE | Deploy state and service mapping |
 | `config.json` | User or Phase 4.5 | Phase 4.5 | User config overrides |

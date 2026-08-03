@@ -33,4 +33,4 @@ Git LFS, submodules, and similar mechanisms are installed and fetched only when 
 
 ## Topology preservation
 
-The file (or chart render) at `deployment_source` must include the full runtime topology. Build-only handling is separate from final runtime topology; Phase 3 digests are written back to matching workloads in Phase 4 from `analysis.json` → `build_result`.
+The file (or chart render) at `deployment_source` must include the full runtime topology. Build-only handling is separate from final runtime topology; Phase 4 resolves digests from `build-result.json` → `pushed` and deployment-source `image:` tags into `phase-4/image-digests.json` for template conversion.

@@ -1,18 +1,20 @@
 ---
 title: "Phase 3 — 构建并推送"
-description: "linux/amd64 镜像构建与 GHCR 推送及 digest 捕获。"
-keywords: ["phase 3", "build", "ghcr", "digest", "subagent", "kaniko"]
+description: "linux/amd64 镜像构建与 GHCR 推送。"
+keywords: ["phase 3", "build", "ghcr", "subagent", "kaniko"]
 ---
 
 ## 目的
 
-Phase 3 由主 Agent 编排：**Subagent 按顺序构建**须构建的镜像，全部成功后由**主 Agent 统一推送**到用户 GHCR，并写入 `.sealos/phase-3/build-result.json`（以 digest 为主）。构建后端取决于 `analysis.json` 中的 `runtime_profile`；**推送始终由主 Agent 完成**。
+Phase 3 由主 Agent 编排：**Subagent 按顺序构建**须构建的镜像，全部成功后由**主 Agent 统一推送**到用户 GHCR，并写入 `.sealos/phase-3/build-result.json`（**推送引用**与 `pull_access`，不含模板用 digest 表）。构建后端取决于 `analysis.json` 中的 `runtime_profile`；**推送始终由主 Agent 完成**。
+
+所有镜像 tag → digest 的固定由 [Phase 4](/pipeline/phases/phase-4-template) 统一完成。
 
 本阶段不做仓库侦察、不运行 railpack、不生成 Dockerfile、不修改 `deployment_source`（配方错误返回 Phase 2）。
 
 ## 前置条件
 
-- Phase 4 判定须构建且 digest 未就绪时调用（不由 Phase 2 直接调用）
+- Phase 4 判定须构建且尚未完成推送时调用（不由 Phase 2 直接调用）
 
 ## 输入
 
@@ -57,7 +59,7 @@ Phase 3 由主 Agent 编排：**Subagent 按顺序构建**须构建的镜像，�
 
 | 输出 | 路径 | 说明 |
 | --- | --- | --- |
-| 构建结果 | `.sealos/phase-3/build-result.json` | 所有已推送镜像的 digest 与拉取元数据 |
+| 构建结果 | `.sealos/phase-3/build-result.json` | 已推送镜像的 tag 引用与 `pull_access` |
 | `analysis.json` | `.sealos/analysis.json` | 新增 `build_result` 指针 |
 
 ## 流程
@@ -82,7 +84,7 @@ Phase 3 由主 Agent 编排：**Subagent 按顺序构建**须构建的镜像，�
 全部 Subagent 构建成功后，**主 Agent**（`local` 与 `sandbox` 相同）：
 
 - 将本阶段新构建的镜像**统一**推送到当前 GitHub 用户的 GHCR（用户不选择 registry）。
-- 每次推送使用唯一版本标识打标签；读取不可变 digest。
+- 每次推送使用**唯一版本标识**打标签；将可拉取的 tag 引用记入 `pushed`（见步骤 4）。
 - `local`：从本地 Buildx 构建产物推送；检查 `gh` 登录与 `write:packages`。
 - `sandbox`：从 Kaniko Job 构建产物推送；使用环境注入的 `GITHUB_TOKEN` 等凭证（不依赖本地 `gh`）。
 - 推送后对每个镜像做匿名拉取探测：成功记 `pull_access: public`，否则记 `ghcr_secret_required`。
@@ -92,16 +94,16 @@ Phase 3 由主 Agent 编排：**Subagent 按顺序构建**须构建的镜像，�
 
 ### 4. 主 Agent — 写入 `build-result.json`
 
-将结果写入 `.sealos/phase-3/build-result.json`。`digests` 中每项为不可变 `repository@sha256:...`，key 与部署源中的服务/工作负载名对齐。
+将结果写入 `.sealos/phase-3/build-result.json`。`pushed` 中每项为推送后的 tag 引用（`repository:tag` 或带 registry 的完整引用），key 与部署源工作负载名对齐。**不得**在此文件写入模板最终用的 `repository@sha256:...` digest 表。
 
 示例：
 
 ```json
 {
   "generated_at": "2026-08-02T14:00:00Z",
-  "digests": {
-    "web": "ghcr.io/user/myapp-web@sha256:abc123...",
-    "worker": "ghcr.io/user/myapp-worker@sha256:def456..."
+  "pushed": {
+    "web": "ghcr.io/user/myapp-web:20260802-web-abc123",
+    "worker": "ghcr.io/user/myapp-worker:20260802-worker-def456"
   },
   "pull_access": {
     "web": "public",
@@ -110,7 +112,7 @@ Phase 3 由主 Agent 编排：**Subagent 按顺序构建**须构建的镜像，�
 }
 ```
 
-`pull_access` 传给 Phase 4。仅 `ghcr_secret_required` 在模板中附加 pull-secret 处理。
+`pull_access` 供 Phase 4 模板生成时决定是否附加 pull-secret。
 
 ### 5. 主 Agent — 写入 `analysis.json`
 
@@ -138,13 +140,12 @@ Phase 3 由主 Agent 编排：**Subagent 按顺序构建**须构建的镜像，�
 
 - `.sealos/phase-3/build-result.json` 存在且通过 schema
 - `analysis.json` 含 `build_result` 且路径正确
-- `digests` 覆盖本阶段所有已推送服务
-- 每项 digest 为 `repository@sha256:...`
-- 未重建的上游镜像未被写入 `digests`
+- `pushed` 覆盖本阶段所有已推送服务
+- 未重建的上游镜像未出现在 `pushed`
 
 ## Schema 链接
 
-- [产物 Schema — build-result.json](/en/specs/artifact-schemas)
+- [产物 Schema — build-result.json](/specs/artifact-schemas)
 - [deployment-plan.json](/specs/deployment-plan)
 - [部署源](/pipeline/deployment-sources)
 

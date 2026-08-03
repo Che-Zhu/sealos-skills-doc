@@ -12,17 +12,20 @@ keywords: ["schemas", "json", "artifacts", "state.json"]
 | `deployment-plan.schema.json` | `.sealos/phase-2/deployment-plan.json` | Phase 2 |
 | `analysis.schema.json` | `.sealos/analysis.json` | Phase 1, enriched Phase 2 |
 | `build-result.schema.json` | `.sealos/phase-3/build-result.json` | Phase 3 |
+| `image-digests.schema.json` | `.sealos/phase-4/image-digests.json` | Phase 4 |
 | `state.schema.json` | `.sealos/state.json` | Phase 5.5 |
 
 ## `build-result.json`
 
-Written by the main agent at the end of [Phase 3](/en/pipeline/phases/phase-3-build-push). One file holds every digest from this phase. `analysis.json` points to this file via `build_result`.
+Written by the main agent after push in [Phase 3](/en/pipeline/phases/phase-3-build-push). Records **push outcomes**, not the template digest table. `analysis.json` points to this file via `build_result`.
 
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |
 | `generated_at` | string (date-time) | No | Write timestamp |
-| `digests` | object | Yes | Service/workload key → `repository@sha256:...` |
-| `pull_access` | object | No | Service/workload key → pull access mode for Phase 4 |
+| `pushed` | object | Yes | Workload key → tag ref after push |
+| `pull_access` | object | No | Workload key → GHCR pull mode for Phase 4 |
+
+**Do not** include a `digests` field here. Template digests are written by Phase 4 to `image-digests.json`.
 
 ### `pull_access` values
 
@@ -31,7 +34,44 @@ Written by the main agent at the end of [Phase 3](/en/pipeline/phases/phase-3-bu
 | `public` | Anonymous pull from GHCR succeeded after push |
 | `ghcr_secret_required` | Anonymous pull failed or package is private; Phase 4 adds `imagePullSecrets` |
 
-Phase 3 must set one of these two values per service. When the anonymous pull probe is inconclusive, use `ghcr_secret_required`.
+Phase 3 must set one of these two values per pushed service. When the anonymous pull probe is inconclusive, use `ghcr_secret_required`.
+
+Example:
+
+```json
+{
+  "generated_at": "2026-08-02T14:00:00Z",
+  "pushed": {
+    "web": "ghcr.io/user/myapp-web:20260802-web-abc123"
+  },
+  "pull_access": {
+    "web": "public"
+  }
+}
+```
+
+## `image-digests.json`
+
+Written by [Phase 4](/en/pipeline/phases/phase-4-template) before conversion. Holds immutable digests for **every** container image in the deployment source.
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `generated_at` | string (date-time) | No | Write timestamp |
+| `digests` | object | Yes | Workload key → `repository@sha256:...` (`linux/amd64`) |
+
+Built images: resolve from tag refs in `build-result.json` → `pushed`. Upstream images: resolve from `image:` tags in the deployment source.
+
+Example:
+
+```json
+{
+  "generated_at": "2026-08-02T15:00:00Z",
+  "digests": {
+    "web": "ghcr.io/user/myapp-web@sha256:abc123...",
+    "postgres": "docker.io/library/postgres@sha256:def456..."
+  }
+}
+```
 
 ## `analysis.json` phase pointers
 

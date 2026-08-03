@@ -33,4 +33,4 @@ Git LFS、子模块等机制仅在仓库声明时安装与获取。见 [Phase 0]
 
 ## 拓扑保留
 
-`deployment_source` 所指文件（或 chart 渲染结果）须包含完整运行时拓扑。仅构建的组件与最终运行时拓扑分开处理；Phase 3 的 digest 在 Phase 4 从 `analysis.json` → `build_result` 写回部署源对应的工作负载。
+`deployment_source` 所指文件（或 chart 渲染结果）须包含完整运行时拓扑。仅构建的组件与最终运行时拓扑分开处理；Phase 4 从 `build-result.json` → `pushed` 与部署源 `image:` tag 统一解析 digest，写入 `phase-4/image-digests.json` 并用于模板转换。
