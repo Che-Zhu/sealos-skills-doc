@@ -76,9 +76,9 @@
                       "pipeline/phases/phase-2-discover",
                       "pipeline/phases/phase-3-build-push",
                       "pipeline/phases/phase-4-template",
-                      "pipeline/phases/phase-4-5-configure",
-                      "pipeline/phases/phase-5-deploy",
-                      "pipeline/phases/phase-5-5-runtime-truth"
+                      "pipeline/phases/phase-5-prepare",
+                      "pipeline/phases/phase-6-deploy",
+                      "pipeline/phases/phase-7-post-deploy"
                     ]
                   },
                   {
@@ -210,9 +210,9 @@
                       "en/pipeline/phases/phase-2-discover",
                       "en/pipeline/phases/phase-3-build-push",
                       "en/pipeline/phases/phase-4-template",
-                      "en/pipeline/phases/phase-4-5-configure",
-                      "en/pipeline/phases/phase-5-deploy",
-                      "en/pipeline/phases/phase-5-5-runtime-truth"
+                      "en/pipeline/phases/phase-5-prepare",
+                      "en/pipeline/phases/phase-6-deploy",
+                      "en/pipeline/phases/phase-7-post-deploy"
                     ]
                   },
                   {
@@ -285,8 +285,43 @@
   },
   "redirects": [
     {
+      "source": "/pipeline/phases",
+      "destination": "/pipeline/phases/index",
+      "permanent": true
+    },
+    {
       "source": "/en/pipeline/phases",
       "destination": "/en/pipeline/phases/index",
+      "permanent": true
+    },
+    {
+      "source": "/pipeline/phases/phase-4-5-configure",
+      "destination": "/pipeline/phases/phase-5-prepare",
+      "permanent": true
+    },
+    {
+      "source": "/pipeline/phases/phase-5-deploy",
+      "destination": "/pipeline/phases/phase-6-deploy",
+      "permanent": true
+    },
+    {
+      "source": "/pipeline/phases/phase-5-5-runtime-truth",
+      "destination": "/pipeline/phases/phase-7-post-deploy",
+      "permanent": true
+    },
+    {
+      "source": "/en/pipeline/phases/phase-4-5-configure",
+      "destination": "/en/pipeline/phases/phase-5-prepare",
+      "permanent": true
+    },
+    {
+      "source": "/en/pipeline/phases/phase-5-deploy",
+      "destination": "/en/pipeline/phases/phase-6-deploy",
+      "permanent": true
+    },
+    {
+      "source": "/en/pipeline/phases/phase-5-5-runtime-truth",
+      "destination": "/en/pipeline/phases/phase-7-post-deploy",
       "permanent": true
     }
   ],

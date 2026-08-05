@@ -44,6 +44,6 @@ GitHub URL 部署使用临时 checkout。项目目录中的 `.sealos/state.json`
 ~/.sealos/deployments/github.com/<owner>/<repo>/state.json
 ```
 
-桥接目录仅包含已验证的 `state.json`。Agent 在新 checkout 上于部署模式识别前恢复它。仅在 [Phase 5.5](/pipeline/phases/phase-5-5-runtime-truth) 成功且完整状态通过 schema 验证后更新。
+桥接目录仅包含已验证的 `state.json`。Agent 在新 checkout 上于部署模式识别前恢复它。仅在 [Phase 7](/pipeline/phases/phase-7-post-deploy) 成功且完整状态通过 schema 验证后更新。
 
 构建结果、模板及其他运行本地产物不复制到桥接目录。

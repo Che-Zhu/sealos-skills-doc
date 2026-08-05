@@ -20,7 +20,7 @@ A first deploy completes only when **all** conditions are true:
 
 ## state.json contents
 
-After Phase 5.5 passes, Sealos Deploy saves:
+After Phase 7 passes, Sealos Deploy saves:
 
 | Field group | Content |
 | --- | --- |
@@ -40,7 +40,7 @@ Primary service and primary image are recorded only when a public entry or clear
 1. Run full JSON artifact validation after write.
 2. For GitHub URL sources, copy validated `state.json` to the bridge path.
 3. If validation or persistence fails, do not report deploy success.
-4. Do not delete temp checkout until 5.5, validation, and bridge update succeed.
+4. Do not delete temp checkout until Phase 7, validation, and bridge update succeed.
 
 ## Final summary
 
@@ -53,4 +53,4 @@ Show actual path taken, confirmed runtime images, region, App URL when applicabl
 ## Related
 
 - [Mode detection — GitHub bridge](/en/pipeline/mode-detection)
-- [Phase 5.5 — Runtime truth](/en/pipeline/phases/phase-5-5-runtime-truth)
+- [Phase 7 — Post-deploy wrap-up](/en/pipeline/phases/phase-7-post-deploy)

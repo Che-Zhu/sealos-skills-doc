@@ -42,6 +42,6 @@ For GitHub sources, Sealos Deploy keeps a stable bridge copy at:
 ~/.sealos/deployments/github.com/<owner>/<repo>/state.json
 ```
 
-The bridge contains only verified `state.json`. The agent restores it before mode detection on a new checkout. The agent updates it only after [Phase 5.5](/en/pipeline/phases/phase-5-5-runtime-truth) succeeds and full state passes schema validation.
+The bridge contains only verified `state.json`. The agent restores it before mode detection on a new checkout. The agent updates it only after [Phase 7](/en/pipeline/phases/phase-7-post-deploy) succeeds and full state passes schema validation.
 
 Build results, templates, and other run-local artifacts are not copied to the bridge directory.

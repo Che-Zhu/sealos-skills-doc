@@ -1,7 +1,65 @@
 ---
 title: "Phase 6 — Deploy"
-description: "Renumbered to Phase 5."
-keywords: ["phase 6", "deploy", "redirect"]
+description: "Create cloud resources from the final template."
+keywords: ["phase 6", "deploy", "template api"]
 ---
 
-This page was renumbered to [Phase 5 — Deploy](/en/pipeline/phases/phase-5-deploy).
+## Purpose
+
+Phase 6 submits one real create request using the final template and inputs confirmed in [Phase 5](/en/pipeline/phases/phase-5-prepare).
+
+Deploy precheck (dry-run) must complete in Phase 5. Do not repeat precheck here with different template bytes or parameters.
+
+## Inputs
+
+| Input | Source |
+| --- | --- |
+| Template | `.sealos/template/index.yaml` |
+| Template inputs | [Phase 5](/en/pipeline/phases/phase-5-prepare) |
+| Namespace | Phase 0 (`local`) |
+
+## Outputs
+
+| Output | Description |
+| --- | --- |
+| Live resources | App, workloads, network, storage, dependencies |
+| `APP_NAME` | From safe whitelist response or unique live discovery |
+| Pull secret | When private GHCR images require it |
+
+## Procedure
+
+1. Read namespace from Phase 0 kubeconfig. Stop if empty, invalid, or mismatched with workspace. Do not fall back to `default`.
+2. Submit one real create request. Use the same template bytes and parameters as the Phase 5 dry-run.
+3. Extract `APP_NAME` from whitelist response or unique live Instance match.
+4. Create app pull secret in the same namespace when required.
+5. Wait for rollouts, Jobs, CronJobs, and operator-managed resources.
+6. Wait for public Service Endpoints before hitting Ingress or App URL.
+7. On not-ready workloads, read Pod status, events, and logs.
+
+If create returns unknown after timeout or 5xx, do not auto-retry or kubectl-fallback create. Read-only check recent Instance and App scope. Continue only on unique match.
+
+API success means resources exist, not that the app is usable. [Phase 7](/en/pipeline/phases/phase-7-post-deploy) is required.
+
+## Stop conditions
+
+| Result | Condition |
+| --- | --- |
+| **STOP** | Namespace invalid, create fails, secret creation fails, unknown create without unique match |
+| **CONTINUE → Phase 7** | Resources created and rollout waits complete |
+
+## Acceptance
+
+- Create used the same template and inputs as the Phase 5 dry-run
+- `APP_NAME` resolved safely
+- Pull secret created when required before readiness checks
+
+## Schema links
+
+- [Template format](/en/specs/template-format)
+- [Safety rules](/en/specs/safety-rules)
+
+## Implementation map
+
+| Spec section | Implementation |
+| --- | --- |
+| Template deploy | `skills/sealos-deploy/scripts/deploy-template.mjs` |

@@ -77,7 +77,7 @@ An exact match means the template declares the same source project. Do not fuzzy
 
 When there is one exact match, write the URL whether or not the run later takes the fast path.
 
-**Fast path** (skip Phases 2–4.5) requires all of:
+**Fast path** (skip Phases 2–4) requires all of:
 
 | Condition | Requirement |
 | --- | --- |
@@ -97,7 +97,7 @@ Write `official_template`. Keep the four Phase 0 fields. Full [schema](/en/specs
 | Result | Condition |
 | --- | --- |
 | **STOP** | Both blocklist rows are 100% confirmed |
-| **CONTINUE → Phase 4.9** | `official_template` is non-null and fast-path conditions are met |
+| **CONTINUE → Phase 5** | `official_template` is non-null and fast-path conditions are met |
 | **CONTINUE → Phase 2** | All other cases |
 
 ## Acceptance

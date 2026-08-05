@@ -31,7 +31,7 @@ Do not create cloud resources. Do not push images. Do not modify `deployment_sou
 | --- | --- |
 | Sealos template | `.sealos/template/index.yaml` |
 
-Phase 5 reads only the row above. The rest live under `.sealos/phase-4/` and are **not** Sealos templates:
+Phase 6 deploy uses the row above. The rest live under `.sealos/phase-4/` and are **not** Sealos templates:
 
 | Intermediate | Path | Role |
 | --- | --- | --- |
@@ -90,7 +90,7 @@ Run the [deploy gate](/en/specs/template-format#deploy-gate) on `.sealos/templat
 
 ### 6. Downstream
 
-On pass → **CONTINUE → [Phase 4.5](/en/pipeline/phases/phase-4-5-configure)** → [Phase 4.9](/en/pipeline/overview#first-deploy-routes) → Phase 5.
+On pass → **CONTINUE → [Phase 5](/en/pipeline/phases/phase-5-prepare)** → Phase 6 → Phase 7.
 
 ## Conversion constraints
 
@@ -109,7 +109,7 @@ On pass → **CONTINUE → [Phase 4.5](/en/pipeline/phases/phase-4-5-configure)*
 | Result | Condition |
 | --- | --- |
 | **CONTINUE → Phase 3** | Build required and push not done (no `build_result`) |
-| **CONTINUE → Phase 4.5** | Deploy gate passed |
+| **CONTINUE → Phase 5** | Deploy gate passed |
 | **RETURN → Phase 2** | Invalid deployment source (missing Dockerfile, bad context, incomplete topology) |
 | **STOP** | Digest resolution failed, conversion failed, or deploy gate failed |
 

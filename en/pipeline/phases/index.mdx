@@ -4,7 +4,7 @@ description: "Index of all Sealos Deploy lifecycle phases."
 keywords: ["phases", "index"]
 ---
 
-Each phase page follows the same contract layout: purpose, inputs, outputs, preconditions, procedure, stop conditions, acceptance, and schema links.
+Each phase page follows the same contract layout: purpose, inputs, outputs, prerequisites, procedure, stop conditions, acceptance, and schema links.
 
 <CardGroup cols={2}>
   <Card title="Phase 0 — Preflight" icon="shield-check" href="/en/pipeline/phases/phase-0-preflight">
@@ -13,24 +13,24 @@ Each phase page follows the same contract layout: purpose, inputs, outputs, prec
   <Card title="Phase 1 — Assess" icon="magnifying-glass" href="/en/pipeline/phases/phase-1-assess">
     Judge deployability, choose fast or standard path.
   </Card>
-  <Card title="Phase 2 — Discover and image prep" icon="network-wired" href="/en/pipeline/phases/phase-2-discover">
-    gitingest scout, writes deployment_source.
+  <Card title="Phase 2 — Discover" icon="network-wired" href="/en/pipeline/phases/phase-2-discover">
+    gitingest scout, write deployment_source.
   </Card>
   <Card title="Phase 3 — Build and push" icon="box" href="/en/pipeline/phases/phase-3-build-push">
-    GHCR build and digest capture.
+    GHCR build and push.
   </Card>
   <Card title="Phase 4 — Template" icon="file-lines" href="/en/pipeline/phases/phase-4-template">
     Generate canonical Sealos template.
   </Card>
-  <Card title="Phase 4.5 — Configure" icon="sliders" href="/en/pipeline/phases/phase-4-5-configure">
-    Collect inputs and confirm deploy.
+  <Card title="Phase 5 — Pre-deploy preparation" icon="sliders" href="/en/pipeline/phases/phase-5-prepare">
+    Collect inputs, confirm, YAML dry-run.
   </Card>
-  <Card title="Phase 5 — Deploy" icon="cloud" href="/en/pipeline/phases/phase-5-deploy">
+  <Card title="Phase 6 — Deploy" icon="cloud" href="/en/pipeline/phases/phase-6-deploy">
     Create cloud resources.
   </Card>
-  <Card title="Phase 5.5 — Runtime truth" icon="circle-check" href="/en/pipeline/phases/phase-5-5-runtime-truth">
-    Live verification before deployment success.
+  <Card title="Phase 7 — Post-deploy wrap-up" icon="circle-check" href="/en/pipeline/phases/phase-7-post-deploy">
+    Runtime verification and state recording.
   </Card>
 </CardGroup>
 
-See [Pipeline overview](/en/pipeline/overview) for route diagrams. Update flow: [Update mode](/en/pipeline/update-mode) and Phase U1–U3.
+Route diagram: [Pipeline overview](/en/pipeline/overview). Update flow: [Update mode](/en/pipeline/update-mode) and Phases U1–U3.

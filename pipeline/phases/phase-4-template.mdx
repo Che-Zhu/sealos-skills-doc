@@ -31,7 +31,7 @@ Phase 4 属于标准构建路径。它读取 `deployment-plan.json` 的 `deploym
 | --- | --- |
 | Sealos 模板 | `.sealos/template/index.yaml` |
 
-Phase 5 只读取上表文件。其余写入 `.sealos/phase-4/`，**不是** Sealos 模板：
+Phase 6 部署使用上表文件。其余写入 `.sealos/phase-4/`，**不是** Sealos 模板：
 
 | 中间产物 | 路径 | 用途 |
 | --- | --- | --- |
@@ -90,7 +90,7 @@ Phase 5 只读取上表文件。其余写入 `.sealos/phase-4/`，**不是** Sea
 
 ### 6. 下游
 
-通过 → **CONTINUE → [Phase 4.5](/pipeline/phases/phase-4-5-configure)** → [Phase 4.9](/pipeline/overview#首次部署路径) → Phase 5。
+通过 → **CONTINUE → [Phase 5](/pipeline/phases/phase-5-prepare)** → Phase 6 → Phase 7。
 
 ## 转换约束
 
@@ -109,7 +109,7 @@ Phase 5 只读取上表文件。其余写入 `.sealos/phase-4/`，**不是** Sea
 | 结果 | 条件 |
 | --- | --- |
 | **CONTINUE → Phase 3** | 须构建且尚未推送（无 `build_result`） |
-| **CONTINUE → Phase 4.5** | 部署门禁通过 |
+| **CONTINUE → Phase 5** | 部署门禁通过 |
 | **RETURN → Phase 2** | 部署源无效（缺 Dockerfile、坏 context、拓扑残缺） |
 | **STOP** | digest 解析失败、转换失败、或部署门禁失败 |
 

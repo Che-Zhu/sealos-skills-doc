@@ -1,0 +1,90 @@
+---
+title: "Phase 5 — Pre-deploy preparation"
+description: "Collect template inputs, user confirmation, and YAML deploy precheck."
+keywords: ["phase 5", "prepare", "configure", "precheck", "confirmation"]
+---
+
+## Purpose
+
+Phase 5 runs before cloud resources are created. It collects template inputs when needed, records user confirmation, and dry-runs the final YAML.
+
+The standard build path enters after the [Phase 4](/en/pipeline/phases/phase-4-template) deploy gate passes. The [Phase 1](/en/pipeline/phases/phase-1-assess) official-template fast path skips Phases 2–4 but still enters Phase 5.
+
+For the official-template fast path: re-verify the template against the catalog, collect required inputs, and show optional defaults. Do not rewrite the official YAML or rebuild current source.
+
+Do not create cloud resources in this phase.
+
+## Inputs
+
+| Input | Source |
+| --- | --- |
+| Template | `.sealos/template/index.yaml` (standard path from Phase 4; fast path from `official_template`) |
+| User overrides | `.sealos/config.json` when present |
+| Namespace | Phase 0 (`local`) |
+
+## Outputs
+
+| Output | Description |
+| --- | --- |
+| Final input set | Values bound to the template for [Phase 6](/en/pipeline/phases/phase-6-deploy) |
+| User confirmation | Explicit deploy approval |
+| Precheck record | Successful dry-run (no resources created) |
+
+## Procedure
+
+### 1. Verify template
+
+- **Standard path:** read `.sealos/template/index.yaml` from Phase 4.
+- **Official fast path:** re-verify against [labring-actions/templates `kb-0.9/template`](https://github.com/labring-actions/templates/tree/kb-0.9/template) before Phase 6. Do not trust local records and YAML alone.
+
+### 2. Classify and collect configuration
+
+Classify template configuration into four groups:
+
+| Group | Examples |
+| --- | --- |
+| Auto-managed | App name, internal URLs, random secrets, managed infra connections |
+| User-required | Admin accounts, API keys, SMTP, OAuth credentials |
+| Optional | Feature flags and runtime params with sensible defaults |
+| Fixed | Production mode, internal ports, paths |
+
+1. Explain required fields to the user.
+2. Collect required values.
+3. Offer optional edits.
+4. Mask secrets in logs and the final summary.
+
+### 3. Validate and deploy precheck
+
+1. Re-validate the final template (including bound inputs).
+2. Run a **YAML dry-run** against the Sealos deploy API with the final template and inputs. Do not create resources.
+3. Show a summary of region, images, dependencies, and configuration.
+4. Wait for explicit deploy approval.
+
+Proceed to Phase 6 only after dry-run passes and the user confirms.
+
+## Stop conditions
+
+| Result | Condition |
+| --- | --- |
+| **STOP** | User refuses deploy |
+| **STOP** | Template validation or dry-run fails |
+| **STOP** | Official template online verification fails |
+| **CONTINUE → Phase 6** | User confirms and dry-run passes |
+
+## Acceptance
+
+- All required inputs collected
+- Secrets masked in logs
+- User confirmation recorded
+- Dry-run uses the same template bytes and parameters Phase 6 will submit
+
+## Schema links
+
+- [Artifact schemas — config.json](/en/specs/artifact-schemas)
+- [Template format](/en/specs/template-format)
+
+## Implementation map
+
+| Spec section | Implementation |
+| --- | --- |
+| Pre-deploy preparation | `skills/sealos-deploy/modules/pipeline.md` (Phase 5) |

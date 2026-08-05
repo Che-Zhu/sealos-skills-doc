@@ -1,0 +1,75 @@
+---
+title: "Phase 7 — Post-deploy wrap-up"
+description: "Runtime verification, state recording, and deploy completion."
+keywords: ["phase 7", "post-deploy", "runtime truth", "verification", "state"]
+---
+
+## Purpose
+
+Phase 7 judges whether the deploy truly succeeded from live cloud state and records completion. Do not rely on template output or API return codes alone.
+
+Phase 7 is mandatory for every deploy. Creating resources without post-deploy wrap-up is not deploy success.
+
+## Inputs
+
+| Input | Source |
+| --- | --- |
+| Live resources | [Phase 6](/en/pipeline/phases/phase-6-deploy) |
+| Access URLs | Ingress, App URL, internal endpoints |
+| Workload status | Pods, events, logs |
+
+## Outputs
+
+| Output | Path | Description |
+| --- | --- | --- |
+| Verified deploy | — | Report success only after checks pass |
+| Deploy state | `.sealos/state.json` | See [State and completion](/en/pipeline/state-and-completion) |
+
+## Procedure
+
+### 1. Runtime verification
+
+The agent must verify applicable items by workload type:
+
+- [ ] App, workspace, resource scope, and access URLs confirmed
+- [ ] Workloads, internal links, and public entry ready
+- [ ] Web app reachable from the real entry; core flow works after login or init when required
+- [ ] Init, migration, startup, and runtime logs reviewed
+- [ ] No `no matching manifest`, `no match for platform in manifest`, or `exec format error`
+- [ ] Stability window: alerts, restarts, OOM, readiness converged
+- [ ] Databases, object storage, workers, and cron behave as expected
+
+### 2. Failure handling
+
+**Architecture mismatch on reused third-party image:** when buildable source exists, fix images and template in Phases 2–4, then redeploy from Phase 5. Without buildable source, report incompatible service, image, and error. Do not guess other images or floating tags.
+
+**Resource exhaustion:** OOMKilled, restart loops, migration timeout, or readiness flap means current resources fail runtime verification. Raise CPU or memory to the next Sealos step, regenerate the template, redeploy from Phase 5, and re-run Phase 7. Official template path cannot edit verified official YAML; disable reuse and return to the standard path when resources cannot pass.
+
+### 3. State recording
+
+After all applicable checks pass, write `.sealos/state.json` per [State and completion](/en/pipeline/state-and-completion) and pass schema validation. Update bridge persistence when applicable.
+
+## Stop conditions
+
+| Result | Condition |
+| --- | --- |
+| **STOP** | Required runtime checks still fail after bounded remediation |
+| **COMPLETE** | All applicable checks pass and `state.json` is written |
+
+## Acceptance
+
+- Real entry, core behavior, logs, and stability pass for current workloads
+- Resource remediation loop completed when triggered
+- `state.json` written and passes schema validation
+
+## Schema links
+
+- [Artifact schemas — state.json](/en/specs/artifact-schemas)
+- [State and completion](/en/pipeline/state-and-completion)
+
+## Implementation map
+
+| Spec section | Implementation |
+| --- | --- |
+| Runtime truth | `skills/sealos-deploy/modules/runtime-truth.md` |
+| Live smoke | `skills/sealos-deploy/scripts/sealos-live-smoke.mjs` |

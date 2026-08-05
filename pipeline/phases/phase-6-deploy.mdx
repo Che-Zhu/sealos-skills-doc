@@ -1,7 +1,65 @@
 ---
 title: "Phase 6 — 部署"
-description: "已重编号为 Phase 5。"
-keywords: ["phase 6", "deploy", "redirect"]
+description: "从最终模板创建云端资源。"
+keywords: ["phase 6", "deploy", "template api"]
 ---
 
-本页已重编号为 [Phase 5 — 部署](/pipeline/phases/phase-5-deploy)。
+## 目的
+
+Phase 6 使用 [Phase 5](/pipeline/phases/phase-5-prepare) 已确认的最终模板与输入，提交一次真实创建请求。
+
+部署预检（dry-run）须在 Phase 5 完成。本 Phase 不得重复预检后改用不同模板或参数。
+
+## 输入
+
+| 输入 | 来源 |
+| --- | --- |
+| 模板 | `.sealos/template/index.yaml` |
+| 模板输入 | [Phase 5](/pipeline/phases/phase-5-prepare) |
+| Namespace | Phase 0（`local`） |
+
+## 输出
+
+| 输出 | 说明 |
+| --- | --- |
+| 线上资源 | App、工作负载、网络、存储、依赖 |
+| `APP_NAME` | 来自安全白名单响应或唯一线上发现 |
+| Pull secret | 私有 GHCR 镜像需要时 |
+
+## 流程
+
+1. 从 Phase 0 准备的 kubeconfig 读取 namespace。为空、无效或与工作空间不匹配则停止。不得回退到 `default`。
+2. 提交一次真实创建请求。使用与 Phase 5 dry-run 相同的模板字节与参数。
+3. 从白名单响应或唯一线上 Instance 匹配提取 `APP_NAME`。
+4. 需要时在同一 namespace 创建应用 pull secret。
+5. 等待 rollout、Job、CronJob 与 operator 管理资源。
+6. 访问 Ingress 或 App URL 前等待公网 Service Endpoints。
+7. 工作负载未就绪时读取 Pod 状态、事件与日志。
+
+创建超时或 5xx 返回 unknown 时，不得自动重试或用 kubectl 回退创建。只读检查近期 Instance 与 App 范围。仅在唯一匹配时继续。
+
+API 成功表示资源存在，不表示应用可用。[Phase 7](/pipeline/phases/phase-7-post-deploy) 为必需。
+
+## 停止条件
+
+| 结果 | 条件 |
+| --- | --- |
+| **STOP** | namespace 无效、创建失败、secret 创建失败、unknown 创建且无唯一匹配 |
+| **CONTINUE → Phase 7** | 资源已创建且 rollout 等待完成 |
+
+## 验收标准
+
+- 创建使用与 Phase 5 dry-run 相同的模板与输入
+- `APP_NAME` 安全解析
+- 需要时在读就绪检查前创建 pull secret
+
+## Schema 链接
+
+- [模板格式](/specs/template-format)
+- [安全规则](/specs/safety-rules)
+
+## 实现映射
+
+| 规范章节 | 实现 |
+| --- | --- |
+| 模板部署 | `skills/sealos-deploy/scripts/deploy-template.mjs` |
