@@ -1,24 +1,25 @@
 ---
 title: "Phase 5 — Pre-deploy preparation"
-description: "Collect template inputs, user confirmation, and YAML deploy precheck."
+description: "Collect template inputs, user confirmation, and a YAML dry-run."
 keywords: ["phase 5", "prepare", "configure", "precheck", "confirmation"]
 ---
 
 ## Purpose
 
-Phase 5 runs before cloud resources are created. It collects template inputs when needed, records user confirmation, and dry-runs the final YAML.
+Phase 5 collects template inputs and user approval. Then it dry-runs the final YAML before deploy.
 
-The standard build path enters after the [Phase 4](/en/pipeline/phases/phase-4-template) deploy gate passes. The [Phase 1](/en/pipeline/phases/phase-1-assess) official-template fast path skips Phases 2–4; the template was already fetched in Phase 1.
+Do not create cloud resources. Do not rewrite official template content in `.sealos/template/index.yaml`.
 
-For the official-template fast path: collect required inputs and show optional defaults. Do not rewrite the official YAML or rebuild current source.
+## Prerequisites
 
-Do not create cloud resources in this phase.
+- `.sealos/template/index.yaml` exists. [Phase 1](/en/pipeline/phases/phase-1-assess) or [Phase 4](/en/pipeline/phases/phase-4-template) wrote it.
+- If the file is missing, return to the earlier phase. Do not start Phase 5.
 
 ## Inputs
 
 | Input | Source |
 | --- | --- |
-| Template | `.sealos/template/index.yaml` (official path: fetched in Phase 1; standard path: generated in Phase 4) |
+| Template | `.sealos/template/index.yaml` |
 | User overrides | `.sealos/config.json` when present |
 | Namespace | Phase 0 (`local`) |
 
@@ -26,55 +27,50 @@ Do not create cloud resources in this phase.
 
 | Output | Description |
 | --- | --- |
-| Final input set | Values bound to the template for [Phase 6](/en/pipeline/phases/phase-6-deploy) |
+| Final input set | For [Phase 6](/en/pipeline/phases/phase-6-deploy) |
 | User confirmation | Explicit deploy approval |
-| Precheck record | Successful dry-run (no resources created) |
+| Dry-run pass | No resources created |
 
 ## Procedure
 
-### 1. Read template
+### 1. Collect configuration
 
-Read `.sealos/template/index.yaml`. The official fast path uses the copy [Phase 1](/en/pipeline/phases/phase-1-assess) already fetched; the standard path uses the Phase 4 version that passed the deploy gate. Missing file → **STOP**.
-
-### 2. Classify and collect configuration
-
-Classify template configuration into four groups:
+Classify template fields into four groups:
 
 | Group | Examples |
 | --- | --- |
 | Auto-managed | App name, internal URLs, random secrets, managed infra connections |
 | User-required | Admin accounts, API keys, SMTP, OAuth credentials |
-| Optional | Feature flags and runtime params with sensible defaults |
+| Optional | Feature flags and runtime params with defaults |
 | Fixed | Production mode, internal ports, paths |
 
-1. Explain required fields to the user.
+1. Tell the user which fields are required.
 2. Collect required values.
-3. Offer optional edits.
-4. Mask secrets in logs and the final summary.
+3. Offer optional changes.
+4. Mask secrets in logs and the summary.
 
-### 3. Validate and deploy precheck
+### 2. Validate and dry-run
 
-1. Re-validate the final template (including bound inputs).
-2. Run a **YAML dry-run** against the Sealos deploy API with the final template and inputs. Do not create resources.
-3. Show a summary of region, images, dependencies, and configuration.
+1. Validate the final template with bound inputs.
+2. Dry-run the template and inputs against the Sealos deploy API. Do not create resources.
+3. Show region, images, dependencies, and configuration.
 4. Wait for explicit deploy approval.
 
-Proceed to Phase 6 only after dry-run passes and the user confirms.
+If dry-run passes and the user confirms, **CONTINUE → Phase 6**.
 
 ## Stop conditions
 
 | Result | Condition |
 | --- | --- |
 | **STOP** | User refuses deploy |
-| **STOP** | Template missing, validation fails, or dry-run fails |
+| **STOP** | Template validation fails or dry-run fails |
 | **CONTINUE → Phase 6** | User confirms and dry-run passes |
 
 ## Acceptance
 
-- All required inputs collected
+- Required inputs collected
 - Secrets masked in logs
-- User confirmation recorded
-- Dry-run uses the same template bytes and parameters Phase 6 will submit
+- Dry-run uses the same template bytes and parameters as Phase 6
 
 ## Schema links
 

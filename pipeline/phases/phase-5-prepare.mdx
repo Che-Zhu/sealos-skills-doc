@@ -1,24 +1,25 @@
 ---
 title: "Phase 5 — 部署前准备"
-description: "收集模板输入、用户确认与 YAML 部署预检。"
+description: "收集模板输入、用户确认与 YAML dry-run。"
 keywords: ["phase 5", "prepare", "configure", "precheck", "confirmation"]
 ---
 
 ## 目的
 
-Phase 5 在创建云端资源之前执行。收集模板输入（按需）、绑定用户确认，并对最终 YAML 运行 dry-run 部署预检。
+Phase 5 在部署前收集模板输入、记录用户确认，并对最终 YAML 运行 dry-run。
 
-标准构建路径在 [Phase 4](/pipeline/phases/phase-4-template) 部署门禁通过后进入本 Phase。[Phase 1](/pipeline/phases/phase-1-assess) 官方模板快速路径跳过 Phase 2–4；模板已在 Phase 1 拉取落盘。
+不得创建云端资源。不得改写 `.sealos/template/index.yaml` 中的官方模板内容。
 
-官方模板路径：收集必填输入并展示可选默认。不重写官方 YAML，不重建当前源码。
+## 前置条件
 
-不得创建云端资源。
+- `.sealos/template/index.yaml` 已存在（[Phase 1](/pipeline/phases/phase-1-assess) 拉取官方模板，或 [Phase 4](/pipeline/phases/phase-4-template) 生成）
+- 文件缺失 → 回到上游 Phase，不得进入本 Phase
 
 ## 输入
 
 | 输入 | 来源 |
 | --- | --- |
-| 模板 | `.sealos/template/index.yaml`（官方路径由 Phase 1 拉取；标准路径由 Phase 4 生成） |
+| 模板 | `.sealos/template/index.yaml` |
 | 用户覆盖 | 存在时的 `.sealos/config.json` |
 | Namespace | Phase 0（`local`） |
 
@@ -26,55 +27,50 @@ Phase 5 在创建云端资源之前执行。收集模板输入（按需）、绑
 
 | 输出 | 说明 |
 | --- | --- |
-| 最终输入集 | 绑定到模板供 [Phase 6](/pipeline/phases/phase-6-deploy) 使用 |
+| 最终输入集 | 供 [Phase 6](/pipeline/phases/phase-6-deploy) 使用 |
 | 用户确认 | 明确的部署批准 |
-| 预检通过记录 | dry-run 成功（不创建资源） |
+| dry-run 通过 | 未创建资源 |
 
 ## 流程
 
-### 1. 读取模板
+### 1. 收集配置
 
-读取 `.sealos/template/index.yaml`。官方快速路径使用 [Phase 1](/pipeline/phases/phase-1-assess) 已拉取的副本；标准路径使用 Phase 4 已通过部署门禁的版本。文件缺失 → **STOP**。
-
-### 2. 分类并收集配置
-
-将模板配置分为四组：
+将模板字段分为四组：
 
 | 组 | 示例 |
 | --- | --- |
 | 自动管理 | 应用名、内部 URL、随机秘密、托管基础设施连接 |
 | 用户必填 | 管理员账号、API 密钥、SMTP、OAuth 凭证 |
-| 可选 | 有合理默认的功能开关与运行时参数 |
+| 可选 | 有默认的功能开关与运行时参数 |
 | 固定 | 生产模式、内部端口、路径 |
 
-1. 向用户说明必填字段。
+1. 说明必填字段。
 2. 收集必填值。
 3. 提供可选修改。
-4. 日志与最终摘要中掩码敏感值。
+4. 在日志与摘要中掩码敏感值。
 
-### 3. 校验与部署预检
+### 2. 校验与 dry-run
 
-1. 重新校验最终模板（含输入绑定）。
-2. 用最终模板与输入对 Sealos 部署 API 运行 **YAML dry-run**。不创建资源。
+1. 校验绑定输入后的最终模板。
+2. 用最终模板与输入对 Sealos 部署 API 运行 YAML dry-run。不创建资源。
 3. 展示区域、镜像、依赖与配置摘要。
 4. 等待明确部署确认。
 
-只有 dry-run 通过且用户确认后，才能进入 Phase 6。
+dry-run 通过且用户确认后 → **CONTINUE → Phase 6**。
 
 ## 停止条件
 
 | 结果 | 条件 |
 | --- | --- |
 | **STOP** | 用户拒绝部署 |
-| **STOP** | 模板缺失、校验失败或 dry-run 失败 |
+| **STOP** | 模板校验失败或 dry-run 失败 |
 | **CONTINUE → Phase 6** | 用户确认且 dry-run 通过 |
 
 ## 验收标准
 
-- 所有必填输入已收集
+- 必填输入已收集
 - 敏感值在日志中已掩码
-- 用户确认已记录
-- dry-run 使用与 Phase 6 将提交的相同模板字节与参数
+- dry-run 与 Phase 6 使用相同模板字节与参数
 
 ## Schema 链接
 

@@ -54,7 +54,7 @@ flowchart TD
 
 One Sealos deploy maps to one full-repo template; multi-service Compose and similar projects must keep the full service topology.
 
-Phase 5 runs before Phase 6. The agent must collect inputs when needed, record user confirmation, and dry-run the final YAML. Deploy proceeds only after precheck passes.
+Phase 5 runs before Phase 6. `.sealos/template/index.yaml` must exist. The agent collects inputs, records user confirmation, and dry-runs the final YAML. Deploy proceeds only after precheck passes.
 
 ## Update route
 
@@ -71,7 +71,7 @@ See [Update mode](/en/pipeline/update-mode) and [Phases U1–U3](/en/pipeline/up
 | [Phase 2](/en/pipeline/phases/phase-2-discover) | Discover | gitingest, `deployment-plan.json` |
 | [Phase 3](/en/pipeline/phases/phase-3-build-push) | Build and push | Push `linux/amd64` images to GHCR |
 | [Phase 4](/en/pipeline/phases/phase-4-template) | Template | Generate canonical Sealos template |
-| [Phase 5](/en/pipeline/phases/phase-5-prepare) | Pre-deploy preparation | Collect inputs, confirm, YAML dry-run |
+| [Phase 5](/en/pipeline/phases/phase-5-prepare) | Pre-deploy preparation | Collect inputs, confirm, dry-run (template ready) |
 | [Phase 6](/en/pipeline/phases/phase-6-deploy) | Deploy | Create cloud resources |
 | [Phase 7](/en/pipeline/phases/phase-7-post-deploy) | Post-deploy wrap-up | Runtime verification and state recording |
 | [Phase U1](/en/pipeline/update/phase-u1-prepare) | Prepare update | Choose rebuild targets or restart workloads |

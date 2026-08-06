@@ -54,7 +54,7 @@ flowchart TD
 
 一次 Sealos 部署对应整仓一张模板；多服务 Compose 等项目须保留完整服务拓扑。
 
-Phase 5 在 Phase 6 之前执行。Agent 须收集输入（按需）、获得用户确认，并对最终 YAML 运行 dry-run。只有预检通过，才能进入部署阶段。
+Phase 5 在 Phase 6 之前执行。`.sealos/template/index.yaml` 须已存在。Agent 收集输入、获得用户确认，并对最终 YAML 运行 dry-run。预检通过后才能部署。
 
 ## 更新路径
 
@@ -71,7 +71,7 @@ Phase 5 在 Phase 6 之前执行。Agent 须收集输入（按需）、获得用
 | [Phase 2](/pipeline/phases/phase-2-discover) | 发现与镜像准备 | gitingest、`deployment-plan.json` |
 | [Phase 3](/pipeline/phases/phase-3-build-push) | 构建并推送 | `linux/amd64` 镜像推送到 GHCR |
 | [Phase 4](/pipeline/phases/phase-4-template) | 模板生成 | 生成 canonical Sealos 模板 |
-| [Phase 5](/pipeline/phases/phase-5-prepare) | 部署前准备 | 收集输入、用户确认、YAML dry-run |
+| [Phase 5](/pipeline/phases/phase-5-prepare) | 部署前准备 | 收集输入、确认、dry-run（模板已就绪） |
 | [Phase 6](/pipeline/phases/phase-6-deploy) | 部署 | 创建云端资源 |
 | [Phase 7](/pipeline/phases/phase-7-post-deploy) | 部署后收尾 | 运行验收与状态记录 |
 | [Phase U1](/pipeline/update/phase-u1-prepare) | 准备更新 | 选择重建服务或重启工作负载 |
