@@ -8,9 +8,9 @@ keywords: ["phase 5", "prepare", "configure", "precheck", "confirmation"]
 
 Phase 5 runs before cloud resources are created. It collects template inputs when needed, records user confirmation, and dry-runs the final YAML.
 
-The standard build path enters after the [Phase 4](/en/pipeline/phases/phase-4-template) deploy gate passes. The [Phase 1](/en/pipeline/phases/phase-1-assess) official-template fast path skips Phases 2–4 but still enters Phase 5.
+The standard build path enters after the [Phase 4](/en/pipeline/phases/phase-4-template) deploy gate passes. The [Phase 1](/en/pipeline/phases/phase-1-assess) official-template fast path skips Phases 2–4; the template was already fetched in Phase 1.
 
-For the official-template fast path: re-verify the template against the catalog, collect required inputs, and show optional defaults. Do not rewrite the official YAML or rebuild current source.
+For the official-template fast path: collect required inputs and show optional defaults. Do not rewrite the official YAML or rebuild current source.
 
 Do not create cloud resources in this phase.
 
@@ -18,7 +18,7 @@ Do not create cloud resources in this phase.
 
 | Input | Source |
 | --- | --- |
-| Template | `.sealos/template/index.yaml` (standard path from Phase 4; fast path from `official_template`) |
+| Template | `.sealos/template/index.yaml` (official path: fetched in Phase 1; standard path: generated in Phase 4) |
 | User overrides | `.sealos/config.json` when present |
 | Namespace | Phase 0 (`local`) |
 
@@ -32,10 +32,9 @@ Do not create cloud resources in this phase.
 
 ## Procedure
 
-### 1. Verify template
+### 1. Read template
 
-- **Standard path:** read `.sealos/template/index.yaml` from Phase 4.
-- **Official fast path:** re-verify against [labring-actions/templates `kb-0.9/template`](https://github.com/labring-actions/templates/tree/kb-0.9/template) before Phase 6. Do not trust local records and YAML alone.
+Read `.sealos/template/index.yaml`. The official fast path uses the copy [Phase 1](/en/pipeline/phases/phase-1-assess) already fetched; the standard path uses the Phase 4 version that passed the deploy gate. Missing file → **STOP**.
 
 ### 2. Classify and collect configuration
 
@@ -67,8 +66,7 @@ Proceed to Phase 6 only after dry-run passes and the user confirms.
 | Result | Condition |
 | --- | --- |
 | **STOP** | User refuses deploy |
-| **STOP** | Template validation or dry-run fails |
-| **STOP** | Official template online verification fails |
+| **STOP** | Template missing, validation fails, or dry-run fails |
 | **CONTINUE → Phase 6** | User confirms and dry-run passes |
 
 ## Acceptance

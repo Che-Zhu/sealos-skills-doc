@@ -48,7 +48,7 @@ flowchart TD
   P4 --> P5 --> P6 --> P7
 ```
 
-**Official template path:** preflight → mode detection → assess (fast path) → **Phase 5 pre-deploy preparation** → Phase 6 deploy → Phase 7 post-deploy wrap-up
+**Official template path:** preflight → mode detection → assess (exact match and fetch official template) → **Phase 5 pre-deploy preparation** → Phase 6 deploy → Phase 7 post-deploy wrap-up
 
 **Standard build path:** preflight → mode detection → assess → no fast path → **Phase 2** (`deployment-plan.json`) → **Phase 4** (Phase 3 build when needed) → template generation → **Phase 5 pre-deploy preparation** → Phase 6 deploy → Phase 7 post-deploy wrap-up
 

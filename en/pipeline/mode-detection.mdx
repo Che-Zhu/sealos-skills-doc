@@ -28,7 +28,7 @@ Update runs Phase U1 through U3. It skips assess, discovery, template generation
 
 When a first deploy was interrupted, Sealos Deploy recognizes completed assess, official template selection, image builds, or template generation.
 
-The agent may resume only when artifacts still match the current project and current choices. An official template must pass online catalog verification before Phase 5. The agent must not trust local records and YAML alone.
+The agent may resume only when artifacts still match the current project and current choices. Official fast path: resume at Phase 5 when Phase 1 wrote `official_template` and `.sealos/template/index.yaml` exists. Do not trust template content from the URL in `analysis.json` alone.
 
 Otherwise the run restarts from the appropriate earlier phase.
 

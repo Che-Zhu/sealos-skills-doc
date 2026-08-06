@@ -6,11 +6,11 @@ keywords: ["phase 1", "assess", "analysis.json", "official template"]
 
 ## Purpose
 
-Phase 1 judges whether the project can run as a cloud service. It chooses the fast path or the standard path. It writes `official_template`.
+Phase 1 judges whether the project can run as a cloud service. It chooses the fast path or the standard path. It writes `official_template`. On an exact catalog match, it **fetches the official template verbatim** to `.sealos/template/index.yaml`.
 
 UPDATE mode skips this phase.
 
-Do not score the project. Do not select images. Do not run [Phase 4](/en/pipeline/phases/phase-4-template) template generation. Do not create cloud resources. Do not fetch YAML. Do not write `.sealos/template/index.yaml`.
+Do not score the project. Do not select images. Do not run [Phase 4](/en/pipeline/phases/phase-4-template) template generation (conversion, digest pinning, deploy gate). Do not create cloud resources. Do not fetch or rewrite YAML except the official template verbatim fetch below.
 
 ## Blocklist
 
@@ -37,6 +37,7 @@ Phase 0 must have written `runtime_profile`, `work_dir`, and `repo_name`. `githu
 | Output | Path |
 | --- | --- |
 | `official_template` | `.sealos/analysis.json` |
+| Official template (on exact match) | `.sealos/template/index.yaml` |
 
 ```json
 {
@@ -92,11 +93,22 @@ On `local` with uncommitted changes, `official_template` may still be non-null. 
 
 Write `official_template`. Keep the four Phase 0 fields. Full [schema](/en/specs/artifact-schemas) validation is not required in this phase.
 
+### 5. Fetch official template
+
+Run only when `official_template` is non-null:
+
+1. Fetch `index.yaml` from the `official_template` URL.
+2. Write it **verbatim** to `.sealos/template/index.yaml`. Do not rewrite, merge, or regenerate from the current repo.
+3. Fetch failure (URL unreachable, empty body) → **STOP**.
+
+On the standard path, a later Phase 4 run may **overwrite** this file. The fast path uses this file in Phase 5.
+
 ## Stop conditions
 
 | Result | Condition |
 | --- | --- |
 | **STOP** | Both blocklist rows are 100% confirmed |
+| **STOP** | `official_template` is non-null but the official template fetch failed |
 | **CONTINUE → Phase 5** | `official_template` is non-null and fast-path conditions are met |
 | **CONTINUE → Phase 2** | All other cases |
 
@@ -104,7 +116,7 @@ Write `official_template`. Keep the four Phase 0 fields. Full [schema](/en/specs
 
 - `official_template` matches the match result
 - Phase 0 four fields are unchanged
-- `.sealos/template/index.yaml` is not written
+- When `official_template` is non-null, `.sealos/template/index.yaml` exists as an unmodified copy of the fetched official YAML
 
 ## Schema links
 

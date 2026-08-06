@@ -6,11 +6,11 @@ keywords: ["phase 1", "assess", "analysis.json", "official template"]
 
 ## 目的
 
-判断项目能否以云服务形式部署。选择快速路径或标准路径。写入 `official_template`。
+判断项目能否以云服务形式部署。选择快速路径或标准路径。写入 `official_template`；精确匹配时**原样拉取**官方模板至 `.sealos/template/index.yaml`。
 
 UPDATE 模式跳过本 Phase。
 
-不得评分。不得选择镜像。不得执行 [Phase 4](/pipeline/phases/phase-4-template) 式模板生成。不得创建云端资源。不得拉取 YAML。不得写入 `.sealos/template/index.yaml`。
+不得评分。不得选择镜像。不得执行 [Phase 4](/pipeline/phases/phase-4-template) 式模板生成（转换、digest 固定、部署门禁）。不得创建云端资源。除下文官方模板原样拉取外，不得拉取或改写其他 YAML。
 
 ## 黑名单
 
@@ -37,6 +37,7 @@ Phase 0 须已写入 `runtime_profile`、`work_dir`、`repo_name`。`github_url`
 | 输出 | 路径 |
 | --- | --- |
 | `official_template` | `.sealos/analysis.json` |
+| 官方模板（精确匹配时） | `.sealos/template/index.yaml` |
 
 ```json
 {
@@ -92,11 +93,22 @@ Phase 0 须已写入 `runtime_profile`、`work_dir`、`repo_name`。`github_url`
 
 写入 `official_template`。保留 Phase 0 四字段。本阶段不要求通过完整 [schema](/specs/artifact-schemas)。
 
+### 5. 拉取官方模板
+
+仅当 `official_template` 非 `null` 时执行：
+
+1. 从 `official_template` URL 拉取 `index.yaml`。
+2. **原样**写入 `.sealos/template/index.yaml`。不得改写、合并或按当前仓库重生成。
+3. 拉取失败（URL 不可达、内容为空）→ **STOP**。
+
+标准路径后续若进入 Phase 4，可由 Phase 4 **覆盖**本文件。快速路径在 Phase 5 直接使用本文件。
+
 ## 停止条件
 
 | 结果 | 条件 |
 | --- | --- |
 | **STOP** | 黑名单两项均 100% 确认 |
+| **STOP** | `official_template` 非 `null` 但官方模板拉取失败 |
 | **CONTINUE → Phase 5** | `official_template` 非 `null`，且满足快速路径条件 |
 | **CONTINUE → Phase 2** | 其余情况 |
 
@@ -104,7 +116,7 @@ Phase 0 须已写入 `runtime_profile`、`work_dir`、`repo_name`。`github_url`
 
 - `official_template` 与匹配结果一致
 - Phase 0 四字段未改
-- 未写入 `template/index.yaml`
+- `official_template` 非 `null` 时，`.sealos/template/index.yaml` 存在且为拉取的官方 YAML 原样副本
 
 ## Schema 链接
 

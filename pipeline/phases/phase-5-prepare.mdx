@@ -8,9 +8,9 @@ keywords: ["phase 5", "prepare", "configure", "precheck", "confirmation"]
 
 Phase 5 在创建云端资源之前执行。收集模板输入（按需）、绑定用户确认，并对最终 YAML 运行 dry-run 部署预检。
 
-标准构建路径在 [Phase 4](/pipeline/phases/phase-4-template) 部署门禁通过后进入本 Phase。[Phase 1](/pipeline/phases/phase-1-assess) 官方模板快速路径跳过 Phase 2–4，但仍须进入本 Phase。
+标准构建路径在 [Phase 4](/pipeline/phases/phase-4-template) 部署门禁通过后进入本 Phase。[Phase 1](/pipeline/phases/phase-1-assess) 官方模板快速路径跳过 Phase 2–4；模板已在 Phase 1 拉取落盘。
 
-官方模板路径：对照目录再次验证模板，收集必填输入并展示可选默认。不重写官方 YAML，不重建当前源码。
+官方模板路径：收集必填输入并展示可选默认。不重写官方 YAML，不重建当前源码。
 
 不得创建云端资源。
 
@@ -18,7 +18,7 @@ Phase 5 在创建云端资源之前执行。收集模板输入（按需）、绑
 
 | 输入 | 来源 |
 | --- | --- |
-| 模板 | `.sealos/template/index.yaml`（标准路径由 Phase 4 写入；快速路径由 `official_template` 拉取） |
+| 模板 | `.sealos/template/index.yaml`（官方路径由 Phase 1 拉取；标准路径由 Phase 4 生成） |
 | 用户覆盖 | 存在时的 `.sealos/config.json` |
 | Namespace | Phase 0（`local`） |
 
@@ -32,10 +32,9 @@ Phase 5 在创建云端资源之前执行。收集模板输入（按需）、绑
 
 ## 流程
 
-### 1. 验证模板
+### 1. 读取模板
 
-- **标准路径：** 读取 Phase 4 生成的 `.sealos/template/index.yaml`。
-- **官方模板快速路径：** 进入 Phase 6 前须再次对照 [labring-actions/templates `kb-0.9/template`](https://github.com/labring-actions/templates/tree/kb-0.9/template) 验证。不得仅凭本地记录与 YAML 信任。
+读取 `.sealos/template/index.yaml`。官方快速路径使用 [Phase 1](/pipeline/phases/phase-1-assess) 已拉取的副本；标准路径使用 Phase 4 已通过部署门禁的版本。文件缺失 → **STOP**。
 
 ### 2. 分类并收集配置
 
@@ -67,8 +66,7 @@ Phase 5 在创建云端资源之前执行。收集模板输入（按需）、绑
 | 结果 | 条件 |
 | --- | --- |
 | **STOP** | 用户拒绝部署 |
-| **STOP** | 模板校验失败或 dry-run 失败 |
-| **STOP** | 官方模板在线验证失败 |
+| **STOP** | 模板缺失、校验失败或 dry-run 失败 |
 | **CONTINUE → Phase 6** | 用户确认且 dry-run 通过 |
 
 ## 验收标准

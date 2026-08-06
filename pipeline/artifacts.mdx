@@ -34,7 +34,7 @@ keywords: ["artifacts", "state.json", "analysis.json", "template"]
 | `phase-2/deployment-plan.json` | Phase 2 | Phase 3、4 | 含 `deployment_source` 指针 |
 | `phase-2/gitingest-digest.txt` | Phase 2 | Phase 2 | gitingest 侦察输入 |
 | `phase-2/docker-compose.yml` | Phase 2 | Phase 3、4 | Canonical compose（非 Helm/K8s 时） |
-| `template/index.yaml` | Phase 4 或后续官方模板路径 | Phase 5、6 | Canonical 部署模板 |
+| `template/index.yaml` | Phase 1（官方精确匹配）或 Phase 4（标准路径） | Phase 5、6 | Canonical 部署模板 |
 | `phase-3/build-result.json` | Phase 3 | Phase 4 | 已推送镜像的 tag 引用（`pushed`）与 `pull_access` |
 | `phase-4/image-digests.json` | Phase 4 | Phase 4 | 全部容器镜像的 `repository@sha256:...`（`linux/amd64`） |
 | `phase-4/` | Phase 4 | — | 转换中间产物（`source/`、`rendered.yaml`、`resource-map.json`） |
