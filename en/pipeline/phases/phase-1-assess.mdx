@@ -54,6 +54,37 @@ One exact match → URL string. Otherwise → `null`. This is independent of the
 - [Phase 0](/en/pipeline/phases/phase-0-preflight) passed
 - [Mode detection](/en/pipeline/mode-detection) is **DEPLOY**
 
+## Phase constraints
+
+Read when entering. Obey **while executing**.
+
+| ID | Constraint | Notes |
+| --- | --- | --- |
+| P1-01 | Do not score or choose images | Assess path, not build |
+| P1-02 | Do not run Phase 4-style template generation | No conversion, digest pin, or deploy gate |
+| P1-03 | Do not create cloud resources | Except verbatim official template fetch, do not fetch or rewrite other YAML |
+| P1-04 | Official templates: exact match only | No fuzzy match by name, language, or framework |
+| P1-05 | Blacklist STOP only at 100% certainty | Insufficient evidence → CONTINUE |
+| P1-06 | When `official_template` is non-null, fetch verbatim | Do not rewrite, merge, or regenerate from the repo |
+
+## Phase validation
+
+Run **after outputs are written**:
+
+```bash
+node skills/sealos-deploy/scripts/validate-phase-1.mjs --dir "$WORK_DIR"
+```
+
+The script checks:
+
+| ID | Check |
+| --- | --- |
+| P1-V01 | `official_template` is `null` or a labring-actions raw URL |
+| P1-V02 | Phase 0 four fields preserved |
+| P1-V03 | When `official_template` is non-null, `.sealos/template/index.yaml` exists |
+
+On failure, do not **CONTINUE → Phase 2** or **CONTINUE → Phase 5**.
+
 ## Procedure
 
 ### 1. Blocklist check

@@ -93,7 +93,8 @@
                   "pipeline/state-and-completion",
                   "pipeline/cleanup",
                   "pipeline/artifacts",
-                  "pipeline/deployment-sources"
+                  "pipeline/deployment-sources",
+                  "pipeline/phase-validation"
                 ]
               }
             ]
@@ -227,7 +228,8 @@
                   "en/pipeline/state-and-completion",
                   "en/pipeline/cleanup",
                   "en/pipeline/artifacts",
-                  "en/pipeline/deployment-sources"
+                  "en/pipeline/deployment-sources",
+                  "en/pipeline/phase-validation"
                 ]
               }
             ]

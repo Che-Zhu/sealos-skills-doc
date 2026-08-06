@@ -15,6 +15,36 @@ Do not create cloud resources. Do not rewrite official template content in `.sea
 - `.sealos/template/index.yaml` exists. [Phase 1](/en/pipeline/phases/phase-1-assess) or [Phase 4](/en/pipeline/phases/phase-4-template) wrote it.
 - If the file is missing, return to the earlier phase. Do not start Phase 5.
 
+## Phase constraints
+
+Read when entering. Obey **while executing**.
+
+| ID | Constraint | Notes |
+| --- | --- | --- |
+| P5-01 | Do not create cloud resources | Dry-run creates nothing |
+| P5-02 | Do not rewrite official template content in `.sealos/template/index.yaml` | Collect inputs and confirm only |
+| P5-03 | Template file must already exist from Phase 1 or Phase 4 | If missing, return upstream |
+| P5-04 | Require explicit user deploy approval | No Phase 6 without confirmation |
+
+## Phase validation
+
+Run **after outputs are written**:
+
+```bash
+node skills/sealos-deploy/scripts/validate-phase-5.mjs --dir "$WORK_DIR"
+```
+
+The script checks:
+
+| ID | Check |
+| --- | --- |
+| P5-V01 | `.sealos/template/index.yaml` exists |
+| P5-V02 | `.sealos/phase-5/prepare-result.json` passes schema |
+| P5-V03 | `template_sha256` matches the current template file |
+| P5-V04 | `dry_run` is `passed` and `user_confirmed` is `true` |
+
+On failure, do not **CONTINUE → Phase 6**.
+
 ## Inputs
 
 | Input | Source |
@@ -30,6 +60,7 @@ Do not create cloud resources. Do not rewrite official template content in `.sea
 | Final input set | For [Phase 6](/en/pipeline/phases/phase-6-deploy) |
 | User confirmation | Explicit deploy approval |
 | Dry-run pass | No resources created |
+| Prepare result | `.sealos/phase-5/prepare-result.json` |
 
 ## Procedure
 
@@ -55,6 +86,8 @@ Classify template fields into four groups:
 2. Dry-run the template and inputs against the Sealos deploy API. Do not create resources.
 3. Show region, images, dependencies, and configuration.
 4. Wait for explicit deploy approval.
+
+5. Write `.sealos/phase-5/prepare-result.json` (`template_sha256`, `dry_run`, `user_confirmed`).
 
 If dry-run passes and the user confirms, **CONTINUE → Phase 6**.
 

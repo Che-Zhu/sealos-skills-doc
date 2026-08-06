@@ -1,0 +1,64 @@
+---
+title: "阶段验收脚本"
+description: "各 Phase 的机器可验收约束与 validate-phase-N.mjs 契约。"
+keywords: ["phase validation", "constraints", "validate-phase"]
+---
+
+每个部署 Phase 有两节：
+
+| 节 | 时机 | 内容 |
+| --- | --- | --- |
+| **阶段约束** | 进入本 Phase 时阅读，**执行过程中**遵守 | 本 Phase 独有事实、平台怪癖、职责边界。此时产物往往**尚不存在** |
+| **阶段验收** | 本 Phase **结束前** | `validate-phase-N.mjs` 核对**产出物**是否满足契约 |
+
+约束带 ID（如 `P3-01`）。可验收的约束由脚本在同一 ID 下报错。仅行为类、脚本看不见的规则只写在阶段约束中，不写验收表。
+
+实现位于 [`sealos-skills`](https://github.com/labring/sealos-skills)：`skills/sealos-deploy/scripts/validate-phase-N.mjs`（`N` = 0–7）。
+
+## 运行方式
+
+```bash
+node skills/sealos-deploy/scripts/validate-phase-0.mjs --dir "$WORK_DIR"
+# … validate-phase-1.mjs … validate-phase-7.mjs
+```
+
+`$WORK_DIR` 为 `analysis.json` 中的 `work_dir`。
+
+## 与 schema 校验的关系
+
+| 层 | 命令 | 范围 |
+| --- | --- | --- |
+| 全局产物 schema | `validate-artifacts.mjs` | 结构合法的 JSON/YAML |
+| 阶段验收 | `validate-phase-N.mjs` | 本 Phase **语义约束**（平台规则、跨产物一致性） |
+| Phase 4 部署门禁 | `check_consistency.py` | 模板规则子集（`validate-phase-4.mjs` 会调用或等价核对） |
+
+阶段验收**不能**替代 schema 校验。两者在 Phase 结束前均须通过（适用时）。
+
+## 跳过规则
+
+| Phase | 何时跳过验收 |
+| --- | --- |
+| Phase 3 | 无需构建、未写入 `build_result` |
+| Phase 1、2 | UPDATE 模式跳过对应 Phase |
+| 其余 | 进入该 Phase 则须验收 |
+
+## 约束索引
+
+| Phase | 脚本 | 约束页 |
+| --- | --- | --- |
+| 0 | `validate-phase-0.mjs` | [Phase 0](/pipeline/phases/phase-0-preflight#阶段约束) |
+| 1 | `validate-phase-1.mjs` | [Phase 1](/pipeline/phases/phase-1-assess#阶段约束) |
+| 2 | `validate-phase-2.mjs` | [Phase 2](/pipeline/phases/phase-2-discover#阶段约束) |
+| 3 | `validate-phase-3.mjs` | [Phase 3](/pipeline/phases/phase-3-build-push#阶段约束) |
+| 4 | `validate-phase-4.mjs` | [Phase 4](/pipeline/phases/phase-4-template#阶段约束) |
+| 5 | `validate-phase-5.mjs` | [Phase 5](/pipeline/phases/phase-5-prepare#阶段约束) |
+| 6 | `validate-phase-6.mjs` | [Phase 6](/pipeline/phases/phase-6-deploy#阶段约束) |
+| 7 | `validate-phase-7.mjs` | [Phase 7](/pipeline/phases/phase-7-post-deploy#阶段约束) |
+
+## 实现状态
+
+| 脚本 | 状态 |
+| --- | --- |
+| `validate-phase-0.mjs` – `validate-phase-7.mjs` | 待 `sealos-skills` 实现；本站契约为准 |
+
+实现 PR 须为每条约束 ID 提供测试 fixture。见 [校验](/contributing/validation)。

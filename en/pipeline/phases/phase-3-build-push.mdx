@@ -16,6 +16,34 @@ This phase does not scout the repo, run railpack, generate Dockerfiles, or modif
 
 - Called when Phase 4 requires builds and push has not completed (not called directly from Phase 2)
 
+## Phase constraints
+
+Read when entering. Obey **while executing** (applies when pushing).
+
+| ID | Constraint | Notes |
+| --- | --- | --- |
+| P3-01 | GitHub username in GHCR paths must be lowercase | GitHub usernames can include uppercase; `ghcr.io` does not |
+| P3-02 | All `pushed` images must share one GHCR namespace | Same `owner` in `ghcr.io/{owner}/...` |
+| P3-03 | `pushed` records tag refs only | No `@sha256:`; digest pin is Phase 4 |
+| P3-04 | Subagent build concurrency limit is 1 | No parallel builds |
+| P3-05 | Main agent pushes uniformly | Subagents must not push to a registry |
+
+## Phase validation
+
+After this phase runs and writes `build_result`, run **after outputs are written**:
+
+```bash
+node skills/sealos-deploy/scripts/validate-phase-3.mjs --dir "$WORK_DIR"
+```
+
+The script checks **P3-01**–**P3-03**, plus:
+
+| ID | Check |
+| --- | --- |
+| P3-V04 | Each `pushed` key has `pull_access` (`public` or `ghcr_secret_required`) |
+
+Skip when no build is required and `build_result` was not written. On failure, do not **CONTINUE → Phase 4**.
+
 ## Inputs
 
 | Input | Source |
@@ -90,7 +118,7 @@ After all subagent builds succeed, the **main agent** (`local` and `sandbox` ali
 - After push, probe anonymous pull per image: success → `pull_access: public`; otherwise → `ghcr_secret_required`.
 - Push failures to `ghcr.io/{user}/...` are Phase 3 execution failures.
 
-All private GHCR images in one app must share one normalized GHCR namespace. Mixed namespaces stop before cloud resource creation.
+All private GHCR images in one app must share one normalized GHCR namespace (see **P3-01**, **P3-02**). Mixed namespaces stop before cloud resource creation.
 
 ### 4. Main agent — write `build-result.json`
 

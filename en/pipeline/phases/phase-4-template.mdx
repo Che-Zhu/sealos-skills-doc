@@ -17,6 +17,37 @@ Do not create cloud resources. Do not push images. Do not modify `deployment_sou
 - Phase 2 wrote `deployment_plan` and `deployment-plan.json`
 - `deployment_source` is readable (see [Deployment sources](/en/pipeline/deployment-sources))
 
+## Phase constraints
+
+Read when entering. Obey **while executing**.
+
+| ID | Constraint | Notes |
+| --- | --- | --- |
+| P4-01 | Do not create cloud resources or push images | |
+| P4-02 | Do not modify `deployment_source` | Invalid source → **RETURN → Phase 2** |
+| P4-03 | Do not write digests to `build-result.json` | Digest table only in `image-digests.json` |
+| P4-04 | Pin digest for **every** container image in the deployment source | Built and upstream `image:` refs |
+| P4-05 | Deploy gate runs `check_consistency.py` rule subset only | Do not run full `quality_gate.py` CI |
+
+## Phase validation
+
+Run **after outputs are written**:
+
+```bash
+node skills/sealos-deploy/scripts/validate-phase-4.mjs --dir "$WORK_DIR"
+```
+
+The script checks:
+
+| ID | Check |
+| --- | --- |
+| P4-V01 | Each `image-digests.json` entry is `repository@sha256:...` (`linux/amd64`) |
+| P4-V02 | Every container `image` in the template matches the digest table |
+| P4-V03 | `build-result.json` `pushed` values contain no `@sha256:` |
+| P4-V04 | Template passes the deploy gate |
+
+On failure, do not **CONTINUE → Phase 5**.
+
 ## Inputs
 
 | File | Notes |

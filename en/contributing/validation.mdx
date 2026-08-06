@@ -19,6 +19,7 @@ Run these before merging changes to this repository.
 | --- | --- |
 | Codex plugin metadata | `python3 scripts/validate-codex-plugin.py` |
 | sealos-deploy scripts | `node --check <script.mjs>` + `node scripts/test-<name>.mjs` |
+| Phase validation | `node skills/sealos-deploy/scripts/validate-phase-N.mjs --dir <work_dir>` |
 | docker-to-sealos rules | `python3 skills/docker-to-sealos/scripts/quality_gate.py` |
 | Template references | `node scripts/test-sealos-deploy-template-references.mjs` |
 | Live smoke contract | `node skills/sealos-deploy/scripts/test-sealos-live-smoke.mjs` |

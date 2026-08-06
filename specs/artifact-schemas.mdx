@@ -13,6 +13,8 @@ keywords: ["schemas", "json", "artifacts", "state.json"]
 | `analysis.schema.json` | `.sealos/analysis.json` | Phase 1；Phase 2 增补 |
 | `build-result.schema.json` | `.sealos/phase-3/build-result.json` | Phase 3 |
 | `image-digests.schema.json` | `.sealos/phase-4/image-digests.json` | Phase 4 |
+| `prepare-result.schema.json` | `.sealos/phase-5/prepare-result.json` | Phase 5 |
+| `deploy-result.schema.json` | `.sealos/phase-6/deploy-result.json` | Phase 6 |
 | `state.schema.json` | `.sealos/state.json` | Phase 7 |
 
 ## `build-result.json`
@@ -73,6 +75,25 @@ Phase 3 对每个已推送服务须设为二者之一。探测不确定时记 `g
 }
 ```
 
+## `prepare-result.json`
+
+[Phase 5](/pipeline/phases/phase-5-prepare) 在 dry-run 与用户确认后写入。供 Phase 6 核对模板字节一致。
+
+| 字段 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| `template_sha256` | string | 是 | `.sealos/template/index.yaml` 的 SHA-256（十六进制，小写） |
+| `dry_run` | string | 是 | 固定为 `passed` |
+| `user_confirmed` | boolean | 是 | 用户明确批准部署时为 `true` |
+
+## `deploy-result.json`
+
+[Phase 6](/pipeline/phases/phase-6-deploy) 在创建请求成功后写入。
+
+| 字段 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| `template_sha256` | string | 是 | 与 Phase 5 `prepare-result.json` 相同 |
+| `app_name` | string | 是 | 线上 App 名称 |
+
 ## `analysis.json` 阶段指针
 
 | 字段 | 写入阶段 | 指向 |
@@ -84,4 +105,7 @@ Phase 3 对每个已推送服务须设为二者之一。探测不确定时记 `g
 
 ```bash
 node skills/sealos-deploy/scripts/validate-artifacts.mjs --dir "$WORK_DIR"
+node skills/sealos-deploy/scripts/validate-phase-N.mjs --dir "$WORK_DIR"
 ```
+
+阶段验收脚本见 [阶段验收](/pipeline/phase-validation)。

@@ -38,6 +38,38 @@ See [deployment-plan.json](/en/specs/deployment-plan) for the field contract.
 
 - Phase 1 exit is **CONTINUE → Phase 2** (standard path)
 
+## Phase constraints
+
+Read when entering. Obey **while executing**.
+
+| ID | Constraint | Notes |
+| --- | --- | --- |
+| P2-01 | Do not build or push images | Build is Phase 3 |
+| P2-02 | Do not generate Sealos templates | Template is Phase 4 |
+| P2-03 | Do not create cloud resources | |
+| P2-04 | Do not change `official_template` | Keep Phase 1 value |
+| P2-05 | One deploy must cover full repo topology | DB, queue, worker — not main app only |
+| P2-06 | On Compose path, `deployment_source` must be `.sealos/phase-2/docker-compose.yml` | Not the repo's original compose path |
+
+## Phase validation
+
+Run **after outputs are written**:
+
+```bash
+node skills/sealos-deploy/scripts/validate-phase-2.mjs --dir "$WORK_DIR"
+```
+
+The script checks:
+
+| ID | Check |
+| --- | --- |
+| P2-V01 | `deployment-plan.json` passes schema with valid `deployment_source` |
+| P2-V02 | `deployment_source` path exists under `work_dir` |
+| P2-V03 | `official_template` matches Phase 1 |
+| P2-V04 | On Compose path, `deployment_source` is `.sealos/phase-2/docker-compose.yml` |
+
+On failure, do not **CONTINUE → Phase 4**.
+
 ## Procedure
 
 ### 1. Read `analysis.json`

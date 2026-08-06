@@ -17,6 +17,37 @@ Phase 4 属于标准构建路径。它读取 `deployment-plan.json` 的 `deploym
 - Phase 2 已写入 `deployment_plan` 与 `deployment-plan.json`
 - `deployment_source` 可读（见 [部署源](/pipeline/deployment-sources)）
 
+## 阶段约束
+
+进入本 Phase 时须知晓，并在**执行过程中**遵守。
+
+| ID | 约束 | 说明 |
+| --- | --- | --- |
+| P4-01 | 不得创建云端资源、不得推送镜像 | |
+| P4-02 | 不得修改 `deployment_source` | 无效时 **RETURN → Phase 2** |
+| P4-03 | 不得将 digest 写入 `build-result.json` | digest 表只写在 `image-digests.json` |
+| P4-04 | 须固定部署源中的**每一个**容器镜像 digest | 含上游 `image:` 与本仓库构建 |
+| P4-05 | 部署门禁只跑 `check_consistency.py` 规则子集 | 不得跑 `quality_gate.py` 全量 CI |
+
+## 阶段验收
+
+Phase 4 **产出落盘后**运行：
+
+```bash
+node skills/sealos-deploy/scripts/validate-phase-4.mjs --dir "$WORK_DIR"
+```
+
+脚本核对：
+
+| ID | 核对项 |
+| --- | --- |
+| P4-V01 | `image-digests.json` 每项为 `repository@sha256:...`（`linux/amd64`） |
+| P4-V02 | 模板中每个容器 `image` 与 digest 表一致 |
+| P4-V03 | `build-result.json` 的 `pushed` 不含 `@sha256:` |
+| P4-V04 | 模板通过部署门禁 |
+
+未通过 → 不得 **CONTINUE → Phase 5**。
+
 ## 输入
 
 | 文件 | 说明 |

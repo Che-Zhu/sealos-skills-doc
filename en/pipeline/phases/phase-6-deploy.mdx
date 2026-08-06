@@ -10,6 +10,35 @@ Phase 6 submits one real create request using the final template and inputs conf
 
 Deploy precheck (dry-run) must complete in Phase 5. Do not repeat precheck here with different template bytes or parameters.
 
+## Phase constraints
+
+Read when entering. Obey **while executing**.
+
+| ID | Constraint | Notes |
+| --- | --- | --- |
+| P6-01 | Deploy precheck must complete in Phase 5 | Do not repeat precheck here with different template bytes or params |
+| P6-02 | STOP on invalid namespace | Do not fall back to `default` |
+| P6-03 | Do not auto-retry on unknown create (timeout or 5xx) | Do not fall back to kubectl create |
+| P6-04 | Submit one real create request | Use template and inputs confirmed in Phase 5 |
+
+## Phase validation
+
+Run **after outputs are written**:
+
+```bash
+node skills/sealos-deploy/scripts/validate-phase-6.mjs --dir "$WORK_DIR"
+```
+
+The script checks:
+
+| ID | Check |
+| --- | --- |
+| P6-V01 | `.sealos/phase-6/deploy-result.json` passes schema |
+| P6-V02 | `template_sha256` matches Phase 5 `prepare-result.json` |
+| P6-V03 | `app_name` is non-empty |
+
+On failure, do not **CONTINUE → Phase 7**.
+
 ## Inputs
 
 | Input | Source |
@@ -25,6 +54,7 @@ Deploy precheck (dry-run) must complete in Phase 5. Do not repeat precheck here 
 | Live resources | App, workloads, network, storage, dependencies |
 | `APP_NAME` | From safe whitelist response or unique live discovery |
 | Pull secret | When private GHCR images require it |
+| Deploy result | `.sealos/phase-6/deploy-result.json` |
 
 ## Procedure
 

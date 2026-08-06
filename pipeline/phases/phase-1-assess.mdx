@@ -54,6 +54,37 @@ Phase 0 须已写入 `runtime_profile`、`work_dir`、`repo_name`。`github_url`
 - [Phase 0](/pipeline/phases/phase-0-preflight) 已通过
 - [部署模式识别](/pipeline/mode-detection) 为 **DEPLOY**
 
+## 阶段约束
+
+进入本 Phase 时须知晓，并在**执行过程中**遵守。
+
+| ID | 约束 | 说明 |
+| --- | --- | --- |
+| P1-01 | 不得评分、不得选择镜像 | 评估路径，非构建 |
+| P1-02 | 不得执行 Phase 4 式模板生成 | 禁止转换、digest 固定、部署门禁 |
+| P1-03 | 不得创建云端资源 | 除官方模板原样拉取外，不得拉取或改写其他 YAML |
+| P1-04 | 官方模板仅精确匹配 | 禁止按名称、语言或框架模糊匹配 |
+| P1-05 | 黑名单须 100% 确认才 STOP | 证据不足须 CONTINUE，不得误停 |
+| P1-06 | `official_template` 非 `null` 时须原样拉取 | 不得改写、合并或按当前仓库重生成 |
+
+## 阶段验收
+
+Phase 1 **产出落盘后**运行：
+
+```bash
+node skills/sealos-deploy/scripts/validate-phase-1.mjs --dir "$WORK_DIR"
+```
+
+脚本核对：
+
+| ID | 核对项 |
+| --- | --- |
+| P1-V01 | `official_template` 为 `null` 或 labring-actions raw URL |
+| P1-V02 | Phase 0 四字段保留且未被改写 |
+| P1-V03 | `official_template` 非 `null` 时，`.sealos/template/index.yaml` 存在 |
+
+未通过 → 不得 **CONTINUE → Phase 2** 或 **CONTINUE → Phase 5**。
+
 ## 流程
 
 ### 1. 黑名单判断

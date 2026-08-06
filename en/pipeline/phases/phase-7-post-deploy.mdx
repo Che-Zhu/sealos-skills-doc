@@ -10,6 +10,33 @@ Phase 7 judges whether the deploy truly succeeded from live cloud state and reco
 
 Phase 7 is mandatory for every deploy. Creating resources without post-deploy wrap-up is not deploy success.
 
+## Phase constraints
+
+Read when entering. Obey **while executing**.
+
+| ID | Constraint | Notes |
+| --- | --- | --- |
+| P7-01 | Do not judge success from API return codes alone | Verify live runtime state |
+| P7-02 | On arch mismatch, do not guess images or floating tags | See failure handling |
+| P7-03 | Write `state.json` before reporting success to the user | See [State and completion](/en/pipeline/state-and-completion) |
+
+## Phase validation
+
+Run **after outputs are written**:
+
+```bash
+node skills/sealos-deploy/scripts/validate-phase-7.mjs --dir "$WORK_DIR"
+```
+
+The script checks:
+
+| ID | Check |
+| --- | --- |
+| P7-V01 | `.sealos/state.json` exists and passes schema |
+| P7-V02 | `app_name` in `state.json` matches Phase 6 `deploy-result.json` |
+
+On failure, do not report **COMPLETE** to the user.
+
 ## Inputs
 
 | Input | Source |

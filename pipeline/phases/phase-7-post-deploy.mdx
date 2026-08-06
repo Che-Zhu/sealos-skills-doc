@@ -10,6 +10,33 @@ Phase 7 从线上云状态判断部署是否真正成功，并完成状态记录
 
 Phase 7 对每次部署为必需。创建资源而无部署后收尾不算部署成功。
 
+## 阶段约束
+
+进入本 Phase 时须知晓，并在**执行过程中**遵守。
+
+| ID | 约束 | 说明 |
+| --- | --- | --- |
+| P7-01 | 不得仅凭 API 返回码判断成功 | 须核对线上运行状态 |
+| P7-02 | 架构不匹配时不得猜测镜像或浮动标签 | 见失败处理 |
+| P7-03 | 向用户报告成功前须写完 `state.json` | 见 [状态与完成](/pipeline/state-and-completion) |
+
+## 阶段验收
+
+Phase 7 **产出落盘后**运行：
+
+```bash
+node skills/sealos-deploy/scripts/validate-phase-7.mjs --dir "$WORK_DIR"
+```
+
+脚本核对：
+
+| ID | 核对项 |
+| --- | --- |
+| P7-V01 | `.sealos/state.json` 存在且通过 schema |
+| P7-V02 | `state.json` 中 `app_name` 与 Phase 6 `deploy-result.json` 一致 |
+
+未通过 → 不得向用户报告 **COMPLETE**。
+
 ## 输入
 
 | 输入 | 来源 |

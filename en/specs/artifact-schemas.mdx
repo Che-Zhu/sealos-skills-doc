@@ -13,6 +13,8 @@ keywords: ["schemas", "json", "artifacts", "state.json"]
 | `analysis.schema.json` | `.sealos/analysis.json` | Phase 1, enriched Phase 2 |
 | `build-result.schema.json` | `.sealos/phase-3/build-result.json` | Phase 3 |
 | `image-digests.schema.json` | `.sealos/phase-4/image-digests.json` | Phase 4 |
+| `prepare-result.schema.json` | `.sealos/phase-5/prepare-result.json` | Phase 5 |
+| `deploy-result.schema.json` | `.sealos/phase-6/deploy-result.json` | Phase 6 |
 | `state.schema.json` | `.sealos/state.json` | Phase 7 |
 
 ## `build-result.json`
@@ -73,6 +75,25 @@ Example:
 }
 ```
 
+## `prepare-result.json`
+
+Written by [Phase 5](/en/pipeline/phases/phase-5-prepare) after dry-run and user confirmation. Phase 6 uses it to verify the same template bytes.
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `template_sha256` | string | Yes | SHA-256 of `.sealos/template/index.yaml` (hex, lowercase) |
+| `dry_run` | string | Yes | Must be `passed` |
+| `user_confirmed` | boolean | Yes | `true` after explicit deploy approval |
+
+## `deploy-result.json`
+
+Written by [Phase 6](/en/pipeline/phases/phase-6-deploy) after a successful create request.
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `template_sha256` | string | Yes | Same as Phase 5 `prepare-result.json` |
+| `app_name` | string | Yes | Online App name |
+
 ## `analysis.json` phase pointers
 
 | Field | Written in | Points to |
@@ -84,4 +105,7 @@ Example:
 
 ```bash
 node skills/sealos-deploy/scripts/validate-artifacts.mjs --dir "$WORK_DIR"
+node skills/sealos-deploy/scripts/validate-phase-N.mjs --dir "$WORK_DIR"
 ```
+
+See [Phase validation](/en/pipeline/phase-validation) for phase scripts.

@@ -10,6 +10,35 @@ Phase 6 使用 [Phase 5](/pipeline/phases/phase-5-prepare) 已确认的最终模
 
 部署预检（dry-run）须在 Phase 5 完成。本 Phase 不得重复预检后改用不同模板或参数。
 
+## 阶段约束
+
+进入本 Phase 时须知晓，并在**执行过程中**遵守。
+
+| ID | 约束 | 说明 |
+| --- | --- | --- |
+| P6-01 | 部署预检须在 Phase 5 完成 | 本 Phase 不得换模板字节或参数后重复预检 |
+| P6-02 | namespace 无效时须 STOP | 不得回退到 `default` |
+| P6-03 | 创建超时或 5xx 为 unknown 时不得自动重试 | 不得用 kubectl 回退创建 |
+| P6-04 | 仅提交一次真实创建请求 | 使用 Phase 5 已确认的模板与输入 |
+
+## 阶段验收
+
+Phase 6 **产出落盘后**运行：
+
+```bash
+node skills/sealos-deploy/scripts/validate-phase-6.mjs --dir "$WORK_DIR"
+```
+
+脚本核对：
+
+| ID | 核对项 |
+| --- | --- |
+| P6-V01 | `.sealos/phase-6/deploy-result.json` 通过 schema |
+| P6-V02 | `template_sha256` 与 Phase 5 `prepare-result.json` 一致 |
+| P6-V03 | `app_name` 非空 |
+
+未通过 → 不得 **CONTINUE → Phase 7**。
+
 ## 输入
 
 | 输入 | 来源 |
@@ -25,6 +54,7 @@ Phase 6 使用 [Phase 5](/pipeline/phases/phase-5-prepare) 已确认的最终模
 | 线上资源 | App、工作负载、网络、存储、依赖 |
 | `APP_NAME` | 来自安全白名单响应或唯一线上发现 |
 | Pull secret | 私有 GHCR 镜像需要时 |
+| 部署结果 | `.sealos/phase-6/deploy-result.json` |
 
 ## 流程
 

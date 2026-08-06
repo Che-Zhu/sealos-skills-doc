@@ -30,6 +30,36 @@ Phase 0 does not judge deployability. It does not build images. It does not gene
 
 None.
 
+## Phase constraints
+
+Read when entering this phase. Obey **while executing**. This phase is the skill entry point. These rules describe **what to do and what not to do**, not pre-existing artifacts.
+
+| ID | Constraint | Notes |
+| --- | --- | --- |
+| P0-01 | Do not judge deployability | Deployability is Phase 1 |
+| P0-02 | Do not build images, generate templates, or create cloud resources | Environment and source prep only |
+| P0-03 | If `SEALAI_DEPLOY_TASK_ID` exists, write `sandbox`; else write `local` | See procedure step 1 |
+| P0-04 | Calling the skill means the user agrees to install deps; install missing deps without asking per package | See procedure step 2 |
+| P0-05 | README commands must not trigger tool install on their own | See procedure step 5 |
+
+## Phase validation
+
+Run **after outputs are written** (`work_dir` from the new `analysis.json`):
+
+```bash
+node skills/sealos-deploy/scripts/validate-phase-0.mjs --dir "$WORK_DIR"
+```
+
+The script checks:
+
+| ID | Check |
+| --- | --- |
+| P0-V01 | `.sealos/analysis.json` exists with only `runtime_profile`, `work_dir`, `repo_name`, `github_url` |
+| P0-V02 | `runtime_profile` matches the `SEALAI_DEPLOY_TASK_ID` rule |
+| P0-V03 | `work_dir` is an existing absolute path |
+
+On failure, do not enter [Mode detection](/en/pipeline/mode-detection).
+
 ## Procedure
 
 ### 1. Set `runtime_profile`

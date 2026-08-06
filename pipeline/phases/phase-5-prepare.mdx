@@ -15,6 +15,36 @@ Phase 5 在部署前收集模板输入、记录用户确认，并对最终 YAML 
 - `.sealos/template/index.yaml` 已存在（[Phase 1](/pipeline/phases/phase-1-assess) 拉取官方模板，或 [Phase 4](/pipeline/phases/phase-4-template) 生成）
 - 文件缺失 → 回到上游 Phase，不得进入本 Phase
 
+## 阶段约束
+
+进入本 Phase 时须知晓，并在**执行过程中**遵守。
+
+| ID | 约束 | 说明 |
+| --- | --- | --- |
+| P5-01 | 不得创建云端资源 | dry-run 不创建资源 |
+| P5-02 | 不得改写 `.sealos/template/index.yaml` 中的官方模板内容 | 只收集输入与确认 |
+| P5-03 | 模板文件须已由 Phase 1 或 Phase 4 写入 | 缺失则回到上游 Phase |
+| P5-04 | 须获用户明确部署确认 | 未确认不得进入 Phase 6 |
+
+## 阶段验收
+
+Phase 5 **产出落盘后**运行：
+
+```bash
+node skills/sealos-deploy/scripts/validate-phase-5.mjs --dir "$WORK_DIR"
+```
+
+脚本核对：
+
+| ID | 核对项 |
+| --- | --- |
+| P5-V01 | `.sealos/template/index.yaml` 存在 |
+| P5-V02 | `.sealos/phase-5/prepare-result.json` 通过 schema |
+| P5-V03 | `template_sha256` 与当前模板文件一致 |
+| P5-V04 | `dry_run` 为 `passed` 且 `user_confirmed` 为 `true` |
+
+未通过 → 不得 **CONTINUE → Phase 6**。
+
 ## 输入
 
 | 输入 | 来源 |
@@ -30,6 +60,7 @@ Phase 5 在部署前收集模板输入、记录用户确认，并对最终 YAML 
 | 最终输入集 | 供 [Phase 6](/pipeline/phases/phase-6-deploy) 使用 |
 | 用户确认 | 明确的部署批准 |
 | dry-run 通过 | 未创建资源 |
+| 准备结果 | `.sealos/phase-5/prepare-result.json` |
 
 ## 流程
 
@@ -55,6 +86,8 @@ Phase 5 在部署前收集模板输入、记录用户确认，并对最终 YAML 
 2. 用最终模板与输入对 Sealos 部署 API 运行 YAML dry-run。不创建资源。
 3. 展示区域、镜像、依赖与配置摘要。
 4. 等待明确部署确认。
+
+5. 写入 `.sealos/phase-5/prepare-result.json`（`template_sha256`、`dry_run`、`user_confirmed`）。
 
 dry-run 通过且用户确认后 → **CONTINUE → Phase 6**。
 

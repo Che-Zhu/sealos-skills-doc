@@ -1,0 +1,64 @@
+---
+title: "Phase validation scripts"
+description: "Machine-checkable constraints per phase and validate-phase-N.mjs contracts."
+keywords: ["phase validation", "constraints", "validate-phase"]
+---
+
+Each deploy phase has two sections:
+
+| Section | When | Content |
+| --- | --- | --- |
+| **Phase constraints** | Read when **entering** this phase; obey **while executing** | Unique facts, platform quirks, scope boundaries. Artifacts often **do not exist yet** |
+| **Phase validation** | **Before exit** from this phase | `validate-phase-N.mjs` checks **outputs** against the contract |
+
+Constraints use IDs (for example `P3-01`). Checkable constraints fail under the same ID in the script. Behavior-only rules that scripts cannot see stay in phase constraints only, not in the validation table.
+
+Implementation lives in [`sealos-skills`](https://github.com/labring/sealos-skills): `skills/sealos-deploy/scripts/validate-phase-N.mjs` (`N` = 0–7).
+
+## How to run
+
+```bash
+node skills/sealos-deploy/scripts/validate-phase-0.mjs --dir "$WORK_DIR"
+# … validate-phase-1.mjs … validate-phase-7.mjs
+```
+
+`$WORK_DIR` is `work_dir` from `analysis.json`.
+
+## Relation to schema validation
+
+| Layer | Command | Scope |
+| --- | --- | --- |
+| Global artifact schemas | `validate-artifacts.mjs` | Structurally valid JSON/YAML |
+| Phase validation | `validate-phase-N.mjs` | **Semantic** rules for that phase (platform quirks, cross-artifact consistency) |
+| Phase 4 deploy gate | `check_consistency.py` | Template rule subset (`validate-phase-4.mjs` invokes or equivalent) |
+
+Phase validation does **not** replace schema validation. Run both before exit when applicable.
+
+## Skip rules
+
+| Phase | When to skip validation |
+| --- | --- |
+| Phase 3 | No build required; `build_result` not written |
+| Phase 1, 2 | UPDATE mode skips these phases |
+| Others | If you enter the phase, you must validate |
+
+## Constraint index
+
+| Phase | Script | Constraint page |
+| --- | --- | --- |
+| 0 | `validate-phase-0.mjs` | [Phase 0](/en/pipeline/phases/phase-0-preflight#phase-constraints) |
+| 1 | `validate-phase-1.mjs` | [Phase 1](/en/pipeline/phases/phase-1-assess#phase-constraints) |
+| 2 | `validate-phase-2.mjs` | [Phase 2](/en/pipeline/phases/phase-2-discover#phase-constraints) |
+| 3 | `validate-phase-3.mjs` | [Phase 3](/en/pipeline/phases/phase-3-build-push#phase-constraints) |
+| 4 | `validate-phase-4.mjs` | [Phase 4](/en/pipeline/phases/phase-4-template#phase-constraints) |
+| 5 | `validate-phase-5.mjs` | [Phase 5](/en/pipeline/phases/phase-5-prepare#phase-constraints) |
+| 6 | `validate-phase-6.mjs` | [Phase 6](/en/pipeline/phases/phase-6-deploy#phase-constraints) |
+| 7 | `validate-phase-7.mjs` | [Phase 7](/en/pipeline/phases/phase-7-post-deploy#phase-constraints) |
+
+## Implementation status
+
+| Script | Status |
+| --- | --- |
+| `validate-phase-0.mjs` – `validate-phase-7.mjs` | Pending in `sealos-skills`; this site is the contract |
+
+Implementation PRs must include test fixtures for each constraint ID. See [Validation](/en/contributing/validation).

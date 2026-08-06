@@ -16,6 +16,34 @@ Phase 3 由主 Agent 编排：**Subagent 按顺序构建**须构建的镜像，�
 
 - Phase 4 判定须构建且尚未完成推送时调用（不由 Phase 2 直接调用）
 
+## 阶段约束
+
+进入本 Phase 时须知晓，并在**执行过程中**遵守（推送时适用）。
+
+| ID | 约束 | 说明 |
+| --- | --- | --- |
+| P3-01 | GHCR 路径中的 GitHub 用户名须为小写 | GitHub 用户名可含大写；`ghcr.io` 不接受大写 owner |
+| P3-02 | 所有 `pushed` 镜像须共用同一 GHCR namespace | `ghcr.io/{owner}/...` 的 `owner` 一致 |
+| P3-03 | `pushed` 只记录 tag 引用 | 不得含 `@sha256:`；digest 固定属 Phase 4 |
+| P3-04 | Subagent 构建并发上限为 1 | 禁止并行构建 |
+| P3-05 | 推送由主 Agent 统一完成 | Subagent 不得推送到 registry |
+
+## 阶段验收
+
+本 Phase 实际运行且写入 `build_result` 后，**产出落盘**再运行：
+
+```bash
+node skills/sealos-deploy/scripts/validate-phase-3.mjs --dir "$WORK_DIR"
+```
+
+脚本核对 **P3-01**–**P3-03**，以及：
+
+| ID | 核对项 |
+| --- | --- |
+| P3-V04 | 每个 `pushed` key 均有 `pull_access`（`public` 或 `ghcr_secret_required`） |
+
+无需构建、未写入 `build_result` 时跳过。未通过 → 不得 **CONTINUE → Phase 4**。
+
 ## 输入
 
 | 输入 | 来源 |
@@ -90,7 +118,7 @@ Phase 3 由主 Agent 编排：**Subagent 按顺序构建**须构建的镜像，�
 - 推送后对每个镜像做匿名拉取探测：成功记 `pull_access: public`，否则记 `ghcr_secret_required`。
 - 推送到 `ghcr.io/{user}/...` 失败属 Phase 3 执行失败。
 
-应用中所有私有或不确定的 GHCR 镜像须共享一个规范化 GHCR namespace。混合 namespace 在创建云端资源前停止。
+应用中所有私有或不确定的 GHCR 镜像须共享一个规范化 GHCR namespace（见 **P3-01**、**P3-02**）。混合 namespace 在创建云端资源前停止。
 
 ### 4. 主 Agent — 写入 `build-result.json`
 

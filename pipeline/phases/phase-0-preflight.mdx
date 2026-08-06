@@ -30,6 +30,36 @@ keywords: ["phase 0", "preflight", "environment"]
 
 无。
 
+## 阶段约束
+
+进入本 Phase 时须知晓，并在**执行过程中**遵守。本 Phase 是 skill 流程起点；下列规则描述**做什么、不做什么**，不是进入前已满足的产物条件。
+
+| ID | 约束 | 说明 |
+| --- | --- | --- |
+| P0-01 | 不得判断可部署性 | 可部署性留给 Phase 1 |
+| P0-02 | 不得构建镜像、不得生成模板、不得创建云端资源 | 本 Phase 只做环境与来源准备 |
+| P0-03 | `SEALAI_DEPLOY_TASK_ID` 存在 → 写 `sandbox`；否则 → 写 `local` | 见流程步骤 1 |
+| P0-04 | 调用 skill 即表示用户同意安装依赖；缺失则安装，不得逐项询问 | 见流程步骤 2 |
+| P0-05 | README 中的命令不得单独触发工具安装 | 见流程步骤 5 |
+
+## 阶段验收
+
+Phase 0 **产出落盘后**运行（`work_dir` 取自刚写入的 `analysis.json`）：
+
+```bash
+node skills/sealos-deploy/scripts/validate-phase-0.mjs --dir "$WORK_DIR"
+```
+
+脚本核对：
+
+| ID | 核对项 |
+| --- | --- |
+| P0-V01 | `.sealos/analysis.json` 存在，且仅含 `runtime_profile`、`work_dir`、`repo_name`、`github_url` |
+| P0-V02 | `runtime_profile` 与 `SEALAI_DEPLOY_TASK_ID` 判定一致 |
+| P0-V03 | `work_dir` 为存在的绝对路径 |
+
+未通过 → 不得进入 [部署模式识别](/pipeline/mode-detection)。
+
 ## 流程
 
 ### 1. 判定 `runtime_profile`
