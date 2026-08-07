@@ -66,9 +66,9 @@ See [Update mode](/en/pipeline/update-mode) and [Phases U1–U3](/en/pipeline/up
 
 | Phase | Name | Main task |
 | --- | --- | --- |
-| [Phase 0](/en/pipeline/phases/phase-0-preflight) | Preflight | Environment, source materialization, gitingest/railpack deps |
+| [Phase 0](/en/pipeline/phases/phase-0-preflight) | Preflight | Environment, identity, source directory |
 | [Phase 1](/en/pipeline/phases/phase-1-assess) | Assess | Judge deployability, choose path |
-| [Phase 2](/en/pipeline/phases/phase-2-discover) | Discover | gitingest, `deployment-plan.json` |
+| [Phase 2](/en/pipeline/phases/phase-2-discover) | Discover | agentlens, `deployment-plan.json` |
 | [Phase 3](/en/pipeline/phases/phase-3-build-push) | Build and push | Push `linux/amd64` images to GHCR |
 | [Phase 4](/en/pipeline/phases/phase-4-template) | Template | Generate canonical Sealos template |
 | [Phase 5](/en/pipeline/phases/phase-5-prepare) | Pre-deploy preparation | Collect inputs, confirm, dry-run (template ready) |

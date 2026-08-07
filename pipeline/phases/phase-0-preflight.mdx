@@ -42,7 +42,7 @@ keywords: ["phase 0", "preflight", "environment"]
 | P0-03 | `SEALAI_DEPLOY_TASK_ID` 存在 → `sandbox`；否则 → `local` | 见流程步骤 1 |
 | P0-04 | 缺失依赖须一次列出并询问用户；同意后安装；拒绝或失败则 STOP | 见流程步骤 2 |
 | P0-05 | 检查脚本只探测，不安装 | `check-running-environment.mjs` |
-| P0-06 | `sealos-cli` 不列入必装二进制；通过 `npx` 调用 | 见流程步骤 3 |
+| P0-06 | `sealos-cli` 与 `@norberia/agentlens` 不列入必装二进制；通过 `npx` 调用 | 身份与 Phase 2 侦察 |
 | P0-07 | Git LFS 与子模块按仓库需要处理，非默认必装 | 见流程步骤 5 |
 | P0-08 | `gh` 登录 / `write:packages` 在本 Phase 仅为警告 | 仅在后续选定 GHCR 推送时升级为硬阻断 |
 
@@ -83,13 +83,15 @@ Agent 运行 `skills/sealos-deploy/scripts/phase-0/check-running-environment.mjs
 
 **`local` 与 `sandbox` 共用：**
 
-git、Node.js 18+、Python 3.8+、PyYAML、[gitingest](https://pypi.org/project/gitingest/)、kompose、Helm 3+、kubectl、curl、jq
+git、Node.js 18+、Python 3.8+、PyYAML、kompose、Helm 3+、kubectl、curl、jq
 
 **仅 `local`：**
 
 `gh`（二进制）、Docker CLI、运行中的 Docker daemon、Docker Buildx、[railpack](https://github.com/railwayapp/railpack)
 
 `sandbox` 已预装 railpack。`sandbox` 不要求 Docker 与 `gh`。
+
+**不列入必装（`npx`）：** `sealos-cli`；`@norberia/agentlens`（Phase 2 侦察）。不得安装或依赖 gitingest。
 
 **警告（本 Phase 不 STOP）：**
 

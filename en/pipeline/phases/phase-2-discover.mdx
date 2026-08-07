@@ -1,7 +1,7 @@
 ---
 title: "Phase 2 — Discover and image prep"
 description: "Scout the repository, complete image prep, and write deployment_source."
-keywords: ["phase 2", "discover", "railpack", "gitingest", "deployment-plan"]
+keywords: ["phase 2", "discover", "railpack", "agentlens", "deployment-plan"]
 ---
 
 ## Purpose
@@ -21,13 +21,13 @@ UPDATE mode skips this phase.
 | `analysis.json` | Phase 0, Phase 1 |
 | Project source and docs | `analysis.json` → `work_dir` |
 | `railpack` | Installed in Phase 0 (`sandbox` preinstalled; `local` must be available) |
-| `gitingest` | Installed in Phase 0 |
+| Node.js 18+ | Installed in Phase 0 (for `npx @norberia/agentlens`) |
 
 ## Outputs
 
 | Output | Path | Description |
 | --- | --- | --- |
-| Deployment digest | `.sealos/phase-2/gitingest-digest.txt` | gitingest output (scope in step 2) |
+| Deploy file tree | `.sealos/phase-2/agentlens-digest.txt` | Tree from `agentlens --preset deploy` |
 | Deployment plan | `.sealos/phase-2/deployment-plan.json` | Contains `deployment_source` |
 | Canonical Compose | `.sealos/phase-2/docker-compose.yml` | Only on non-Helm/K8s path |
 | `analysis.json` | `.sealos/analysis.json` | Adds `deployment_plan` pointer |
@@ -78,9 +78,17 @@ Read `work_dir`, `runtime_profile`, and related fields. Preserve Phase 0 and Pha
 
 ### 2. Main agent scout
 
-Read root `README*`, `CONTRIBUTING*`, and similar docs. Run `gitingest` in `work_dir` for deploy and CI evidence. Do not ingest the full repository source. Write output to `.sealos/phase-2/gitingest-digest.txt`.
+Read root `README*`, `CONTRIBUTING*`, and similar docs. Run **agentlens** in `work_dir` (do not use gitingest):
 
-Include file types such as:
+```bash
+mkdir -p "$WORK_DIR/.sealos/phase-2"
+npx -y @norberia/agentlens "$WORK_DIR" --preset deploy \
+  -o "$WORK_DIR/.sealos/phase-2/agentlens-digest.txt"
+```
+
+The output is a deploy-focused **file tree** only (no file bodies). Read the listed paths next. Do not ingest the full repository source.
+
+Include evidence types such as:
 
 - `README*`, `CONTRIBUTING*`
 - `docker-compose*`, `compose.y*ml`, `Dockerfile*`
@@ -97,7 +105,7 @@ Record README understanding and scout notes in the deploy log (natural language,
 The main agent starts one subagent with:
 
 - `analysis.json`
-- Path to `.sealos/phase-2/gitingest-digest.txt`
+- Path to `.sealos/phase-2/agentlens-digest.txt`
 - Verbal handoff from the main agent (findings and judgment, natural language)
 
 Tell the subagent to write `.sealos/phase-2/deployment-plan.json` per [deployment-plan.json](/en/specs/deployment-plan):

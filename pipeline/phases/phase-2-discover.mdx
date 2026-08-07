@@ -1,7 +1,7 @@
 ---
 title: "Phase 2 — 发现与镜像准备"
 description: "侦察仓库、补齐镜像准备，并写入 deployment_source。"
-keywords: ["phase 2", "discover", "railpack", "gitingest", "deployment-plan"]
+keywords: ["phase 2", "discover", "railpack", "agentlens", "deployment-plan"]
 ---
 
 ## 目的
@@ -21,13 +21,13 @@ UPDATE 模式跳过本 Phase。
 | `analysis.json` | Phase 0、Phase 1 |
 | 项目源码与文档 | `analysis.json` → `work_dir` |
 | `railpack` | Phase 0 已安装（`sandbox` 预装，`local` 须可用） |
-| `gitingest` | Phase 0 已安装 |
+| Node.js 18+ | Phase 0 已安装（用于 `npx @norberia/agentlens`） |
 
 ## 输出
 
 | 输出 | 路径 | 说明 |
 | --- | --- | --- |
-| 部署相关摘要 | `.sealos/phase-2/gitingest-digest.txt` | gitingest 输出（范围见步骤 2） |
+| 部署相关文件树 | `.sealos/phase-2/agentlens-digest.txt` | `agentlens --preset deploy` 的 tree 输出 |
 | 部署计划 | `.sealos/phase-2/deployment-plan.json` | 含 `deployment_source` 指针 |
 | Canonical Compose | `.sealos/phase-2/docker-compose.yml` | 仅非 Helm/K8s 路径时写入 |
 | `analysis.json` | `.sealos/analysis.json` | 新增 `deployment_plan` 指针 |
@@ -78,9 +78,17 @@ node skills/sealos-deploy/scripts/validate-phase-2.mjs --dir "$WORK_DIR"
 
 ### 2. 主 Agent 侦察
 
-阅读根目录 `README*`、`CONTRIBUTING*` 等。在 `work_dir` 运行 `gitingest`，ingest 部署与 CI 证据，不得 ingest 全仓源码。输出写入 `.sealos/phase-2/gitingest-digest.txt`。
+阅读根目录 `README*`、`CONTRIBUTING*` 等。在 `work_dir` 运行 **agentlens**（不得使用 gitingest）：
 
-须包含的文件类型示例：
+```bash
+mkdir -p "$WORK_DIR/.sealos/phase-2"
+npx -y @norberia/agentlens "$WORK_DIR" --preset deploy \
+  -o "$WORK_DIR/.sealos/phase-2/agentlens-digest.txt"
+```
+
+输出仅为部署相关**文件树**（无文件正文）。按树中路径再读取具体文件。不得 ingest 全仓源码。
+
+须覆盖的证据类型示例：
 
 - `README*`、`CONTRIBUTING*`
 - `docker-compose*`、`compose.y*ml`、`Dockerfile*`
@@ -97,7 +105,7 @@ node skills/sealos-deploy/scripts/validate-phase-2.mjs --dir "$WORK_DIR"
 主 Agent 启动一个 Subagent。传入：
 
 - `analysis.json`
-- `.sealos/phase-2/gitingest-digest.txt` 路径
+- `.sealos/phase-2/agentlens-digest.txt` 路径
 - 主 Agent 口头交接（发现与判断，自然语言）
 
 告知 Subagent 按 [deployment-plan.json](/specs/deployment-plan) 写入 `.sealos/phase-2/deployment-plan.json`：

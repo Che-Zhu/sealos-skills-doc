@@ -42,7 +42,7 @@ Read when entering this phase. Obey **while executing**.
 | P0-03 | If `SEALAI_DEPLOY_TASK_ID` exists, write `sandbox`; else write `local` | See procedure step 1 |
 | P0-04 | List missing deps once, ask once, then install; refuse or failure → STOP | See procedure step 2 |
 | P0-05 | Probe scripts detect only; they never install | `check-running-environment.mjs` |
-| P0-06 | Do not require a global `sealos-cli` binary; use `npx` when needed | See procedure step 3 |
+| P0-06 | Do not require global `sealos-cli` or `agentlens` binaries; use `npx` when needed | Identity and Phase 2 scout |
 | P0-07 | Git LFS and submodules are on demand, not default required installs | See procedure step 5 |
 | P0-08 | `gh` login / `write:packages` are warnings in this phase | Hard block only when a later phase chooses GHCR push |
 
@@ -75,13 +75,15 @@ The script detects only:
 
 **`local` and `sandbox`:**
 
-git, Node.js 18+, Python 3.8+, PyYAML, [gitingest](https://pypi.org/project/gitingest/), kompose, Helm 3+, kubectl, curl, jq
+git, Node.js 18+, Python 3.8+, PyYAML, kompose, Helm 3+, kubectl, curl, jq
 
 **`local` only:**
 
 `gh` (binary), Docker CLI, running Docker daemon, Docker Buildx, [railpack](https://github.com/railwayapp/railpack)
 
 `sandbox` includes railpack and does not require Docker or `gh`.
+
+**Not required installs (`npx`):** `sealos-cli`; `@norberia/agentlens` (Phase 2 scout). Do not install or depend on gitingest.
 
 **Warnings (not STOP here):** incomplete `gh` login or missing `write:packages`. Enforce them only when the run later chooses GHCR push.
 

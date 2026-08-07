@@ -14,13 +14,13 @@ keywords: ["prerequisites", "sealos account", "ghcr", "docker", "kubectl"]
 
 Phase 0 按运行环境探测依赖。缺失时一次列出并询问用户，同意后安装。完整规则见 [Phase 0 — 部署前环境检查](/pipeline/phases/phase-0-preflight)。
 
-**`local` 与 `sandbox` 共用：** Git、Node.js 18+、Python 3.8+ 与 PyYAML、gitingest、kompose、Helm 3+、kubectl、curl、jq
+**`local` 与 `sandbox` 共用：** Git、Node.js 18+、Python 3.8+ 与 PyYAML、kompose、Helm 3+、kubectl、curl、jq
 
 **仅 `local`（Phase 3 构建路径）：** `gh`（二进制必装；登录与 `write:packages` 在选定 GHCR 推送时再强制）、Docker CLI、运行中的 Docker daemon、Docker Buildx、railpack（`sandbox` 已预装 railpack，Phase 3 使用 **k8s-kaniko-job** skill，无需 Buildx）
 
 **按需（仓库声明时）：** Git LFS、子模块拉取
 
-**不列入必装二进制：** `sealos-cli`（通过 `npx` 调用，与 sealos-s3 相同）
+**不列入必装二进制（`npx`）：** `sealos-cli`；`@norberia/agentlens`（Phase 2 部署侦察）
 
 ## GitHub CLI 与 GHCR 访问
 

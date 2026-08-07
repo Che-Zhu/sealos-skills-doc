@@ -68,7 +68,7 @@ Phase 5 在 Phase 6 之前执行。`.sealos/template/index.yaml` 须已存在。
 | --- | --- | --- |
 | [Phase 0](/pipeline/phases/phase-0-preflight) | 部署前环境检查 | 环境、身份、源码目录、`analysis.json` 四字段 |
 | [Phase 1](/pipeline/phases/phase-1-assess) | 项目评估 | 判断能否部署，选择路径 |
-| [Phase 2](/pipeline/phases/phase-2-discover) | 发现与镜像准备 | gitingest、`deployment-plan.json` |
+| [Phase 2](/pipeline/phases/phase-2-discover) | 发现与镜像准备 | agentlens、`deployment-plan.json` |
 | [Phase 3](/pipeline/phases/phase-3-build-push) | 构建并推送 | `linux/amd64` 镜像推送到 GHCR |
 | [Phase 4](/pipeline/phases/phase-4-template) | 模板生成 | 生成 canonical Sealos 模板 |
 | [Phase 5](/pipeline/phases/phase-5-prepare) | 部署前准备 | 收集输入、确认、dry-run（模板已就绪） |
