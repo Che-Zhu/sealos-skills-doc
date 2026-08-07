@@ -1,14 +1,14 @@
 ---
 title: "Phase 0 — Preflight"
-description: "Environment checks, source materialization, and initial analysis.json fields."
+description: "Detect the runtime, install required tools, prepare identity, and enter an analyzable source directory."
 keywords: ["phase 0", "preflight", "environment"]
 ---
 
 ## Purpose
 
-Phase 0 checks that the environment can run `sealos-deploy`. It resolves the project source, materializes source code, and writes `runtime_profile`, `work_dir`, `repo_name`, and `github_url` to `.sealos/analysis.json`.
+Decide the runtime profile, install required dependencies, prepare identity, and enter an analyzable source directory. Write `runtime_profile`, `work_dir`, `repo_name`, and `github_url` to `.sealos/analysis.json`.
 
-Phase 0 does not judge deployability. It does not build images. It does not generate templates. It does not create cloud resources.
+Do not judge deployability. Do not build images. Do not generate templates. Do not create cloud resources.
 
 ## Inputs
 
@@ -22,8 +22,9 @@ Phase 0 does not judge deployability. It does not build images. It does not gene
 
 | Output | Description |
 | --- | --- |
-| `.sealos/analysis.json` | Contains `runtime_profile`, `work_dir`, `repo_name`, `github_url` |
-| Deploy log | Phase boundaries from this phase onward |
+| `.sealos/analysis.json` | Only `runtime_profile`, `work_dir`, `repo_name`, `github_url` (overwrite) |
+| Sealos context (`local` only) | Region, workspace, auth, kubeconfig |
+| Deploy log | `~/.sealos/logs/deploy-*.log` |
 | Result | `CONTINUE` or `STOP` |
 
 ## Preconditions
@@ -32,29 +33,30 @@ None.
 
 ## Phase constraints
 
-Read when entering this phase. Obey **while executing**. This phase is the skill entry point. These rules describe **what to do and what not to do**, not pre-existing artifacts.
+Read when entering this phase. Obey **while executing**.
 
 | ID | Constraint | Notes |
 | --- | --- | --- |
 | P0-01 | Do not judge deployability | Deployability is Phase 1 |
-| P0-02 | Do not build images, generate templates, or create cloud resources | Environment and source prep only |
+| P0-02 | Do not build images, generate templates, or create cloud resources | Environment, identity, and source prep only |
 | P0-03 | If `SEALAI_DEPLOY_TASK_ID` exists, write `sandbox`; else write `local` | See procedure step 1 |
-| P0-04 | Calling the skill means the user agrees to install deps; install missing deps without asking per package | See procedure step 2 |
-| P0-05 | README commands must not trigger tool install on their own | See procedure step 5 |
+| P0-04 | List missing deps once, ask once, then install; refuse or failure → STOP | See procedure step 2 |
+| P0-05 | Probe scripts detect only; they never install | `check-running-environment.mjs` |
+| P0-06 | Do not require a global `sealos-cli` binary; use `npx` when needed | See procedure step 3 |
+| P0-07 | Git LFS and submodules are on demand, not default required installs | See procedure step 5 |
+| P0-08 | `gh` login / `write:packages` are warnings in this phase | Hard block only when a later phase chooses GHCR push |
 
 ## Phase validation
 
-Run **after outputs are written** (`work_dir` from the new `analysis.json`):
+Run **after outputs are written**:
 
 ```bash
 node skills/sealos-deploy/scripts/validate-phase-0.mjs --dir "$WORK_DIR"
 ```
 
-The script checks:
-
 | ID | Check |
 | --- | --- |
-| P0-V01 | `.sealos/analysis.json` exists with only `runtime_profile`, `work_dir`, `repo_name`, `github_url` |
+| P0-V01 | `.sealos/analysis.json` exists with only the four Phase 0 fields |
 | P0-V02 | `runtime_profile` matches the `SEALAI_DEPLOY_TASK_ID` rule |
 | P0-V03 | `work_dir` is an existing absolute path |
 
@@ -62,68 +64,67 @@ On failure, do not enter [Mode detection](/en/pipeline/mode-detection).
 
 ## Procedure
 
-### 1. Set `runtime_profile`
+### 1. Probe environment and dependencies
 
-| `SEALAI_DEPLOY_TASK_ID` | `runtime_profile` |
-| --- | --- |
-| Present | `sandbox` |
-| Absent | `local` |
+Run `skills/sealos-deploy/scripts/phase-0/check-running-environment.mjs`.
 
-### 2. Install required dependencies
+The script detects only:
 
-A `sealos-deploy` invocation means the user agrees to install dependencies. If a tool is missing, install or upgrade it now. Do not ask per tool. Recheck after install.
+1. `runtime_profile` from `SEALAI_DEPLOY_TASK_ID`
+2. Present tools, missing tools, and warnings
 
 **`local` and `sandbox`:**
 
-Git, Git LFS, Node.js 18+, Python 3.8+ and PyYAML, [gitingest](https://pypi.org/project/gitingest/) (`pip install gitingest`), kompose, Helm 3+, kubectl, curl, jq
+git, Node.js 18+, Python 3.8+, PyYAML, [gitingest](https://pypi.org/project/gitingest/), kompose, Helm 3+, kubectl, curl, jq
 
 **`local` only:**
 
-`gh`, Docker CLI, a running Docker daemon, Docker Buildx, [railpack](https://github.com/railwayapp/railpack)
+`gh` (binary), Docker CLI, running Docker daemon, Docker Buildx, [railpack](https://github.com/railwayapp/railpack)
 
-`sandbox` includes railpack. On `local`, install or upgrade railpack and confirm `railpack --help` works.
+`sandbox` includes railpack and does not require Docker or `gh`.
 
-If Docker is installed but the daemon is not running, start the daemon.
+**Warnings (not STOP here):** incomplete `gh` login or missing `write:packages`. Enforce them only when the run later chooses GHCR push.
 
-**`local` auth only:**
+### 2. Install missing dependencies
 
-If `gh` is not logged in or lacks `write:packages`, complete login or authorization. Confirm kubeconfig for the selected workspace.
+If anything is missing: list once, ask once, install on agreement, re-run the probe. Refuse or remaining gaps → `STOP`.
 
-### 3. Confirm platform context (`local` only)
+If Docker is installed but the daemon is stopped, ask, then start it.
 
-1. Select the Sealos Cloud region.
-2. Complete Sealos login.
-3. Select the target workspace.
+### 3. Prepare identity (`local` only)
 
-Update Sealos auth and kubeconfig in the user home directory.
+Skip in `sandbox`.
 
-`sandbox` skips this section. Kubernetes permissions, `GITHUB_TOKEN`, S3, and other injected values are checked in later phases when needed.
+Use `sealos-cli` (or `npx -y sealos-cli@latest`):
 
-### 4. Resolve project source
+1. Select region from skill `config.json`
+2. Login
+3. Select workspace
+4. Confirm `~/.sealos/` auth and kubeconfig are usable without printing them
+
+### 4. Enter the source directory
 
 | Source | Action |
 | --- | --- |
-| GitHub repository URL | Clone to a temporary directory |
-| Local project directory | Use the given path |
+| GitHub repository URL | Shallow clone (`--depth 1`) |
+| Local project directory | Use that path |
 | No argument | Use `$(pwd)` |
 
-Resolve `repo_name`. If a GitHub remote exists, record `github_url`. Step 6 writes both fields to `analysis.json`.
+Always shallow-clone. Never fetch full history:
 
-### 5. Materialize source
+```bash
+git clone --depth 1 "<github-url>" "$WORK_DIR"
+```
 
-Materialize the full workspace for the current commit. Fetch submodules and LFS objects. Recheck after materialization.
+Resolve `repo_name` and `github_url` (`null` when not GitHub).
 
-For a local directory source, keep existing modifications.
+### 5. Optional submodules and Git LFS
 
-A README command alone must not trigger tool installation.
+Only when the repo declares them. Ask once. Refuse or failure → `STOP`. Do not install tools only because a README mentions a command.
 
 ### 6. Write `analysis.json`
 
-```bash
-mkdir -p "{work_dir}/.sealos"
-```
-
-Write `.sealos/analysis.json`:
+Overwrite `.sealos/analysis.json` with only:
 
 ```json
 {
@@ -134,42 +135,40 @@ Write `.sealos/analysis.json`:
 }
 ```
 
-| Field | Description |
-| --- | --- |
-| `runtime_profile` | Same as step 1: `local` or `sandbox` |
-| `work_dir` | Absolute path to an analyzable, buildable workspace |
-| `repo_name` | Directory name or URL parse result |
-| `github_url` | From the argument or `git remote`; `null` for non-GitHub projects |
-
-At the end of Phase 0, the file contains only these fields. Phase 1 writes `official_template`. Phase 2 writes `deployment_plan`. Phase 3 writes `build_result` (only after this phase actually runs).
+Phase 1 later writes the full analysis snapshot and keeps `runtime_profile`. Resume must not treat a Phase 0-only file as Phase 1 complete.
 
 ### 7. Start the deploy log
 
-Create the deploy log. Record Phase 0 boundaries and key decisions. Later phases append to it.
+Create `~/.sealos/logs/deploy-<YYYYMMDD-HHmmss>.log` and record Phase 0 boundaries.
 
 ## Stop conditions
 
 | Result | Condition |
 | --- | --- |
 | **STOP** | `runtime_profile` cannot be determined |
-| **STOP** | A required dependency cannot be installed or verified |
+| **STOP** | Required dependency install refused or still failing |
 | **STOP** | `local`: region, login, or workspace not confirmed |
-| **STOP** | Project source cannot be resolved or source materialization fails |
-| **STOP** | `analysis.json` cannot be written |
+| **STOP** | Project source cannot be resolved or entered |
+| **STOP** | Required submodules/LFS refused or fetch failed |
+| **STOP** | `analysis.json` write or `validate-phase-0.mjs` fails |
 | **CONTINUE** | All checks pass → [mode detection](/en/pipeline/mode-detection) |
 
 ## Acceptance
 
 - `runtime_profile` is `local` or `sandbox`
-- Required dependencies are installed and available
-- `local`: Sealos region, login, and workspace are confirmed
-- `.sealos/analysis.json` exists with `runtime_profile`, `work_dir`, `repo_name`
-- `work_dir` is complete, analyzable, and buildable
+- Required dependencies are installed
+- `local`: Sealos region, login, and workspace confirmed
+- `.sealos/analysis.json` contains only the four Phase 0 fields
+- `work_dir` is analyzable
 
 ## Schema links
 
-The Phase 0 subset of `analysis.json` does not require full schema validation before Phase 2 completes. See [Artifacts](/en/pipeline/artifacts).
+The Phase 0 subset does not require full `analysis.schema.json` validation before Phase 1 completes. See [Artifacts](/en/pipeline/artifacts).
 
 ## Implementation map
 
-`skills/sealos-deploy/modules/phase-0.md`
+| Item | Path |
+| --- | --- |
+| Environment probe | `skills/sealos-deploy/scripts/phase-0/check-running-environment.mjs` |
+| Phase 0 validation | `skills/sealos-deploy/scripts/validate-phase-0.mjs` |
+| Module | `skills/sealos-deploy/modules/phase-0.md` |
