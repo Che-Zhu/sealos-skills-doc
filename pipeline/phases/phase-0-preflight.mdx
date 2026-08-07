@@ -1,12 +1,12 @@
 ---
 title: "Phase 0 — 部署前环境检查"
-description: "环境检查、项目来源、源码物化、写入 runtime_profile。"
+description: "判定运行环境、补齐依赖与身份，并进入可分析的源码目录。"
 keywords: ["phase 0", "preflight", "environment"]
 ---
 
 ## 目的
 
-判定当前环境能否运行 `sealos-deploy`。解析项目来源，物化源码，将 `runtime_profile`、`work_dir`、`repo_name`、`github_url` 写入 `.sealos/analysis.json`。
+判定运行环境、补齐依赖与身份，并进入可分析的源码目录。将 `runtime_profile`、`work_dir`、`repo_name`、`github_url` 写入 `.sealos/analysis.json`。
 
 不得判断可部署性，不得构建镜像，不得生成模板，不得创建云端资源。
 
@@ -23,6 +23,7 @@ keywords: ["phase 0", "preflight", "environment"]
 | 输出 | 说明 |
 | --- | --- |
 | `.sealos/analysis.json` | 含 `runtime_profile`、`work_dir`、`repo_name`、`github_url` |
+| Sealos 上下文（仅 `local`） | 区域、工作空间、auth、kubeconfig |
 | 部署日志 | 从本阶段起记录阶段边界 |
 | 结果 | `CONTINUE` 或 `STOP` |
 
@@ -37,10 +38,12 @@ keywords: ["phase 0", "preflight", "environment"]
 | ID | 约束 | 说明 |
 | --- | --- | --- |
 | P0-01 | 不得判断可部署性 | 可部署性留给 Phase 1 |
-| P0-02 | 不得构建镜像、不得生成模板、不得创建云端资源 | 本 Phase 只做环境与来源准备 |
-| P0-03 | `SEALAI_DEPLOY_TASK_ID` 存在 → 写 `sandbox`；否则 → 写 `local` | 见流程步骤 1 |
-| P0-04 | 调用 skill 即表示用户同意安装依赖；缺失则安装，不得逐项询问 | 见流程步骤 2 |
-| P0-05 | README 中的命令不得单独触发工具安装 | 见流程步骤 5 |
+| P0-02 | 不得构建镜像、不得生成模板、不得创建云端资源 | 本 Phase 只做环境、身份与源码准备 |
+| P0-03 | `SEALAI_DEPLOY_TASK_ID` 存在 → `sandbox`；否则 → `local` | 见流程步骤 1 |
+| P0-04 | 缺失依赖须一次列出并询问用户；同意后安装；拒绝或失败则 STOP | 见流程步骤 2 |
+| P0-05 | 检查脚本只探测，不安装 | `check-running-environment.ts` |
+| P0-06 | `sealos-cli` 不列入必装二进制；通过 `npx` 调用 | 见流程步骤 3 |
+| P0-07 | Git LFS 与子模块按仓库需要处理，非默认必装 | 见流程步骤 5 |
 
 ## 阶段验收
 
@@ -62,60 +65,80 @@ node skills/sealos-deploy/scripts/validate-phase-0.mjs --dir "$WORK_DIR"
 
 ## 流程
 
-### 1. 判定 `runtime_profile`
+### 1. 探测环境与依赖
+
+Agent 运行 `skills/sealos-deploy/scripts/phase-0/check-running-environment.ts`。
+
+脚本做两件事，只输出结果，不安装：
+
+1. 判定 `runtime_profile`：
 
 | `SEALAI_DEPLOY_TASK_ID` | `runtime_profile` |
 | --- | --- |
 | 存在 | `sandbox` |
 | 不存在 | `local` |
 
-### 2. 安装必装依赖
-
-调用本 skill 即表示用户同意安装依赖。缺失则立即安装或升级，不得逐项询问用户。安装后重新核对。
+2. 按 `runtime_profile` 核对依赖，输出已具备项与缺失项。
 
 **`local` 与 `sandbox` 共用：**
 
-Git、Git LFS、Node.js 18+、Python 3.8+ 与 PyYAML、[gitingest](https://pypi.org/project/gitingest/)（`pip install gitingest`）、kompose、Helm 3+、kubectl、curl、jq
+git、Node.js 18+、Python 3.8+、PyYAML、[gitingest](https://pypi.org/project/gitingest/)、kompose、Helm 3+、kubectl、curl、jq
 
-**仅 `local` 额外：**
+**仅 `local`：**
 
 `gh`、Docker CLI、运行中的 Docker daemon、Docker Buildx、[railpack](https://github.com/railwayapp/railpack)
 
-`sandbox` 环境已预装 railpack。`local` 须安装或升级 railpack 并核对 `railpack --help` 可用。
+`sandbox` 已预装 railpack。`sandbox` 不要求 Docker 与 `gh`。
 
-若 Docker 已安装但 daemon 未运行，启动 daemon。
+### 2. 安装缺失依赖
 
-**仅 `local` 认证：**
+若有缺失项：
 
-若 `gh` 未登录或缺少 `write:packages`，完成登录或授权。核对所选工作空间的 kubeconfig。
+1. 一次列出全部缺失项。
+2. 询问用户是否允许安装。
+3. 用户同意 → 安装或升级 → 再次运行同一脚本复核。
+4. 用户拒绝，或安装后仍缺失 → `STOP`。
 
-### 3. 核对平台上下文（仅 `local`）
+不得在未询问时安装。不得对每个包单独反复询问。
+
+若 Docker 已安装但 daemon 未运行，询问用户后启动 daemon。
+
+### 3. 准备身份（仅 `local`）
+
+仅 `local` 执行本节。`sandbox` 跳过，不得引导用户选择区域、登录或工作空间。
+
+**Sealos（通过 `npx` 调用 sealos-cli，与 sealos-s3 相同）：**
 
 1. 选择 Sealos Cloud 区域。
-2. 完成 Sealos 登录。
+2. 完成登录。
 3. 选择目标工作空间。
+4. 核对 auth 与 kubeconfig 已写入用户目录且可用。
 
-更新用户目录中的 Sealos auth 与 kubeconfig。
+**GitHub：**
 
-`sandbox` 跳过本节。Kubernetes 权限、`GITHUB_TOKEN`、S3 等注入物在后续阶段按需核对。
+若 `gh` 未登录或缺少 `write:packages`，完成登录或授权。
 
-### 4. 解析项目来源
+### 4. 进入源码目录
 
 | 来源 | 行为 |
 | --- | --- |
-| GitHub 仓库 URL | 克隆到临时目录 |
+| GitHub 仓库 URL | 克隆到工作目录 |
 | 本地项目目录 | 使用指定路径 |
 | 无参数 | 使用 `$(pwd)` |
 
-解析 `repo_name`。若存在 GitHub 远程，记录 `github_url`。步骤 6 一并写入 `analysis.json`。
+`sandbox`：工作区已有源码时直接使用该路径。仅当需要且本地不存在时才克隆。
 
-### 5. 物化源码
+解析 `repo_name`。若存在 GitHub 远程，记录 `github_url`。
 
-物化当前 commit 的完整工作区。获取子模块与 LFS 对象。物化后重新核对。
+### 5. 按需处理子模块与 LFS
 
-若来源为本地目录，保留已有修改。
+若仓库声明子模块或 Git LFS：
 
-README 中的命令不得单独触发工具安装。
+1. 询问用户是否允许安装对应工具（如 Git LFS）。
+2. 同意后安装，并拉取子模块与 LFS 对象。
+3. 拒绝或失败 → `STOP`。
+
+仓库未声明时跳过。不得因 README 中的命令单独触发工具安装。
 
 ### 6. 写入 `analysis.json`
 
@@ -152,9 +175,11 @@ Phase 0 结束时文件仅含上述字段。Phase 1 写入 `official_template`�
 | 结果 | 条件 |
 | --- | --- |
 | **STOP** | 无法判定 `runtime_profile` |
-| **STOP** | 必装依赖无法安装或核对失败 |
-| **STOP** | `local`：区域、登录或工作空间未确认 |
-| **STOP** | 项目来源无法解析或源码物化失败 |
+| **STOP** | 用户拒绝安装缺失依赖，或安装后复核失败 |
+| **STOP** | `local`：区域、登录、工作空间未确认，或 auth/kubeconfig 不可用 |
+| **STOP** | `local`：`gh` 未登录或缺少 `write:packages` |
+| **STOP** | 项目来源无法解析，或进入/克隆失败 |
+| **STOP** | 仓库需要子模块或 LFS，但用户拒绝或拉取失败 |
 | **STOP** | 无法写入 `analysis.json` |
 | **CONTINUE** | 全部通过 → [部署模式识别](/pipeline/mode-detection) |
 
@@ -162,9 +187,9 @@ Phase 0 结束时文件仅含上述字段。Phase 1 写入 `official_template`�
 
 - `runtime_profile` 为 `local` 或 `sandbox`
 - 必装依赖已安装且可用
-- `local`：Sealos 区域、登录与工作空间已确认
-- `.sealos/analysis.json` 存在且包含 `runtime_profile`、`work_dir`、`repo_name`
-- `work_dir` 完整、可分析、可构建
+- `local`：Sealos 区域、登录与工作空间已确认；`gh` 已登录且具备 `write:packages`
+- `.sealos/analysis.json` 存在且包含 `runtime_profile`、`work_dir`、`repo_name`、`github_url`
+- `work_dir` 完整、可分析
 
 ## Schema 链接
 
@@ -172,4 +197,8 @@ Phase 0 结束时文件仅含上述字段。Phase 1 写入 `official_template`�
 
 ## 实现映射
 
-`skills/sealos-deploy/modules/preflight.md`
+| 项 | 路径 |
+| --- | --- |
+| 环境与依赖探测 | `skills/sealos-deploy/scripts/phase-0/check-running-environment.ts` |
+| Phase 0 验收 | `skills/sealos-deploy/scripts/validate-phase-0.mjs` |
+| 模块说明 | `skills/sealos-deploy/modules/phase-0.md` |

@@ -66,7 +66,7 @@ Phase 5 在 Phase 6 之前执行。`.sealos/template/index.yaml` 须已存在。
 
 | Phase | 名称 | 主要任务 |
 | --- | --- | --- |
-| [Phase 0](/pipeline/phases/phase-0-preflight) | 部署前环境检查 | 环境、源码物化、gitingest/railpack 依赖 |
+| [Phase 0](/pipeline/phases/phase-0-preflight) | 部署前环境检查 | 环境、身份、源码目录、`analysis.json` 四字段 |
 | [Phase 1](/pipeline/phases/phase-1-assess) | 项目评估 | 判断能否部署，选择路径 |
 | [Phase 2](/pipeline/phases/phase-2-discover) | 发现与镜像准备 | gitingest、`deployment-plan.json` |
 | [Phase 3](/pipeline/phases/phase-3-build-push) | 构建并推送 | `linux/amd64` 镜像推送到 GHCR |
